@@ -1,0 +1,125 @@
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
+
+const prisma = new PrismaClient();
+
+// ✅ GET: ดึงคูปองทั้งหมด (พร้อม pagination)
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const skip = (page - 1) * limit;
+
+  const [coupons, total] = await Promise.all([
+    prisma.coupon.findMany({
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        branches: true,
+        shops: true,
+        campaign: { select: { id: true, name: true } },
+        users: true,
+      },
+    }),
+    prisma.coupon.count(),
+  ]);
+
+  return NextResponse.json({
+    data: coupons,
+    pagination: {
+      page,
+      totalPages: Math.ceil(total / limit),
+      total,
+    },
+  });
+}
+
+// ✅ POST: สร้างคูปองใหม่
+export async function POST(req: Request) {
+  try {
+    const formData = await req.formData();
+
+    const name = formData.get("name")?.toString() || "";
+    const code = formData.get("code")?.toString() || `CPN-${Date.now()}`;
+    const description = formData.get("description")?.toString() || null;
+    const terms = formData.get("terms")?.toString() || null;
+    const pointCost = parseInt(formData.get("pointCost")?.toString() || "0");
+    const pointEarn = parseInt(formData.get("pointEarn")?.toString() || "0");
+    const quantity = formData.get("quantity")
+      ? parseInt(formData.get("quantity")!.toString())
+      : null;
+    const maxPerUser = formData.get("maxPerUser")
+      ? parseInt(formData.get("maxPerUser")!.toString())
+      : null;
+
+    const startDateRaw = formData.get("startDate")?.toString() || null;
+    const endDateRaw = formData.get("endDate")?.toString() || null;
+    const expiresAtRaw = formData.get("expiresAt")?.toString() || null;
+
+    const startDate = startDateRaw ? new Date(startDateRaw) : null;
+    const endDate = endDateRaw ? new Date(endDateRaw) : null;
+    const expiresAt = expiresAtRaw ? new Date(expiresAtRaw) : null;
+
+    const campaignId = formData.get("campaignId")?.toString() || null;
+    const autoAssign = formData.get("autoAssign") === "true";
+
+    // ✅ Handle file upload
+    const file = formData.get("file") as File | null;
+    let imageUrl: string | null = null;
+    if (file && file.size > 0) {
+      const uploadsDir = path.join(process.cwd(), "public/uploads/admin/coupon");
+      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+      const filename = `${Date.now()}_${file.name}`;
+      const filePath = path.join(uploadsDir, filename);
+      const buffer = Buffer.from(await file.arrayBuffer());
+      fs.writeFileSync(filePath, buffer);
+      imageUrl = `/uploads/admin/coupon/${filename}`;
+    }
+
+    const shopIds = formData.getAll("shopIds[]") as string[];
+    const branchIds = formData.getAll("branchIds[]") as string[];
+
+    // ✅ ตรวจสอบ "จุดบริการ (Redemption)"
+    const isRedemption = shopIds.includes("redemption");
+
+    // ✅ Connect เฉพาะร้านค้าที่เลือกจริง
+    const validShopIds = shopIds.filter((id) => id !== "redemption");
+
+    // ✅ บันทึกลงฐานข้อมูล
+    const coupon = await prisma.coupon.create({
+      data: {
+        code,
+        name,
+        description,
+        terms,
+        pointCost,
+        pointEarn,
+        quantity,
+        maxPerUser,
+        startDate,
+        endDate,
+        expiresAt: expiresAt!,
+        campaignId,
+        autoAssign,
+        imageUrl,
+        isRedemption, // ✅ เพิ่มฟิลด์นี้
+        shops: validShopIds.length > 0 ? { connect: validShopIds.map((id) => ({ id })) } : undefined,
+        branches: branchIds.length > 0 ? { connect: branchIds.map((id) => ({ id })) } : undefined,
+      },
+      include: {
+        campaign: true,
+        shops: true,
+        branches: true,
+      },
+    });
+
+    return NextResponse.json(coupon);
+  } catch (error: any) {
+    console.error("❌ Error creating coupon:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

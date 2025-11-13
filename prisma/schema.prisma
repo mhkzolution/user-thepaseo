@@ -1,0 +1,754 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User_Lost {
+  id                 String    @id @default(uuid())
+  phone              String
+  password           String?
+  name               String
+  email              String?
+  avatar             String?
+  referredBy         String?
+  referralCampaign   String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  role               Role      @default(USER)
+  lineId             String?   @unique
+  lineToken          String?
+  lineRefreshToken   String?
+  lineTokenExpiresAt DateTime?
+  movedAt            DateTime  @default(now())
+}
+
+model ShopCategory {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shops     Shop[]
+}
+
+model Shop {
+  id          String        @id @default(uuid())
+  name        String
+  logoUrl     String?
+  imageUrl    String?
+  description String?
+  zone        String?
+  location    String?
+  categoryId  String?
+  branchId    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  receipts    Receipt[]     @relation("ShopReceipts")
+  branch      Branch?       @relation(fields: [branchId], references: [id])
+  category    ShopCategory? @relation(fields: [categoryId], references: [id])
+  campaign    Campaign[]    @relation("CampaignShops")
+  coupon      Coupon[]      @relation("CouponShops")
+  event       Event[]       @relation("EventShops")
+  rewards     Reward[]      @relation("RewardShops")
+
+  @@index([branchId], map: "Shop_branchId_fkey")
+  @@index([categoryId], map: "Shop_categoryId_fkey")
+}
+
+model Branch {
+  id        String     @id @default(uuid())
+  name      String
+  type      BranchType
+  location  String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  imageUrl  String?
+  receipts  Receipt[]
+  shops     Shop[]
+  users     User[]
+  campaign  Campaign[] @relation("CampaignBranches")
+  coupon    Coupon[]   @relation("CouponBranches")
+  event     Event[]    @relation("EventBranches")
+  rewards   Reward[]   @relation("RewardBranches")
+}
+
+model OtpVerification {
+  id           String     @id @default(uuid())
+  phone        String
+  otpCode      String
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+  purpose      OtpPurpose
+  requestCount Int        @default(1)
+  verifiedAt   DateTime?
+
+  @@index([phone])
+}
+
+model Popup {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerWelcome {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerLogin {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerRegister {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerOtp {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerHome {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerTerms {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerUpload {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model BannerUploadTerm {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model BannerPoint {
+  id        String    @id @default(uuid())
+  title     String
+  imageUrl  String
+  linkUrl   String
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int       @default(0)
+}
+
+model Help {
+  id        String   @id @default(uuid())
+  question  String
+  answer    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Int      @default(0)
+}
+
+model HelpTerms {
+  id          String  @id @default(uuid())
+  description String? @db.Text
+}
+
+model Interest {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[] @relation("UserInterests")
+}
+
+model User {
+  id                     String                  @id @default(uuid())
+  role                   Role                    @default(USER)
+  name                   String
+  firstName              String?
+  lastName               String?
+  email                  String?                 @unique
+  houseNumber            String?
+  alley                  String?
+  subDistrict            String?
+  district               String?
+  postalCode             String?
+  phone                  String?                 @unique
+  password               String?
+  avatar                 String?                 @db.Text
+  overrideNote           String?
+  totalSpending          Int                     @default(0)
+  point                  Int                     @default(0)
+  referralCode           String                  @unique
+  referredBy             String?
+  referralCampaign       String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  dateOfBirth            DateTime?
+  gender                 Gender?
+  province               String?
+  occupation             Occupation?
+  residenceType          ResidenceType?
+  branchId               String?
+  lineId                 String?                 @unique @db.VarChar(100)
+  lineToken              String?                 @db.Text
+  lineRefreshToken       String?                 @db.Text
+  lineTokenExpiresAt     DateTime?
+  otp                    String?
+  otpExpiry              DateTime?
+  lastLogin              DateTime?
+  isPhoneVerified        Boolean                 @default(false)
+  auditLogs              AuditLog[]              @relation("AdminAudit")
+  campaignParticipations CampaignParticipation[]
+  eventRegistrations     EventRegistration[]
+  favorites              Favorite[]
+  missionLogs            MissionLog[]
+  notifications          Notification[]
+  pointBalance           PointBalance?
+  pointTxns              PointTransaction[]      @relation("UserPointTransactions")
+  pointWallets           PointWallet[]
+  receiptsApprovedBy     Receipt[]               @relation("ReviewedByAdmin")
+  receipts               Receipt[]               @relation("UserReceipts")
+  redeems                RedeemHistory[]
+  redemptions            Redemption[]
+  invitedBy              ReferralLog[]           @relation("Invitee")
+  referredUsers          ReferralLog[]           @relation("Inviter")
+  participations         RewardParticipation[]
+  rewardRedemptionCodes  RewardRedemptionCode[]  @relation("UsedByAdmin")
+  branch                 Branch?                 @relation(fields: [branchId], references: [id])
+  coupons                UserCoupon[]
+  permissions            Permission[]            @relation("PermissionToUser")
+  interests              Interest[]              @relation("UserInterests")
+
+  @@index([branchId], map: "User_branchId_fkey")
+}
+
+model Permission {
+  id     String @id @default(uuid())
+  action String @unique
+  users  User[] @relation("PermissionToUser")
+}
+
+model Receipt {
+  id                String             @id @default(uuid())
+  userId            String
+  amount            Int
+  rejectReason      String?
+  status            ReceiptStatus      @default(PENDING)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  branchId          String?
+  shopId            String?
+  fileType          String?
+  fileUrl           String?
+  pointTransactions PointTransaction[] @relation("ReceiptPointTransactions")
+  branch            Branch?            @relation(fields: [branchId], references: [id])
+  reviewedByAdmin   User?              @relation("ReviewedByAdmin", fields: [reviewedBy], references: [id])
+  shop              Shop?              @relation("ShopReceipts", fields: [shopId], references: [id])
+  user              User               @relation("UserReceipts", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([branchId], map: "Receipt_branchId_fkey")
+  @@index([reviewedBy], map: "Receipt_reviewedBy_fkey")
+  @@index([shopId], map: "Receipt_shopId_fkey")
+}
+
+model UploadTerm {
+  id          String  @id @default(uuid())
+  description String? @db.Text
+}
+
+model Reward {
+  id              String                @id @default(uuid())
+  name            String
+  description     String?               @db.Text
+  terms           String?               @db.Text
+  imageUrl        String?
+  pointCost       Int?
+  pointEarn       Int?
+  quantity        Int?
+  maxPerUser      Int?
+  startDate       DateTime
+  endDate         DateTime
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  linkShare       String?
+  isRedemption    Boolean               @default(false)
+  redeemHistories RedeemHistory[]
+  redemptions     Redemption[]
+  participations  RewardParticipation[]
+  branches        Branch[]              @relation("RewardBranches")
+  shops           Shop[]                @relation("RewardShops")
+}
+
+model Campaign {
+  id             String                  @id @default(uuid())
+  code           String?                 @unique
+  name           String
+  description    String?                 @db.Text
+  terms          String?                 @db.Text
+  imageUrl       String?
+  startDate      DateTime
+  endDate        DateTime
+  pointCost      Int?
+  pointEarn      Int?
+  quantity       Int?
+  maxPerUser     Int?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  linkShare      String?
+  participations CampaignParticipation[]
+  coupons        Coupon[]                @relation("CampaignCoupons")
+  referralLogs   ReferralLog[]
+  branches       Branch[]                @relation("CampaignBranches")
+  shops          Shop[]                  @relation("CampaignShops")
+}
+
+model Event {
+  id            String              @id @default(uuid())
+  name          String
+  description   String?             @db.Text
+  terms         String?             @db.Text
+  imageUrl      String?
+  startDate     DateTime
+  endDate       DateTime
+  pointCost     Int?
+  pointEarn     Int?
+  quantity      Int?
+  maxPerUser    Int?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  linkShare     String?
+  registrations EventRegistration[]
+  branches      Branch[]            @relation("EventBranches")
+  shops         Shop[]              @relation("EventShops")
+}
+
+model RewardParticipation {
+  id         String    @id @default(uuid())
+  userId     String
+  rewardId   String
+  joinedAt   DateTime  @default(now())
+  redeemed   Boolean   @default(false)
+  redeemedAt DateTime?
+  redeemCode String?   @unique
+  verifiedAt DateTime?
+  verifiedBy String?
+  reward     Reward    @relation(fields: [rewardId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@unique([rewardId, userId])
+  @@index([userId], map: "RewardParticipation_userId_fkey")
+}
+
+model Redemption {
+  id                   String                @id @default(uuid())
+  userId               String
+  rewardId             String
+  createdAt            DateTime              @default(now())
+  reward               Reward                @relation(fields: [rewardId], references: [id])
+  user                 User                  @relation(fields: [userId], references: [id])
+  rewardRedemptionCode RewardRedemptionCode?
+
+  @@index([rewardId], map: "Redemption_rewardId_fkey")
+  @@index([userId], map: "Redemption_userId_fkey")
+}
+
+model CampaignParticipation {
+  id         String   @id @default(uuid())
+  userId     String
+  campaignId String
+  joinedAt   DateTime @default(now())
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([campaignId, userId], name: "campaignId_userId")
+  @@index([userId], map: "CampaignParticipation_userId_fkey")
+}
+
+model EventRegistration {
+  id       String   @id @default(uuid())
+  userId   String
+  eventId  String
+  joinedAt DateTime @default(now())
+  event    Event    @relation(fields: [eventId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@index([userId], map: "EventRegistration_userId_fkey")
+}
+
+model Coupon {
+  id           String       @id @default(uuid())
+  code         String       @unique
+  name         String
+  description  String?      @db.Text
+  imageUrl     String?
+  pointCost    Int?
+  expiresAt    DateTime
+  campaignId   String?
+  autoAssign   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  maxPerUser   Int?
+  pointEarn    Int?
+  quantity     Int?
+  terms        String?      @db.Text
+  endDate      DateTime?
+  startDate    DateTime?
+  isRedemption Boolean      @default(false)
+  campaign     Campaign?    @relation("CampaignCoupons", fields: [campaignId], references: [id])
+  users        UserCoupon[]
+  branches     Branch[]     @relation("CouponBranches")
+  shops        Shop[]       @relation("CouponShops")
+
+  @@index([startDate, endDate])
+  @@index([campaignId], map: "Coupon_campaignId_fkey")
+}
+
+model UserCoupon {
+  id         String    @id @default(uuid())
+  userId     String
+  couponId   String
+  assignedAt DateTime  @default(now())
+  used       Boolean   @default(false)
+  usedAt     DateTime?
+  redeemCode String?   @unique
+  verifiedAt DateTime?
+  verifiedBy String?
+  coupon     Coupon    @relation(fields: [couponId], references: [id])
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([used, usedAt])
+  @@index([couponId])
+  @@index([userId])
+}
+
+model Mission {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  pointReward Int
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime     @default(now())
+  missionLogs MissionLog[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  type      String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "Notification_userId_fkey")
+}
+
+model ReferralLog {
+  id         String    @id @default(uuid())
+  inviterId  String
+  inviteeId  String
+  campaignId String?
+  createdAt  DateTime  @default(now())
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  invitee    User      @relation("Invitee", fields: [inviteeId], references: [id])
+  inviter    User      @relation("Inviter", fields: [inviterId], references: [id])
+
+  @@index([campaignId], map: "ReferralLog_campaignId_fkey")
+  @@index([inviteeId], map: "ReferralLog_inviteeId_fkey")
+  @@index([inviterId], map: "ReferralLog_inviterId_fkey")
+}
+
+model PointWallet {
+  id         String    @id @default(cuid())
+  userId     String
+  source     String?
+  points     Int
+  usedPoints Int       @default(0)
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PointSetting {
+  id                String   @id @default(uuid())
+  signupPoints      Int      @default(0)
+  referralPoints    Int      @default(0)
+  receiptRateAmount Int      @default(100)
+  receiptRatePoints Int      @default(1)
+  updatedAt         DateTime @updatedAt
+  isDefault         Boolean  @default(true)
+}
+
+model PointTransaction {
+  id            String       @id @default(cuid())
+  userId        String
+  type          PointType
+  amount        Int
+  balanceAfter  Int
+  referenceId   String?
+  description   String?
+  createdAt     DateTime     @default(now())
+  branchId      String?
+  campaignId    String?
+  couponId      String?
+  eventId       String?
+  receiptId     String?
+  referenceType PointSource?
+  shopId        String?
+  receipt       Receipt?     @relation("ReceiptPointTransactions", fields: [receiptId], references: [id])
+  user          User         @relation("UserPointTransactions", fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([receiptId], map: "PointTransaction_receiptId_fkey")
+}
+
+model PointBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model RedeemHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  rewardId   String
+  pointsUsed Int
+  createdAt  DateTime @default(now())
+  reward     Reward   @relation(fields: [rewardId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([rewardId], map: "RedeemHistory_rewardId_fkey")
+}
+
+model MissionLog {
+  id          String    @id @default(uuid())
+  userId      String
+  missionId   String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  mission     Mission   @relation(fields: [missionId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([missionId], map: "MissionLog_missionId_fkey")
+  @@index([userId], map: "MissionLog_userId_fkey")
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  imageUrl    String?
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  adminId     String
+  action      String
+  targetId    String?
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  admin       User     @relation("AdminAudit", fields: [adminId], references: [id])
+
+  @@index([adminId], map: "AuditLog_adminId_fkey")
+}
+
+model RewardRedemptionCode {
+  id           String     @id @default(uuid())
+  code         String     @unique
+  redemptionId String     @unique
+  used         Boolean    @default(false)
+  usedAt       DateTime?
+  usedByAdmin  String?
+  redemption   Redemption @relation(fields: [redemptionId], references: [id])
+  usedBy       User?      @relation("UsedByAdmin", fields: [usedByAdmin], references: [id])
+
+  @@index([usedByAdmin], map: "RewardRedemptionCode_usedByAdmin_fkey")
+}
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  targetId   String
+  targetType String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, targetId, targetType])
+  @@index([userId])
+  @@index([targetType, targetId])
+}
+
+model Termsofservice {
+  id          String  @id @default(uuid())
+  description String? @db.Text
+}
+
+model BusinessInformation {
+  id          String  @id @default(uuid())
+  description String? @db.Text
+}
+
+enum BranchType {
+  MALL
+  PARK
+  TOWN
+}
+
+enum OtpPurpose {
+  REGISTER
+  RESET_PASSWORD
+  VERIFY_PHONE
+}
+
+enum Role {
+  USER
+  ADMIN
+  ADMINMARKETING
+  CRMMANAGEMENT
+  STAFF
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Occupation {
+  STUDENT
+  PRIVATE_EMPLOYEE
+  STATE_ENTERPRISE
+  FREELANCER
+  BUSINESS_OWNER
+  HOMEMAKER
+  OTHER
+}
+
+enum ResidenceType {
+  TOWNHOUSE
+  CONDO
+  SINGLE_HOUSE
+}
+
+enum ReceiptStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PointType {
+  EARN
+  RECEIPT
+  REDEEM
+  MISSION
+  REFERRAL
+  ADJUST
+  EXPIRE
+}
+
+enum PointSource {
+  RECEIPT
+  CAMPAIGN
+  COUPON
+  EVENT
+  MISSION
+  REWARD
+  REFERRAL
+  ADJUST
+}

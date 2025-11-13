@@ -1,0 +1,23 @@
+.profile-card {
+    background: #9DC93C ;
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+}
+
+.profile-card::before {
+    content: "";
+    z-index: 1;
+    position: absolute;
+    top: -300px;
+    right: -150px;
+    width: 500px;
+    height: 500px;
+    border-radius: 100%;
+    background: linear-gradient(to right, rgba(0, 120, 98, 0.5), rgba(43, 255, 178, 0.5))!important;
+    opacity: 0.8;
+}
+
+.profile-card-1, .profile-card-2 {
+    z-index: 3;
+}

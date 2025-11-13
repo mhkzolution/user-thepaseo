@@ -1,0 +1,70 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{js,ts,jsx,tsx}",
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      spacing: {
+        '5rem': '5rem',
+        'my-custom-spacing': '5rem',
+        '10%': '10%',
+        '15%': '15%',
+        '20%': '20%',
+        '25%': '25%',
+        '30%': '30%',
+        '40%': '40%',
+        '50%': '50%',
+        '55%': '55%',
+        '60%': '60%',
+        '70%': '70%',
+        '75%': '75%',
+        '80%': '80%',
+        '85%': '85%',
+        '90%': '90%',
+        'homebanner': '27.5rem',
+        'homebanner-mb': '12.5rem',
+      },
+      fontFamily: {
+        prompt: ['Prompt', 'sans-serif'],
+      },
+      colors: {
+        'line': '#06C755',
+        'paseo': '#9DC93C',
+        'paseo-hover': '#ecf5d2',
+        'paseo-dark': '#688e22',
+        primary: {
+          DEFAULT: "#9DC93C",
+          dark: "#9DC93C",
+          light: "#d9ecaa",
+          lighter: "#d9ecaa",
+        },
+        text: {
+          primary: "#1F2937",
+          secondary: "#4B5563",
+          active: "#688e22",
+        },
+        accent: {
+          DEFAULT: "#E5E7EB",
+        },
+      },
+      backgroundImage: {
+        'paseo-g': 'linear-gradient(360deg, #506d1e 0%, #9DC93C 50%, #d9ecaa 90%, #88b32f 100%)',
+        'paseo-g-b': 'linear-gradient(360deg, #4a4a4a 0%, #8c8c8c 50%, #d9d9d9 90%, #6b8e23 100%)',
+        'cancel-warm': 'linear-gradient(360deg, #991b1b 0%, #dc2626 45%, #fca5a5 85%, #ef4444 100%)',
+        'cancel-warm-soft': 'linear-gradient(360deg, #7c2d12 0%, #ea580c 45%, #fdba74 85%, #f97316 100%)',
+      },
+      borderRadius: {
+        '5xl': '3rem',
+        '4xl': '2.5rem',
+        '3xl': '2rem',
+      },
+      after: ['after'],
+      before: ['before'],
+    },
+  },
+  plugins: [],
+}

@@ -1,0 +1,226 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import BackButton from '@/components/BackButton/page';
+import RichTextEditor from "@/components/RichTextEditor/page";
+
+export default function NewShopPage() {
+  const router = useRouter();
+  const [branches, setBranches] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    logoUrl: "",
+    imageUrl: "",
+    description: "",
+    zone: "",
+    location: "",
+    categoryId: "",
+    branchId: "",
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const branchRes = await fetch("/api/admin/branches");
+      const categoryRes = await fetch("/api/admin/shop/category");
+      setBranches(await branchRes.json());
+      setCategories(await categoryRes.json());
+    };
+    fetchData();
+  }, []);
+
+  const handleUpload = async (file: File, field: "logoUrl" | "imageUrl") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    setUploading(true);
+    try {
+      const res = await fetch("/api/admin/shop/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.path) {
+        setForm((prev) => ({ ...prev, [field]: data.path }));
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch("/api/admin/shop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    router.push("/admin/shop");
+  };
+
+  return (
+      <div>
+            <div>
+              <BackButton className="mb-4" />
+            </div>
+  
+            <Card className="bg-white">
+              <CardContent className="md:p-10 p-4 space-y-4">
+              <h1 className="text-xl font-bold mb-4">เพิ่มร้านค้า</h1>
+  
+              <form onSubmit={handleSubmit} className="space-y-4">
+  
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">ชื่อร้าน</label>
+                  <div className="mt-2">
+                    <input
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="ชื่อร้าน"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    />
+                  </div>
+                </div>
+  
+                {/* Upload Logo */}
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">โลโก้ร้าน</label>
+                  <div className="mt-2">
+                    <input
+                      className="w-full border p-2 rounded-lg"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        e.target.files?.[0] && handleUpload(e.target.files[0], "logoUrl")
+                      }
+                    />
+                    {uploading && <p className="text-gray-500">กำลังอัพโหลด...</p>}
+                    {form.logoUrl && (
+                      <Image
+                        width={600}
+                        height={600}
+                        src={form.logoUrl}
+                        alt="logo preview"
+                        className="mt-2 w-24 h-24 object-cover rounded-lg"
+                      />
+                    )}
+                  </div>
+                </div>
+  
+                {/* Upload Image */}
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">ภาพร้าน</label>
+                  <div className="mt-2">
+                    <label className="block text-sm">ภาพร้าน</label>
+                    <input
+                      className="w-full border p-2 rounded-lg"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        e.target.files?.[0] && handleUpload(e.target.files[0], "imageUrl")
+                      }
+                    />
+                    {uploading && <p className="text-gray-500">กำลังอัพโหลด...</p>}
+                    {form.imageUrl && (
+                      <Image
+                        width={600}
+                        height={600}
+                        src={form.imageUrl}
+                        alt="image preview"
+                        className="mt-2 w-32 h-32 object-cover rounded-lg"
+                      />
+                    )}
+                  </div>
+                </div>
+  
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">รายละเอียด</label>
+                  <div className="mt-2">
+                    <RichTextEditor
+                      value={form.description}
+                      onChange={(value: string) => {
+                        setForm({ ...form, description: value });
+                      }}
+                    />
+                  </div>
+                </div>
+  
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">โซน</label>
+                  <div className="mt-2">
+                    <input
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="โซน"
+                      value={form.zone}
+                      onChange={(e) => setForm({ ...form, zone: e.target.value })}
+                    />
+                  </div>
+                </div>
+  
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">ที่ตั้ง</label>
+                  <div className="mt-2">
+                    <input
+                      className="w-full border p-2 rounded-lg"
+                      placeholder="ที่ตั้ง"
+                      value={form.location}
+                      onChange={(e) => setForm({ ...form, location: e.target.value })}
+                    />
+                  </div>
+                </div>
+  
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">เลือกสาขา</label>
+                  <div className="mt-2">
+                    <select
+                      className="w-full border p-2 rounded-lg"
+                      value={form.branchId}
+                      onChange={(e) => setForm({ ...form, branchId: e.target.value })}
+                    >
+                      <option value="">เลือกสาขา</option>
+                      {branches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+  
+                <div className="sm:col-span-3">
+                  <label className="block text-sm/6 font-medium text-gray-900">ประเภทร้านค้า</label>
+                  <div className="mt-2">
+                    <select
+                      className="w-full border p-2 rounded-lg"
+                      value={form.categoryId}
+                      onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                    >
+                      <option value="">เลือกหมวดหมู่</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+  
+                <button
+                  type="submit"
+                  className="w-full bg-paseo text-white py-2 rounded-lg"
+                >
+                  บันทึก
+                </button>
+              </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  

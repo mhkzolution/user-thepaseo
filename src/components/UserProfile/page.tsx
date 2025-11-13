@@ -1,0 +1,178 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import GreenCard from '@/components/GreenCard/page';
+import { HiUserCircle } from "react-icons/hi2";
+import { FaStar } from "react-icons/fa6";
+import Image from "next/image";
+import Link from 'next/link';
+import { RiCoupon2Fill } from "react-icons/ri";
+import { TbCoinBitcoinFilled } from "react-icons/tb";
+import { IoIosArrowDropright } from "react-icons/io";
+import Loading from '@/components/loading';
+
+// Define the structure for a single coupon
+interface CouponData {
+  id: string;
+  used: boolean;
+  assignedAt: string;
+  coupon: {
+    id: string;
+    code: string;
+    name: string;
+    expiresAt: string;
+    imageUrl: string;
+  };
+}
+
+// Update the UserProfileData interface to include the full coupons array
+interface UserProfileData {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  occupation?: string;
+  branch?: { name: string };
+  residenceType?: string;
+  houseNumber?: string;
+  alley?: string;
+  subDistrict?: string;
+  district?: string;
+  postalCode?: string;
+  avatar?: string;
+  point: number;
+  unusedCouponCount: number;
+  coupons: CouponData[]; // Changed from 'coupon: number' to 'coupons: CouponData[]'
+  totalSpending: number;
+  referralCode: string;
+  referredBy?: string;
+}
+
+const getAvatarUrl = (avatar?: string) => {
+  if (!avatar) return null;
+
+  // ถ้าเป็น URL เต็ม (http หรือ https) → ใช้ได้เลย
+  if (avatar.startsWith("http")) {
+    return avatar;
+  }
+
+  // ถ้าเป็นแค่ชื่อไฟล์ → ชี้ไปที่ public/user/profile
+  return `/user/profile/${avatar}`;
+};
+
+export default function UserProfile() {
+  const [user, setUser] = useState<UserProfileData | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/profile');
+        const data = await res.json();
+        if (data.user) setUser(data.user);
+      } catch (err) {
+        console.error("Failed to fetch user profile:", err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (!user) return 
+    <Loading />
+  ;
+
+  const avatarUrl = getAvatarUrl(user.avatar);
+
+  return (
+    <GreenCard title="โปรไฟล์ของคุณ">
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between w-full gap-4">
+          <div className="w-50% z-10 flex flex-row text-center items-center gap-2 bg-white p-2 border border-gray-100 rounded-lg shadow-lg">
+            <Link className="w-full flex flex-row items-center gap-2 text-lg font-semibold" href="/history/point">
+              <div className="pr-4 mr-2 border-r border-gray-400">
+                <TbCoinBitcoinFilled className='text-paseo' size={24}/>
+              </div>
+
+              <div className="flex flex-row justify-between items-center w-full">
+                <span className="text-sm font-semibold text-black">
+                  {user.point} 
+                  <span className="text-xs font-semibold text-black"> พอยท์</span>
+                </span>
+                <IoIosArrowDropright size={24} />
+              </div>
+              
+              
+            </Link>
+          </div>
+
+          <div className="w-50% z-10 flex flex-row text-center items-center gap-2 bg-white p-2 border border-gray-100 rounded-lg shadow-lg">
+              <Link className="w-full flex flex-row items-center gap-2 text-lg font-semibold" href="/profile/coupon">
+                <div className="pr-4 mr-2 border-r border-gray-400">
+                  <RiCoupon2Fill className='text-paseo' size={24} />
+                </div>
+
+                <div className="flex flex-row justify-between items-center w-full">
+                  <span className="text-sm font-semibold text-black">
+                    {user.unusedCouponCount} 
+                    <span className="text-xs font-semibold text-black"> คูปอง</span>
+                  </span>
+                  <IoIosArrowDropright size={24} />
+                </div>
+                
+              </Link>
+          </div>
+        </div>
+              
+              <div className="profile-card w-full text-white rounded-xl shadow-sm p-4 mb:p-6 gap-2 border border-gray-300 shadow-lg flex flex-row gap-4">
+
+                  <div className="z-10 w-30% flex flex-col item-center gap-2">
+
+                      <div className="w-full picture-section flex flex-row justify-center">
+                        {avatarUrl ? (
+                              <Image
+                              src={avatarUrl}
+                              alt={`${user.name}'s avatar`}
+                              width={80}
+                              height={80}
+                              priority
+                              className="rounded-full object-cover shadow-sm w-16 h-16 md:w-20 md:h-20 border border-gray-300 shadow"
+                              />
+                          ) : (
+                              <HiUserCircle size={80} className="bg-white text-paseo rounded-full" />
+                          )}
+                      </div>
+                      
+                  </div>
+      
+                  <div className="z-10 w-70% flex flex-col gap-2">
+
+                    <div className="w-full flex flex-col">
+                        <p className="text-xl font-bold">{user.name}</p>
+                    </div>
+
+                    <div className="w-full flex flex-row gap-2">
+
+                      <div className="w-50% flex flex-col">
+                        <p className="text-xs font-bold underline underline-offset-1">เบอร์โทรศัพท์​</p>
+                        <p className="text-sm">{user.phone}</p>
+                      </div>
+
+                      <div className="w-50% flex flex-col">
+                        <p className="text-xs font-bold underline underline-offset-1">วันเกิด</p>
+                        <p className="text-sm">{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString("th-TH") : "-"}</p>
+                      </div>
+
+                    </div>
+
+                    
+
+                  </div>
+                  
+              </div>
+          </div>
+          
+          
+    </GreenCard>
+  );
+}

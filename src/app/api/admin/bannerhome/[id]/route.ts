@@ -1,0 +1,27 @@
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// ✅ GET banner by ID
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  const banner = await prisma.bannerHome.findUnique({ where: { id } });
+  if (!banner) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(banner);
+}
+
+// ✅ PATCH banner by ID
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  const body = await req.json();
+  const updated = await prisma.bannerHome.update({ where: { id }, data: body });
+  return NextResponse.json(updated);
+}
+
+// ✅ DELETE banner by ID
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
+  await prisma.bannerHome.delete({ where: { id } });
+  return NextResponse.json({ message: "Deleted successfully" });
+}

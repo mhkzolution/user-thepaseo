@@ -1,0 +1,149 @@
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = 20;
+    const skip = (page - 1) * pageSize;
+    const search = searchParams.get("search")?.trim() || undefined;
+    const branchId = searchParams.get("branchId") || undefined;
+    const categoryId = searchParams.get("categoryId") || undefined;
+
+    //console.log("Query parameters:", { page, search, branchId, categoryId });
+
+    const where = {
+      AND: [
+        branchId ? { branchId } : {},
+        categoryId ? { categoryId } : {},
+        search ? { name: { contains: search } } : {}, 
+      ],
+    };
+
+    const [shops, total, branches, categories] = await Promise.all([
+      prisma.shop.findMany({
+        where,
+        include: { category: true, branch: true },
+        orderBy: { createdAt: "asc" },
+        skip,
+        take: pageSize,
+      }),
+      prisma.shop.count({ where }),
+      prisma.branch.findMany({
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { shops: true } },
+        },
+        orderBy: { name: "asc" },
+      }),
+      prisma.shopCategory.findMany({
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { shops: true } },
+        },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    console.log("API response:", {
+      shops: shops.length,
+      total,
+      branches: branches.length,
+      categories: categories.length,
+    });
+
+    return NextResponse.json({
+      shops,
+      total,
+      page,
+      totalPages: Math.ceil(total / pageSize),
+      branches,
+      categories,
+    });
+  } catch (error: any) {
+    console.error("Error fetching shops:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch shops", details: error.message },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { name, logoUrl, imageUrl, description, zone, location, categoryId, branchId } = body;
+
+    if (!name || typeof name !== "string" || name.trim() === "") {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+
+    const shop = await prisma.shop.create({
+      data: {
+        name: name.trim(),
+        logoUrl: logoUrl || null,
+        imageUrl: imageUrl || null,
+        description: description || null,
+        zone: zone || null,
+        location: location || null,
+        categoryId: categoryId || null,
+        branchId: branchId || null,
+      },
+    });
+
+    return NextResponse.json(shop);
+  } catch (error: any) {
+    console.error("Error creating shop:", error);
+    if (error.code === "P2002") {
+      return NextResponse.json({ error: "Shop with this name already exists" }, { status: 409 });
+    }
+    if (error.code === "P2003") {
+      return NextResponse.json({ error: "Invalid categoryId or branchId" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to create shop", details: error.message }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const shopId = searchParams.get("id");
+
+    if (!shopId) {
+      return NextResponse.json({ error: "Shop ID is required" }, { status: 400 });
+    }
+
+    // Check if the shop exists
+    const shop = await prisma.shop.findUnique({
+      where: { id: shopId },
+    });
+
+    if (!shop) {
+      return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+    }
+
+    // Delete the shop
+    await prisma.shop.delete({
+      where: { id: shopId },
+    });
+
+    return NextResponse.json({ message: "Shop deleted successfully" });
+  } catch (error: any) {
+    console.error("Error deleting shop:", error);
+    return NextResponse.json(
+      { error: "Failed to delete shop", details: error.message },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
