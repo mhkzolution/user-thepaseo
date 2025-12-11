@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession, signIn } from 'next-auth/react'
+import { loginWithLineHybrid } from "@/lib/liff-login";
 import { useRouter } from 'next/navigation'
 import { FaLine } from "react-icons/fa6";
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { Button } from "@/components/ui/button"
 import BannerLogin from "@/components/BannerLogin/page"
 import Loading from '@/components/loading';
+import HeaderMobile from '@/components/HeaderMobile/page';
 
 export default function LoginPage() {
   const [step, setStep] = useState<1 | 2 | 3>(1)
@@ -22,6 +24,14 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0)
 
   const router = useRouter()
+
+useEffect(() => {
+  import("@/lib/liff-client").then((module) => {
+    module.initLiff().catch((err) => {
+      console.log("LIFF Init Failed:", err);
+    });
+  });
+}, []);
 
   // ฟังก์ชันเดิมสำหรับตรวจสอบเบอร์และรหัสผ่าน
   const handleCheckCredentials = async () => {
@@ -120,16 +130,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="container mx-auto h-screen overflow-hidden p-0 md:p-6 flex flex-col justify-center items-center">
-      <div className="h-full w-full max-w-md mx-auto p-0 md:rounded-xl rounded-none shadow overflow-hidden">
-
-        <div className="-mb-6" style={{ height:'55%' }}>
-
+    <div className="max-w-lg mx-auto p-0 mb-20 md:mb-0 mb-0 rounded-xl relative overflow-hidden">
+        <HeaderMobile showBack={false} showFavorite={false} />
+        <div className="mb-0 py-4 px-4 md:px-4">
           <BannerLogin />
         </div>
         
-
-        <div className="h-screen p-10 m-0 rounded-3xl bg-white shadow z-50 relative" style={{ height:'50%' }}>
+        <div className="w-full p-10 m-0 rounded-t-5xl bg-white shadow z-50 md:relative fixed bottom-0">
 
           {/* --- Step 1: แสดงปุ่มเข้าสู่ระบบด้วย LINE และปุ่มสำหรับเบอร์โทรศัพท์ --- */}
           {step === 1 && (
@@ -138,13 +145,12 @@ export default function LoginPage() {
 
                 <h2 className="text-l font-semibold mb-5 text-center text-black">เข้าสู่ระบบ</h2>
                 <button
-                  onClick={() => signIn('line', { callbackUrl: '/' })}
-                  className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center" style={{ backgroundColor: '#9DC93C' }}
-                >
+                  onClick={loginWithLineHybrid}
+                  className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center bg-paseo"
+                  >
                   <FaLine className="h-6 w-6 text-white" />
                   <span className="flex-shrink mx-4 text-white">เข้าสู่ระบบด้วย LINE</span>
                 </button>
-
 
                 <button
                   onClick={() => setStep(2)}
@@ -183,12 +189,13 @@ export default function LoginPage() {
                   <div className="flex flex-col items-center justify-center mt-4">
                     <span>หรือ</span>
                     <button
-                      onClick={() => signIn('line', { callbackUrl: '/' })}
-                      className="mt-2 w-full text-black p-2 md:p-2 rounded-full flex justify-center items-center" style={{ backgroundColor: '#9DC93C' }}
+                      onClick={loginWithLineHybrid}
+                      className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center bg-paseo"
                     >
                       <FaLine className="h-6 w-6 text-white" />
                       <span className="flex-shrink mx-4 text-white">เข้าสู่ระบบด้วย LINE</span>
                     </button>
+                    
                   </div>
                 </form>
             </div>
@@ -266,7 +273,6 @@ export default function LoginPage() {
 
         </div>
 
-      </div>
     </div>
   )
 }

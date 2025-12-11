@@ -31,6 +31,7 @@ type EventData = {
   registrations: any[];
   redemptions: any[];
   createdAt: string;
+  tags?: any[];
 };
 
 export default function AdminEventList() {
@@ -92,6 +93,7 @@ export default function AdminEventList() {
                 <th className="p-2 border">ชื่อ</th>
                 <th className="p-2 border">สาขา</th>
                 <th className="p-2 border">ร้าน</th>
+                <th className="p-2 border">แท็ก</th>
                 <th className="p-2 border">เข้าร่วม</th>
                 <th className="p-2 border">แลกสำเร็จ</th>
                 <th className="p-2 border">วันที่สร้าง</th>
@@ -117,6 +119,15 @@ export default function AdminEventList() {
                       <Badge key={s.id} className="text-white mr-2">{s.name}</Badge>
                     ))}
                   </td>
+                  <td className="p-2 border">
+                  {r.tags && r.tags.length > 0 ? (
+                    r.tags.map(tag => (
+                      <span key={tag.id} className="px-2 py-1 text-xs bg-paseo-hover text-black rounded-full mr-1">{tag.name}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )}
+                </td>
                   <td
                     className="p-2 border cursor-pointer text-text-active text-center"
                     onClick={() => router.push(`/admin/event/${r.id}/registrations`)}

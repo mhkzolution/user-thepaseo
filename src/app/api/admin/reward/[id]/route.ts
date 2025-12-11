@@ -49,6 +49,9 @@ export async function PATCH(
       imageUrl = `/uploads/admin/reward/${filename}`;
     }
 
+    const tagsRaw = formData.get("tags")?.toString() || "[]";
+    const tags: string[] = JSON.parse(tagsRaw);
+
     // build update object
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
@@ -78,6 +81,22 @@ export async function PATCH(
       include: { shops: true, branches: true },
     });
 
+    // delete old tags
+    await prisma.tagRelation.deleteMany({
+      where: { targetId: id, targetType: "reward" },
+    });
+
+    // add new tags
+    if (tags.length > 0) {
+      await prisma.tagRelation.createMany({
+        data: tags.map((tagId) => ({
+          tagId,
+          targetId: id,
+          targetType: "reward",
+        })),
+      });
+    }
+
     return NextResponse.json(reward);
   } catch (err: any) {
     console.error("PATCH reward error:", err);
@@ -100,6 +119,17 @@ export async function GET(
         redemptions: { include: { user: true } },
       },
     });
+
+    const tagRows = await prisma.tagRelation.findMany({
+      where: {
+        targetId: id,
+        targetType: "reward",
+      },
+      include: { tag: true },
+    });
+
+    const tagIds = tagRows.map(r => r.tagId);
+    const tags = tagRows.map(r => r.tag);
 
     if (!reward) {
       return NextResponse.json({ error: "Reward not found" }, { status: 404 });
@@ -130,6 +160,8 @@ export async function GET(
       branchIds,   // ✅ ใช้แทน selectedBranches
       locationLabel,
       linkShare: reward.linkShare || "",
+      tagIds,
+      tags,
     });
   } catch (err: any) {
     console.error("GET reward error:", err);
@@ -137,3 +169,85 @@ export async function GET(
   }
 }
 
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // 1️⃣ ตรวจสอบว่ามี reward อยู่ไหม
+    const reward = await prisma.reward.findUnique({
+      where: { id },
+      include: {
+        branches: true,
+        shops: true,
+        redeemHistories: true,
+        redemptions: true,
+        participations: true,
+      },
+    });
+
+    if (!reward) {
+      return NextResponse.json(
+        { error: "Reward not found" },
+        { status: 404 }
+      );
+    }
+
+    // 2️⃣ ลบ tagRelations ของ reward
+    await prisma.tagRelation.deleteMany({
+      where: { targetId: id, targetType: "reward" },
+    });
+
+    // 3️⃣ ลบ RedeemHistory / Redemption / Participation (ตามจริงจาก schema)
+    await prisma.redeemHistory.deleteMany({
+      where: { rewardId: id },
+    });
+
+    await prisma.redemption.deleteMany({
+      where: { rewardId: id },
+    });
+
+    await prisma.rewardParticipation.deleteMany({
+      where: { rewardId: id },
+    });
+
+    // 4️⃣ ถอด relations shops & branches เพื่อป้องกัน foreign key error
+    await prisma.reward.update({
+      where: { id },
+      data: {
+        shops: { set: [] },
+        branches: { set: [] },
+      },
+    });
+
+    // 5️⃣ ลบไฟล์รูปภาพ ถ้ามี
+    if (reward.imageUrl) {
+      const filePath = path.join(process.cwd(), "public", reward.imageUrl);
+      try {
+        await fs.unlink(filePath);
+      } catch (err) {
+        // ถ้าไม่มีไฟล์ ก็ปล่อยผ่าน
+        console.warn("Failed to delete reward image:", filePath);
+      }
+    }
+
+    // 6️⃣ ลบ reward จริง
+    await prisma.reward.delete({ where: { id } });
+
+    return NextResponse.json({
+      success: true,
+      message: "Reward deleted successfully",
+    });
+
+  } catch (error: any) {
+    console.error("❌ DELETE reward error:", error);
+    return NextResponse.json(
+      { error: error.message || "Server Error" },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}

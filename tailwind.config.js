@@ -8,6 +8,16 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontSize: {
+        '10px': '10px',
+        '11px': '11px',
+        '12px': '12px',
+        'xs': '0.75rem',
+        'sm': '0.875rem',
+        '10': ['10px', { lineHeight: '14px' }],
+        '11': ['11px', { lineHeight: '16px' }],
+        '12': ['12px', { lineHeight: '18px' }],
+      },
       spacing: {
         '5rem': '5rem',
         'my-custom-spacing': '5rem',

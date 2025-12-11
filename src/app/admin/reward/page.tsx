@@ -32,6 +32,7 @@ type RewardData = {
   redemptions: any[];
   createdAt: string;
   isRedemption?: string;
+  tags?: any[];
 };
 
 export default function AdminRewardList() {
@@ -88,6 +89,7 @@ export default function AdminRewardList() {
               <th className="p-2 border">ชื่อ</th>
               <th className="p-2 border">สาขา</th>
               <th className="p-2 border">ร้าน</th>
+              <th className="p-2 border">แท็ก</th>
               <th className="p-2 border">จำนวน</th>
               <th className="p-2 border">เริ่ม</th>
               <th className="p-2 border">ถึง</th>
@@ -136,6 +138,16 @@ export default function AdminRewardList() {
                     ))
                   ) : (
                     <span className="text-gray-400 text-sm">-</span>
+                  )}
+                </td>
+
+                <td className="p-2 border">
+                  {r.tags && r.tags.length > 0 ? (
+                    r.tags.map(tag => (
+                      <span key={tag.id} className="px-2 py-1 text-xs bg-paseo-hover text-black rounded-full mr-1">{tag.name}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
                   )}
                 </td>
 

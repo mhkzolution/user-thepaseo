@@ -138,7 +138,7 @@ const Navbar = () => {
           {menuItemsMobile.map((item) => (
             <Link key={item.path} href={item.path} prefetch={false} className={getMobileButtonClass(item.path)}>
               <Image priority={true} src={item.icon} alt="Thepaseo" width={24} height={24} />
-              <span className="text-xs mt-1">{item.label}</span>
+              <span className="text-10px mt-1">{item.label}</span>
             </Link>
           ))}
         </div>

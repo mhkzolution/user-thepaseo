@@ -28,9 +28,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
-    const now = new Date();
-    if (event.startDate > now) return NextResponse.json({ error: "อีเวนต์ยังไม่เริ่ม" }, { status: 400 });
-    if (event.endDate < now) return NextResponse.json({ error: "อีเวนต์สิ้นสุดแล้ว" }, { status: 400 });
+    const now = Date.now(); // UTC timestamp
+    const startTime = new Date(event.startDate).getTime();
+    const endTime = new Date(event.endDate).getTime();
+
+    if (startTime > now) {
+      return NextResponse.json({ error: "อีเวนต์ยังไม่เริ่ม" }, { status: 400 });
+    }
+
+    if (endTime < now) {
+      return NextResponse.json({ error: "อีเวนต์สิ้นสุดแล้ว" }, { status: 400 });
+    }
 
     if (event.quantity !== null && event._count.registrations >= event.quantity) {
       return NextResponse.json({ error: "อีเวนต์เต็มแล้ว" }, { status: 400 });

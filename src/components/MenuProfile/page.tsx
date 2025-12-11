@@ -66,17 +66,18 @@ const MenuProfile = () => {
     <nav className="profile-btn flex flex-row gap-2 mb:gap-5 justify-center mb-4">
       {menuItems.map((item) => {
         const isActive = pathname.replace(/\/$/, "") === item.path.replace(/\/$/, "");
+        const isFavorite = item.path === "/favorite";
         return (
           <Link
             key={item.path}
             href={item.path}
-            className={getButtonClass(item.path)}
+            className={`${getButtonClass(item.path)} ${isFavorite ? "hidden md:block" : ""}`}
           >
             {/* ใช้ React.cloneElement เพื่อเพิ่ม className ให้ icon */}
             {React.cloneElement(item.icon, {
               className: `mb-1 ${getIconColor(item.path)}`,
             })}
-            <p className={`text-xs text-center ${isActive ? "text-white" : "text-black"}`}>
+            <p className={`md:text-xs text-10px text-center ${isActive ? "text-white" : "text-black"}`}>
               {item.label}
             </p>
           </Link>

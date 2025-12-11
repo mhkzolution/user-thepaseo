@@ -4,6 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import TagSelector from "@/components/TagSelector";
 
 import { PiDotsThreeOutlineLight } from "react-icons/pi";
 import { LuShare2 } from "react-icons/lu";
@@ -40,6 +41,8 @@ export default function AddEventPage() {
   // File upload
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+
+  const [tags, setTags] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(false);
 
@@ -276,6 +279,8 @@ export default function AddEventPage() {
             ))}
           </select>
         </div>
+
+        <TagSelector value={tags} onChange={setTags} />
 
         <div className="flex justify-end space-x-2">
           <button

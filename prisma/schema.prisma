@@ -77,6 +77,29 @@ model Branch {
   rewards   Reward[]   @relation("RewardBranches")
 }
 
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  relations TagRelation[]
+}
+
+model TagRelation {
+  id         String   @id @default(uuid())
+  tagId      String
+  targetId   String    // UUID ของ Shop, Campaign, Reward, Event, Coupon, etc
+  targetType String    // เช่น "shop" | "campaign" | "reward" | "event" | "coupon"
+
+  tag        Tag       @relation(fields: [tagId], references: [id])
+
+  createdAt  DateTime  @default(now())
+
+  @@index([tagId])
+  @@index([targetId, targetType])
+}
+
 model OtpVerification {
   id           String     @id @default(uuid())
   phone        String

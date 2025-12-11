@@ -23,6 +23,7 @@ interface Shop {
   branchId?: string;
   category?: { name: string };
   branch?: { name: string };
+  tags?: { id: string; name: string }[];
 }
 
 interface Branch {
@@ -91,7 +92,7 @@ export default function AdminShopPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchQuery, branchId, categoryId]); // ✅ memoize dependencies
+  }, [page, searchQuery, branchId, categoryId]);
 
   useEffect(() => {
     fetchShops();
@@ -311,6 +312,7 @@ export default function AdminShopPage() {
               <th className="border px-3 py-2">ชื่อร้าน</th>
               <th className="border px-3 py-2">สาขา</th>
               <th className="border px-3 py-2">หมวดหมู่</th>
+              <th className="border px-3 py-2">แท็ก</th>
               <th className="border px-3 py-2">จัดการ</th>
             </tr>
           </thead>
@@ -333,6 +335,22 @@ export default function AdminShopPage() {
                 <td className="border px-3 py-2">{shop.name}</td>
                 <td className="border px-3 py-2">{shop.branch?.name || '-'}</td>
                 <td className="border px-3 py-2">{shop.category?.name || '-'}</td>
+                <td className="border px-3 py-2">
+                  {shop.tags && shop.tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {shop.tags?.map((t) => (
+                        <span
+                          key={t.id}
+                          className="px-2 py-1 text-xs bg-paseo-hover text-black rounded-full mr-1"
+                        >
+                          {t.name}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-center flex justify-center gap-2">
                   <Link
                     href={`/admin/shop/${shop.id}/edit`}

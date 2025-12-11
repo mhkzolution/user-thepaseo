@@ -8,6 +8,7 @@ const prisma = new PrismaClient();
 // ✅ GET: ดึงคูปองเดี่ยว
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
   const coupon = await prisma.coupon.findUnique({
     where: { id },
     include: {
@@ -22,8 +23,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
   }
 
-  return NextResponse.json(coupon);
+  // โหลด Tags ของ coupon นี้
+  const tagRows = await prisma.tagRelation.findMany({
+    where: {
+      targetId: id,
+      targetType: "coupon",   // ←❗ แก้จาก reward เป็น coupon
+    },
+    include: { tag: true },
+  });
+
+  const tagIds = tagRows.map((r) => r.tagId);
+  const tags = tagRows.map((r) => r.tag);
+
+  return NextResponse.json({
+    ...coupon,
+    tagIds,
+    tags,
+  });
 }
+
 
 // ✅ PUT: อัปเดตคูปอง (รองรับ Redemption)
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -68,6 +86,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       fs.writeFileSync(filePath, buffer);
       imageUrl = `/uploads/admin/coupon/${filename}`;
     }
+
+    const tagsRaw = formData.get("tags")?.toString() || "[]";
+    const tags: string[] = JSON.parse(tagsRaw);
 
     // ✅ multi-select
     const shopIds = formData.getAll("shopIds[]") as string[];
@@ -120,6 +141,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         branches: true,
       },
     });
+
+    // delete old tags
+    await prisma.tagRelation.deleteMany({
+      where: { targetId: id, targetType: "coupon" },
+    });
+
+    // add new tags
+    if (tags.length > 0) {
+      await prisma.tagRelation.createMany({
+        data: tags.map((tagId) => ({
+          tagId,
+          targetId: id,
+          targetType: "coupon",
+        })),
+      });
+    }
 
     return NextResponse.json(updatedCoupon);
   } catch (error: any) {

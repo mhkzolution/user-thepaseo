@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image';
 import Link from 'next/link';
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,11 @@ import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { th } from "date-fns/locale"
 import BannerRegister from "@/components/BannerRegister/page"
+import HeaderMobile from '@/components/HeaderMobile/page';
+import { signIn } from "next-auth/react"
+
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
+import { FaSave } from "react-icons/fa";
 
 interface Interest {
   id: string;
@@ -164,12 +168,25 @@ export default function RegisterPage() {
       });
 
       const data = await res.json();
-      if (res.ok) {
-        setSuccess(true);
-        router.push('/auth/login');
-      } else {
+
+      if (!res.ok) {
         setError(data.error || 'เกิดข้อผิดพลาดในการสมัครสมาชิก');
+        return;
       }
+
+      // ⬇️ สมัครสำเร็จ → login ทันที โดยไม่ต้อง OTP
+      const loginResult = await signIn("credentials", {
+        redirect: false,
+        phone: form.phone,
+        bypassOtp: true,      // <—— flag บอกว่ามาจากการสมัคร
+      });
+
+      if (loginResult?.ok) {
+        router.push("/");     // เข้าหน้าแรกของระบบทันที
+      } else {
+        router.push("/auth/login");
+      }
+
     } catch (err) {
       console.error(err);
       setError('เกิดข้อผิดพลาดในการสมัครสมาชิก');
@@ -185,16 +202,18 @@ export default function RegisterPage() {
   }, [status, router]);
 
   return (
-    <div className="container mx-auto h-screen overflow-hidden p-0 md:p-6 flex flex-col justify-center items-center">
-      <div className="h-full w-full max-w-md mx-auto p-0 md:rounded-xl rounded-none shadow overflow-hidden">
-        <div className="-mb-6" style={{ height: '25%' }}>
+    <div className="max-w-lg mx-auto p-0 mb-20 md:mb-0 mb-0 rounded-xl relative overflow-hidden">
+
+        <HeaderMobile showBack={false} />
+
+        <div className="mb-0 py-4 px-4 md:px-4">
           <BannerRegister />
         </div>
 
-        <div className="h-screen p-10 m-0 rounded-3xl bg-white shadow z-50 relative" style={{ height: '80%' }}>
+        <div className="md:p-10 p-4 m-0 rounded-3xl bg-white shadow z-50 relative overflow-hidden">
           <div className="flex justify-center items-center gap-4 mb-5">
             <Image src="/logo-paseo-register.png" width={96} height={96} alt="ThePaseo" />
-            <h2 className="text-5xl font-semibold text-center">Welcome</h2>
+            <h2 className="text-4xl font-semibold text-center">สมัครสมาชิก</h2>
           </div>
 
           {/* Step Indicator */}
@@ -208,7 +227,7 @@ export default function RegisterPage() {
                     ${step < index + 1 ? 'text-gray-600' : ''}`}
                   style={
                     step > index + 1 ? { backgroundColor: '#9DC93C' } :
-                    step === index + 1 ? { backgroundColor: '#06C755' } :
+                    step === index + 1 ? { backgroundColor: '#688e22' } :
                     { backgroundColor: '#ddd' }
                   }
                 >
@@ -230,7 +249,7 @@ export default function RegisterPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="relative overflow-hidden">
             {/* Step 1 */}
             {step === 1 && (
               <div className="flex flex-col gap-4">
@@ -346,9 +365,13 @@ export default function RegisterPage() {
 
             {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
 
-            <div className="mt-6 flex justify-between items-center">
+            <div className="fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center blur rounded-t-xl shadow-lg border">
               {step > 1 ? (
-                <button type="button" onClick={handlePrevStep} className="text-white p-3 rounded-full" style={{ backgroundColor: '#06C755' }}>
+                <button
+                  type="button"
+                  onClick={handlePrevStep}
+                  className="w-40% text-white px-2 pl-4 py-2 rounded-full flex flex-row gap-2 items-center justify-between shadow bg-paseo-dark shadow"
+                >
                   <FaArrowLeft />
                 </button>
               ) : <div className="invisible"></div>}
@@ -370,7 +393,6 @@ export default function RegisterPage() {
             <Link href="/auth/login" className="font-bold" style={{ color: '#9DC93C' }}>เข้าสู่ระบบ</Link>
           </div>
         </div>
-      </div>
     </div>
   )
 }

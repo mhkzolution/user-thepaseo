@@ -4,6 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import RichTextEditor from "@/components/RichTextEditor/page";
+import TagSelector from "@/components/TagSelector";
 
 type Campaign = { id: string; name: string };
 type Shop = { id: string; name: string };
@@ -39,6 +40,8 @@ export default function EditCouponPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
 
+  const [tags, setTags] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
 
   // ✅ โหลดข้อมูลคูปอง
@@ -70,6 +73,7 @@ export default function EditCouponPage() {
       setAutoAssign(data.autoAssign || false);
       setCampaignId(data.campaignId || null);
       setExistingImage(data.imageUrl || null);
+      setTags(data.tagIds || []);
     })();
   }, [id]);
 
@@ -132,6 +136,8 @@ export default function EditCouponPage() {
 
     selectedBranches.forEach((id) => formData.append("branchIds[]", id));
     selectedShops.forEach((id) => formData.append("shopIds[]", id));
+
+    formData.append("tags", JSON.stringify(tags));
 
     const res = await fetch(`/api/admin/coupons/${id}`, {
       method: "PUT",
@@ -368,6 +374,8 @@ export default function EditCouponPage() {
               ))}
           </select>
         </div>
+
+        <TagSelector value={tags} onChange={setTags} />
 
         <button
           type="submit"

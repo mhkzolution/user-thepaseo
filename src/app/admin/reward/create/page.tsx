@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/RichTextEditor/page";
+import TagSelector from "@/components/TagSelector";
 
 import { PiDotsThreeOutlineLight } from "react-icons/pi";
 import { LuShare2 } from "react-icons/lu";
@@ -36,6 +37,8 @@ export default function AddRewardPage() {
   const [selectedShops, setSelectedShops] = useState<string[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
+
+  const [tags, setTags] = useState<string[]>([]);
 
   // File upload
   const [file, setFile] = useState<File | null>(null);
@@ -299,6 +302,8 @@ export default function AddRewardPage() {
             เลือกได้หลายร้าน หรือเลือก “จุดบริการ” หากของรางวัลนี้ไม่ได้อยู่ในร้านใด
           </p>
         </div>
+
+        <TagSelector value={tags} onChange={setTags} />
 
         <div className="flex justify-end space-x-2">
           <button

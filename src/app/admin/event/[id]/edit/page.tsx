@@ -4,6 +4,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import TagSelector from "@/components/TagSelector";
 
 import { PiDotsThreeOutlineLight } from "react-icons/pi";
 import { LuShare2 } from "react-icons/lu";
@@ -42,6 +43,8 @@ export default function EditEventPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
 
+  const [tags, setTags] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
 
   // Fetch Event data
@@ -66,6 +69,7 @@ setEndDate(new Date(data.endDate).toISOString().slice(0,16));
       setSelectedBranches(data.branches?.map((b: any) => b.id) || []);
       setSelectedShops(data.shops?.map((s: any) => s.id) || []);
       setExistingImage(data.imageUrl || null);
+      setTags(data.tagIds || []);
     } catch (err) {
       console.error("Error fetching event:", err);
     }
@@ -118,6 +122,7 @@ setEndDate(new Date(data.endDate).toISOString().slice(0,16));
     formData.append("maxPerUser", String(maxPerUser));
     formData.append("startDate", startDate);
     formData.append("endDate", endDate);
+    formData.append("tags", JSON.stringify(tags));
 
     if (file) formData.append("file", file);
 
@@ -337,6 +342,8 @@ setEndDate(new Date(data.endDate).toISOString().slice(0,16));
             ))}
           </select>
         </div>
+
+        <TagSelector value={tags} onChange={setTags} />
 
         <div className="flex justify-end space-x-2">
           <button

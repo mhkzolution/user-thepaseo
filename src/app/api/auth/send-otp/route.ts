@@ -1,4 +1,3 @@
-// /api/auth/send-otp/route.ts
 import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import twilio from "twilio"
@@ -6,14 +5,14 @@ import crypto from "crypto"
 
 const prisma = new PrismaClient()
 
-// ✅ โหลด Twilio Credentials จาก .env
+// Twilio credentials
 const accountSid = process.env.TWILIO_ACCOUNT_SID!
 const authToken = process.env.TWILIO_AUTH_TOKEN!
 const twilioPhone = process.env.TWILIO_PHONE_NUMBER!
 
 const client = twilio(accountSid, authToken)
 
-// 🔐 ฟังก์ชันแปลง OTP ให้เป็น hash เพื่อความปลอดภัย
+// 🔐 ฟังก์ชันสำหรับ hash OTP
 function hashOtp(otp: string) {
   return crypto.createHash("sha256").update(otp).digest("hex")
 }
@@ -23,18 +22,25 @@ export async function POST(req: Request) {
     const { phone } = await req.json()
 
     if (!phone) {
-      return NextResponse.json({ error: "กรุณาระบุเบอร์โทรศัพท์" }, { status: 400 })
+      return NextResponse.json(
+        { error: "กรุณาระบุเบอร์โทรศัพท์" },
+        { status: 400 }
+      )
     }
 
-    // ✅ ตรวจสอบว่ามี user ในระบบไหม
+    // ตรวจสอบ user
     const user = await prisma.user.findUnique({ where: { phone } })
+
     if (!user) {
-      return NextResponse.json({ error: "ไม่พบเบอร์นี้ในระบบ" }, { status: 404 })
+      return NextResponse.json(
+        { error: "ไม่พบเบอร์นี้ในระบบ" },
+        { status: 404 }
+      )
     }
 
     const now = new Date()
 
-    // ✅ ตรวจสอบว่ามี OTP ที่เพิ่งถูกขอใน 2 นาทีล่าสุดไหม (Cooldown)
+    // ⏳ Cooldown: ขอ OTP ซ้ำภายใน 2 นาที
     if (user.otpExpiry && user.otpExpiry > new Date(Date.now() - 2 * 60 * 1000)) {
       return NextResponse.json(
         { error: "กรุณารอ 2 นาทีก่อนขอรหัส OTP ใหม่" },
@@ -42,7 +48,7 @@ export async function POST(req: Request) {
       )
     }
 
-    // ✅ ตรวจสอบจำนวนครั้งที่ขอ OTP ในรอบ 1 ชั่วโมงล่าสุด (Rate Limit)
+    // 🔁 Rate Limit: ขอได้สูงสุด 3 ครั้งใน 1 ชั่วโมง
     const otpRequestsIn1Hour = await prisma.otpVerification.count({
       where: {
         phone,
@@ -57,40 +63,69 @@ export async function POST(req: Request) {
       )
     }
 
-    // ✅ สร้าง OTP 6 หลักแบบสุ่ม
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    // ---------------------------------------------------------
+    // ⭐⭐ DEV MODE — ไม่ส่ง SMS, ใช้ OTP = 123456 ⭐⭐
+    // ---------------------------------------------------------
+    if (process.env.NODE_ENV === "development") {
+      const otp = "123456"
+      const otpExpiry = new Date(Date.now() + 5 * 60 * 1000)
 
-    // ✅ กำหนดหมดอายุ 5 นาที
+      await prisma.user.update({
+        where: { phone },
+        data: { otp, otpExpiry },
+      })
+
+      await prisma.otpVerification.create({
+        data: {
+          phone,
+          otpCode: hashOtp(otp),
+          expiresAt: otpExpiry,
+          purpose: "VERIFY_PHONE",
+        },
+      })
+
+      console.log("💡 DEV MODE OTP:", otp)
+
+      return NextResponse.json({
+        message: "OTP generated (DEV MODE)",
+        devMode: true,
+        otp, // ส่งให้ front-end โชว์ alert ได้
+      })
+    }
+    // ---------------------------------------------------------
+
+    // สร้าง OTP สุ่มสำหรับ Production
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000)
 
-    // ✅ เก็บ OTP ไว้ใน User (ใช้ตอน login)
+    // บันทึกลง user
     await prisma.user.update({
       where: { phone },
-      data: {
-        otp: otp,
-        otpExpiry: otpExpiry,
-      },
+      data: { otp, otpExpiry },
     })
 
-    // ✅ เก็บลงตาราง OtpVerification (เพื่อเช็ค Rate Limit / Log)
+    // Log OTP
     await prisma.otpVerification.create({
       data: {
         phone,
         otpCode: hashOtp(otp),
         expiresAt: otpExpiry,
-        purpose: "VERIFY_PHONE", // ใช้ enum ตาม model ของคุณ
+        purpose: "VERIFY_PHONE",
       },
     })
 
-    // ✅ ส่ง OTP ผ่าน Twilio
-    const formattedPhone = phone.startsWith("+") ? phone : `+66${phone.substring(1)}`
+    // แปลงเบอร์ +66
+    const formattedPhone =
+      phone.startsWith("+") ? phone : `+66${phone.substring(1)}`
+
+    // ส่ง SMS ผ่าน Twilio
     await client.messages.create({
       body: `รหัส OTP ของคุณคือ ${otp} (หมดอายุใน 5 นาที)`,
       from: twilioPhone,
       to: formattedPhone,
     })
 
-    //console.log(`✅ OTP ส่งไปยัง ${formattedPhone}: ${otp}`)
+    console.log(`📨 OTP sent to ${formattedPhone}`)
 
     return NextResponse.json({ message: "OTP sent successfully" })
   } catch (error: any) {

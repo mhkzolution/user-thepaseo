@@ -24,10 +24,34 @@ export async function GET(req: Request) {
     },
   });
 
+  // ดึง tagRelations ของ event ทั้งหน้า (Batch Query ป้องกัน N+1)
+  const eventIds = events.map((e) => e.id);
+
+  const tagRows = await prisma.tagRelation.findMany({
+    where: {
+      targetId: { in: eventIds },
+      targetType: "event",
+    },
+    include: { tag: true },
+  });
+
+  // group tags ตาม eventIds
+  const tagsByEvent: Record<string, any[]> = {};
+  for (const row of tagRows) {
+    if (!tagsByEvent[row.targetId]) tagsByEvent[row.targetId] = [];
+    tagsByEvent[row.targetId].push(row.tag);
+  }
+
+  // รวม tags เข้า event
+  const eventsWithTags = events.map((e) => ({
+    ...e,
+    tags: tagsByEvent[e.id] || [],
+  }));
+
   const totalPages = Math.ceil(totalItems / pageSize);
 
   return NextResponse.json({
-    data: events,
+    data: eventsWithTags,
     pagination: { page, totalPages, totalItems },
   });
 }
@@ -74,6 +98,9 @@ export async function POST(req: Request) {
       imageUrl = `/uploads/admin/event/${filename}`;
     }
 
+    const tagsRaw = formData.get("tags")?.toString() || "[]";
+    const tags: string[] = JSON.parse(tagsRaw);
+
     // สร้าง event พร้อมเชื่อม branches และ shops
     const event = await prisma.event.create({
       data: {
@@ -96,6 +123,16 @@ export async function POST(req: Request) {
         branches: true,
       },
     });
+
+    if (tags.length > 0) {
+      await prisma.tagRelation.createMany({
+        data: tags.map((tagId) => ({
+          tagId,
+          targetId: event.id,
+          targetType: "event",
+        })),
+      });
+    }
 
     return NextResponse.json(event);
   } catch (error: any) {

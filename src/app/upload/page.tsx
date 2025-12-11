@@ -5,11 +5,14 @@ import BannerUpload from "@/components/BannerUpload/page";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react"
 import Image from "next/image";
+import HeaderMobile from '@/components/HeaderMobile/page';
+
 import { CiReceipt } from "react-icons/ci";
 import { IoReceipt } from "react-icons/io5";
 import { MdAddAPhoto } from "react-icons/md";
 import { GoFileDirectoryFill } from "react-icons/go";
 import { MdPictureAsPdf } from "react-icons/md";
+import { AiOutlineExclamationCircle } from "react-icons/ai";
 
 export default function UploadPage() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ dragFree: true });
@@ -22,6 +25,10 @@ export default function UploadPage() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async () => {
     if (files.length === 0) {
@@ -60,8 +67,10 @@ export default function UploadPage() {
     }, [emblaApi])
 
   return (
-    <div className="h-screen max-w-2xl mx-auto p-0 mt-0 mb-0 md:mt-20 md:mb-20 md:rounded-xl overflow-hidden">
-      <div className="-mb-6">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+      <HeaderMobile showBack={true} />
+      
+      <div className="mb-0 py-4 px-4 md:px-4">
         <BannerUpload />
       </div>
 
@@ -76,52 +85,54 @@ export default function UploadPage() {
             <span className="text-gray-500 text-center text-sm">อัพโหลดใบเสร็จ</span>
           </Button>
 
-            <Link href="/upload/terms">
-              <span className="text-gray-500 text-center b">
+            <Link href="/upload/terms" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-200">
+              <span className="text-sm text-gray-500 text-center flex gap-1 items-center">
+                <AiOutlineExclamationCircle size={16} />
                 เงื่อนไขการสะสมพอยท์
               </span>
             </Link>
 
           {showOptions && (
-            <div className="flex flex-col justify-start items-start mt-4 p-4 bg-white rounded-xl shadow-2xl z-50 relative border-2 border-paseo">
+            <div className="flex flex-col justify-start items-start mt-2 py-1 px-2 bg-white rounded-xl shadow-2xl z-50 relative border-2 border-paseo">
               <Button
-                className="w-full py-6 flex justify-start gap-4 hover:bg-paseo-hover"
+                className="w-full py-0 flex justify-start gap-2 hover:bg-paseo-hover"
                 variant="outline"
                 onClick={() => {
                   setShowOptions(false);
                   cameraInputRef.current?.click();
                 }}
               >
-                <MdAddAPhoto size={32} />
-                ถ่ายภาพ
+                <MdAddAPhoto size={16} />
+                <span className="text-xs">ถ่ายภาพ</span>
+                
               </Button>
 
-              <hr className="w-full my-4 border-dotted border-t-4 border-paseo"></hr>
+              <hr className="w-90% self-center my-1 border border-t-0 border-paseo"></hr>
 
               <Button
-                className="w-full py-6 flex justify-start gap-4 hover:bg-paseo-hover"
+                className="w-full py-0 flex justify-start gap-2 hover:bg-paseo-hover text-xs"
                 variant="outline"
                 onClick={() => {
                   setShowOptions(false);
                   galleryInputRef.current?.click();
                 }}
               >
-                <GoFileDirectoryFill size={32} />
-                คลังภาพ (เลือกหลายไฟล์)
+                <GoFileDirectoryFill size={16} />
+                <span className="text-xs">คลังภาพ (เลือกหลายไฟล์)</span>
               </Button>
 
-              <hr className="w-full my-4 border-dotted border-t-4 border-paseo"></hr>
+              <hr className="w-90% self-center my-1 border border-t-0 border-paseo"></hr>
 
               <Button
-                className="w-full py-6 flex justify-start gap-4 hover:bg-paseo-hover"
+                className="w-full py-0 flex justify-start gap-2 hover:bg-paseo-hover text-xs"
                 variant="outline"
                 onClick={() => {
                   setShowOptions(false);
                   pdfInputRef.current?.click();
                 }}
               >
-                <MdPictureAsPdf size={32} />
-                อัพโหลด PDF
+                <MdPictureAsPdf size={16} />
+                <span className="text-xs">อัพโหลด PDF</span>
               </Button>
             </div>
           )}
@@ -155,28 +166,40 @@ export default function UploadPage() {
         {/* ส่วน preview */}
         <div
           className="space-y-4 p-10 z-60"
-          style={{ paddingTop: "6.5rem" }}
+          style={{ paddingTop: "7rem" }}
         >
           <div className="mt-6 mb-6">
 
+            <p className="text-sm text-gray-600 mb-2">
+              ใบเสร็จที่แนบ ( {files.length} / 10 )
+            </p>
+
             <div className="embla w-full" ref={emblaRef}>
-              <div className="embla__container h-full flex gap-4">
+              <div className="embla__container h-full flex gap-2">
                 {Array.from({ length: 10 }).map((_, i) => {
                   const file = files[i];
 
                   if (file) {
                     return (
                       <div
-                        className="embla__slide_upload flex items-center justify-center rounded-xl w-24 h-24 bg-gray-100 overflow-hidden"
+                        className="embla__slide_upload relative flex items-center justify-center rounded-xl w-24 h-24 bg-gray-100"
                         key={i}
                       >
+                        {/* ปุ่มลบ */}
+                        <button
+                          onClick={() => removeFile(i)}
+                          className="absolute top-1 right-1 bg-gray-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs z-20"
+                        >
+                          ✕
+                        </button>
+
                         {file.type.startsWith("image/") ? (
                           <Image
                             width={600}
                             height={600}
                             src={URL.createObjectURL(file)}
                             alt={file.name}
-                            className="object-cover w-full h-full rounded-xl border"
+                            className="object-cover w-full h-full rounded-lg border"
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center w-full h-24 rounded-xl border bg-white text-gray-700 p-4">
@@ -190,11 +213,11 @@ export default function UploadPage() {
                     );
                   }
 
-                  // ช่องว่าง (ยังไม่ได้อัพไฟล์)
+                  // ช่องว่าง
                   return (
                     <div
                       key={i}
-                      className="embla__slide_upload flex items-center justify-center rounded-xl h-24 border-paseo border-2 border-dashed text-gray-400 cursor-pointer"
+                      className="embla__slide_upload flex items-center justify-center rounded-lg h-24 border-paseo border border-dashed text-gray-400 cursor-pointer"
                       onClick={() => cameraInputRef.current?.click()}
                     >
                       <CiReceipt className="text-paseo" size={40} />

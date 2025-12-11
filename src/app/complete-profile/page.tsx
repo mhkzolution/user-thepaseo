@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useSession } from "next-auth/react"
 import { useRouter } from 'next/navigation'
 import Image from 'next/image';
-import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -17,6 +16,10 @@ import { th } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import BannerRegister from "@/components/BannerRegister/page"
+import HeaderMobile from '@/components/HeaderMobile/page';
+
+import { FaSave } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
 
 interface Interest {
   id: string;
@@ -198,13 +201,15 @@ export default function CompleteProfilePage() {
   };
 
   return (
-    <div className="container mx-auto h-screen overflow-hidden p-0 md:p-6 flex flex-col justify-center items-center">
-      <div className="h-full w-full max-w-md mx-auto p-0 md:rounded-xl rounded-none shadow overflow-hidden">
-        <div className="-mb-6" style={{ height: '25%' }}>
+    <div className="max-w-lg mx-auto p-0 mb-20 md:mb-0 mb-0 rounded-xl relative">
+
+        <HeaderMobile showBack={false} />
+
+        <div className="mb-0 py-4 px-4 md:px-4">
           <BannerRegister />
         </div>
 
-        <div className="h-screen p-10 m-0 rounded-3xl bg-white shadow z-50 relative" style={{ height: '80%' }}>
+        <div className="md:p-10 p-4 m-0 rounded-3xl bg-white shadow z-50 relative overflow-hidden">
           <div className="flex justify-center items-center gap-4 mb-5">
             <Image src="/logo-paseo-register.png" width={96} height={96} alt="ThePaseo" />
             <h2 className="text-5xl font-semibold text-center">Welcome</h2>
@@ -221,7 +226,7 @@ export default function CompleteProfilePage() {
                     ${step < index + 1 ? 'text-gray-600' : ''}`}
                   style={
                     step > index + 1 ? { backgroundColor: '#9DC93C' } :
-                    step === index + 1 ? { backgroundColor: '#06C755' } :
+                    step === index + 1 ? { backgroundColor: '#688e22' } :
                     { backgroundColor: '#ddd' }
                   }
                 >
@@ -243,7 +248,7 @@ export default function CompleteProfilePage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="relative overflow-hidden">
             {step === 1 && (
               <div className="flex flex-col gap-4">
                 <div className='flex flex-row gap-4'>
@@ -355,26 +360,39 @@ export default function CompleteProfilePage() {
 
             {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
 
-            <div className="mt-6 flex justify-between items-center">
+            <div className="fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center blur rounded-t-xl shadow-lg border">
               {step > 1 ? (
-                <button type="button" onClick={handlePrevStep} className="text-white p-3 rounded-full" style={{ backgroundColor: '#06C755' }}>
-                  <FaArrowLeft />
+                <button
+                  type="button"
+                  onClick={handlePrevStep}
+                  className="w-40% text-white px-2 pl-4 py-2 rounded-full flex flex-row gap-2 items-center justify-between shadow bg-paseo-dark shadow"
+                >
+                  ย้อนกลับ
+                  <FaArrowLeft color="#000" className="bg-white rounded-full p-1" size={32} />
                 </button>
               ) : <div className="invisible"></div>}
 
               {step < 3 ? (
-                <button type="button" onClick={handleNextStep} className="text-white p-3 rounded-full" style={{ backgroundColor: '#9DC93C' }}>
-                  <FaArrowRight />
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                 className="w-40% text-white px-2 pr-4 py-2 rounded-full flex flex-row gap-2 items-center justify-between shadow bg-paseo shadow"
+                >
+                  <FaArrowRight color="#000" className="bg-white rounded-full p-1" size={32} />
+                  ถัดไป
                 </button>
               ) : (
-                <button type="submit" className="text-white p-3 rounded-xl" style={{ backgroundColor: '#9DC93C' }}>
+                <button
+                  type="submit"
+                  className="w-40% text-white px-2 pr-4 py-2 rounded-full flex flex-row gap-2 items-center justify-between shadow bg-paseo shadow"
+                >
+                  <FaSave color="#000" className="bg-white rounded-full p-1" size={32} />
                   บันทึก
                 </button>
               )}
             </div>
           </form>
         </div>
-      </div>
     </div>
   )
 }

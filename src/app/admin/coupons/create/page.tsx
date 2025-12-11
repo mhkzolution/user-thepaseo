@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import RichTextEditor from "@/components/RichTextEditor/page";
+import TagSelector from "@/components/TagSelector";
 
 type Campaign = { id: string; name: string };
 type Shop = { id: string; name: string };
@@ -35,6 +36,8 @@ export default function CreateCouponPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedShops, setSelectedShops] = useState<string[]>([]);
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+
+  const [tags, setTags] = useState<string[]>([]);
 
   // ✅ โหลดข้อมูลร้านค้า + สาขา
   useEffect(() => {
@@ -344,6 +347,8 @@ export default function CreateCouponPage() {
             เลือกได้หลายร้าน หรือเลือก “จุดบริการ” ถ้าไม่ได้จัดที่ร้านค้าใด
           </p>
         </div>
+
+        <TagSelector value={tags} onChange={setTags} />
 
         <button
           type="submit"

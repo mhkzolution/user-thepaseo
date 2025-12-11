@@ -6,7 +6,7 @@ import path from "path";
 const prisma = new PrismaClient();
 
 // ✅ GET: ดึง campaigns ทั้งหมด
-export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const page = Number(searchParams.get("page")) || 1;
@@ -112,41 +112,6 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("❌ Error creating campaign:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-// ✅ DELETE: ลบ Campaign (พร้อมลบ relations ที่เกี่ยวข้อง)
-export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
-  try {
-    const { id } = await context.params;
-
-    const campaign = await prisma.campaign.findUnique({
-      where: { id },
-      include: { coupons: true },
-    });
-
-    if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
-    }
-
-    // ✅ Step 1: ลบ participation / relation ก่อน
-    await prisma.campaignParticipation.deleteMany({ where: { campaignId: id } });
-
-    // ✅ Step 2: ถ้ามี image → ลบออก
-    if (campaign.imageUrl) {
-      const filePath = path.join(process.cwd(), "public", campaign.imageUrl);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
-
-    // ✅ Step 3: ลบ Campaign
-    await prisma.campaign.delete({ where: { id } });
-
-    return NextResponse.json({ success: true, message: "Campaign deleted successfully" });
-  } catch (error) {
-    console.error("❌ Error deleting campaign:", error);
-    return NextResponse.json({ error: "Failed to delete campaign" }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }

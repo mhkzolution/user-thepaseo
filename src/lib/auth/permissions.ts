@@ -19,6 +19,7 @@ import { FaEdit } from "react-icons/fa";
 import { MdCategory } from "react-icons/md";
 import { FaListCheck } from "react-icons/fa6";
 import { TbPresentationAnalytics } from "react-icons/tb";
+import { FaHashtag } from "react-icons/fa";
 
 export type Role = "USER" | "ADMIN" | "ADMINMARKETING" | "CRMMANAGEMENT" | "STAFF";
 
@@ -125,6 +126,15 @@ export const menuItems: MenuItem[] = [
         { name: "ร้านค้าทั้งหมด", href: "/admin/shop", roles: ["ADMIN", "CRMMANAGEMENT", "STAFF"],logo: FaBorderAll },
         { name: "เพิ่มร้านค้า", href: "/admin/shop/new", roles: ["ADMIN", "CRMMANAGEMENT", "STAFF"],logo: IoMdAddCircle },
         { name: "หมวดหมู่ร้านค้า", href: "/admin/shop/category", roles: ["ADMIN", "CRMMANAGEMENT", "STAFF"],logo: MdCategory },
+        ],
+    },
+    {
+        name: "แท็ก",
+        logo: FaHashtag,
+        href: "/admin/tags",
+        roles: ["ADMIN", "CRMMANAGEMENT", "STAFF"],
+        subItems: [
+        { name: "แท็กทั้งหมด", href: "/admin/tags", roles: ["ADMIN", "CRMMANAGEMENT", "STAFF"],logo: FaBorderAll },
         ],
     },
     {

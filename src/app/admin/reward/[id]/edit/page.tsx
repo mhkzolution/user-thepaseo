@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/RichTextEditor/page";
+import TagSelector from "@/components/TagSelector";
 
 import { PiDotsThreeOutlineLight } from "react-icons/pi";
 import { LuShare2 } from "react-icons/lu";
@@ -43,6 +44,8 @@ export default function EditRewardPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
 
+  const [tags, setTags] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(false);
 
   // Fetch reward data
@@ -70,6 +73,7 @@ export default function EditRewardPage() {
 
         setSelectedBranches(data.branchIds || []);
         setSelectedShops(data.shopIds || []);
+        setTags(data.tagIds || []);
       } catch (err) {
         console.error("Error fetching reward:", err);
       }
@@ -122,6 +126,7 @@ export default function EditRewardPage() {
     formData.append("maxPerUser", String(maxPerUser));
     formData.append("startDate", startDate);
     formData.append("endDate", endDate);
+    formData.append("tags", JSON.stringify(tags));
 
     if (file) formData.append("file", file);
 
@@ -365,6 +370,8 @@ export default function EditRewardPage() {
           </p>
         </div>
 
+        <TagSelector value={tags} onChange={setTags} />
+
         <div className="flex justify-end space-x-2">
           <button
             type="button"
@@ -460,29 +467,29 @@ export default function EditRewardPage() {
           
 
             <div className="text-sm text-gray-700 space-y-1">
-            <p>
-              <span className="font-semibold">ร้านค้า:</span>{" "}
-              {selectedShops.includes("redemption") ? (
-                <span className="text-green-700 font-semibold">🎁 จุดบริการ (Redemption)</span>
-              ) : selectedShops.length > 0 ? (
-                shops
-                  .filter((s) => selectedShops.includes(s.id))
-                  .map((s) => s.name)
-                  .join(", ")
-              ) : (
-                "ยังไม่ได้เลือก"
-              )}
-            </p>
-            <p>
-              <span className="font-semibold">สาขา:</span>{" "}
-              {selectedBranches.length > 0
-                ? branches
-                    .filter((b) => selectedBranches.includes(b.id))
-                    .map((b) => b.name)
+              <p>
+                <span className="font-semibold">ร้านค้า:</span>{" "}
+                {selectedShops.includes("redemption") ? (
+                  <span className="text-green-700 font-semibold">🎁 จุดบริการ (Redemption)</span>
+                ) : selectedShops.length > 0 ? (
+                  shops
+                    .filter((s) => selectedShops.includes(s.id))
+                    .map((s) => s.name)
                     .join(", ")
-                : "ยังไม่ได้เลือก"}
-            </p>
-          </div>
+                ) : (
+                  "ยังไม่ได้เลือก"
+                )}
+              </p>
+              <p>
+                <span className="font-semibold">สาขา:</span>{" "}
+                {selectedBranches.length > 0
+                  ? branches
+                      .filter((b) => selectedBranches.includes(b.id))
+                      .map((b) => b.name)
+                      .join(", ")
+                  : "ยังไม่ได้เลือก"}
+              </p>
+            </div>
 
         </div>
         

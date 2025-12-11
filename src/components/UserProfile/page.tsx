@@ -90,16 +90,15 @@ export default function UserProfile() {
         <div className="flex justify-between w-full gap-4">
           <div className="w-50% z-10 flex flex-row text-center items-center gap-2 bg-white p-2 border border-gray-100 rounded-lg shadow-lg">
             <Link className="w-full flex flex-row items-center gap-2 text-lg font-semibold" href="/history/point">
-              <div className="pr-4 mr-2 border-r border-gray-400">
+              <div className="md:pr-4 pr-2 border-r border-gray-400">
                 <TbCoinBitcoinFilled className='text-paseo' size={24}/>
               </div>
 
-              <div className="flex flex-row justify-between items-center w-full">
+              <div className="flex flex-row justify-center items-center w-full">
                 <span className="text-sm font-semibold text-black">
                   {user.point} 
                   <span className="text-xs font-semibold text-black"> พอยท์</span>
                 </span>
-                <IoIosArrowDropright size={24} />
               </div>
               
               
@@ -108,23 +107,22 @@ export default function UserProfile() {
 
           <div className="w-50% z-10 flex flex-row text-center items-center gap-2 bg-white p-2 border border-gray-100 rounded-lg shadow-lg">
               <Link className="w-full flex flex-row items-center gap-2 text-lg font-semibold" href="/profile/coupon">
-                <div className="pr-4 mr-2 border-r border-gray-400">
+                <div className="md:pr-4 pr-2 border-r border-gray-400">
                   <RiCoupon2Fill className='text-paseo' size={24} />
                 </div>
 
-                <div className="flex flex-row justify-between items-center w-full">
+                <div className="flex flex-row justify-center items-center w-full">
                   <span className="text-sm font-semibold text-black">
                     {user.unusedCouponCount} 
                     <span className="text-xs font-semibold text-black"> คูปอง</span>
                   </span>
-                  <IoIosArrowDropright size={24} />
                 </div>
                 
               </Link>
           </div>
         </div>
               
-              <div className="profile-card w-full text-white rounded-xl shadow-sm p-4 mb:p-6 gap-2 border border-gray-300 shadow-lg flex flex-row gap-4">
+              <div className="profile-card w-full text-white rounded-xl shadow-sm md:p-4 p-2 mb:p-6 gap-2 border border-gray-300 shadow-lg flex flex-row gap-4">
 
                   <div className="z-10 w-30% flex flex-col item-center gap-2">
 
@@ -133,13 +131,13 @@ export default function UserProfile() {
                               <Image
                               src={avatarUrl}
                               alt={`${user.name}'s avatar`}
-                              width={80}
-                              height={80}
+                              width={72}
+                              height={72}
                               priority
                               className="rounded-full object-cover shadow-sm w-16 h-16 md:w-20 md:h-20 border border-gray-300 shadow"
                               />
                           ) : (
-                              <HiUserCircle size={80} className="bg-white text-paseo rounded-full" />
+                              <HiUserCircle size={72} className="bg-white text-paseo rounded-full" />
                           )}
                       </div>
                       
@@ -148,7 +146,7 @@ export default function UserProfile() {
                   <div className="z-10 w-70% flex flex-col gap-2">
 
                     <div className="w-full flex flex-col">
-                        <p className="text-xl font-bold">{user.name}</p>
+                        <p className="text-base font-semibold">{user.name}</p>
                     </div>
 
                     <div className="w-full flex flex-row gap-2">

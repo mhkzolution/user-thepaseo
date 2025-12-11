@@ -157,6 +157,7 @@ export default function AdminPointPage() {
                     <th className="px-2 py-1">ร้าน / สาขา</th>
                     <th className="px-2 py-1">เปลี่ยนแปลง</th>
                     <th className="px-2 py-1">ยอดคงเหลือ</th>
+                    <th className="px-2 py-1">จัดการพอยต์</th>
                   </tr>
                 </thead>
                 <tbody>

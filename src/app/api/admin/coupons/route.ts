@@ -27,8 +27,31 @@ export async function GET(req: Request) {
     prisma.coupon.count(),
   ]);
 
+  const couponIds = coupons.map((c) => c.id);
+
+  const tagRows = await prisma.tagRelation.findMany({
+    where: {
+      targetId: { in: couponIds },
+      targetType: "coupon",
+    },
+    include: { tag: true },
+  });
+
+  // group tags ตาม couponIds
+  const tagsByCoupon: Record<string, any[]> = {};
+  for (const row of tagRows) {
+    if (!tagsByCoupon[row.targetId]) tagsByCoupon[row.targetId] = [];
+    tagsByCoupon[row.targetId].push(row.tag);
+  }
+
+  // รวม tags เข้า coupon
+  const couponsWithTags = coupons.map((c) => ({
+    ...c,
+    tags: tagsByCoupon[c.id] || [],
+  }));
+
   return NextResponse.json({
-    data: coupons,
+    data: couponsWithTags,
     pagination: {
       page,
       totalPages: Math.ceil(total / limit),
@@ -80,6 +103,9 @@ export async function POST(req: Request) {
       imageUrl = `/uploads/admin/coupon/${filename}`;
     }
 
+    const tagsRaw = formData.get("tags")?.toString() || "[]";
+    const tags: string[] = JSON.parse(tagsRaw);
+
     const shopIds = formData.getAll("shopIds[]") as string[];
     const branchIds = formData.getAll("branchIds[]") as string[];
 
@@ -116,6 +142,16 @@ export async function POST(req: Request) {
         branches: true,
       },
     });
+
+    if (tags.length > 0) {
+      await prisma.tagRelation.createMany({
+        data: tags.map((tagId) => ({
+          tagId,
+          targetId: coupon.id,
+          targetType: "coupon",
+        })),
+      });
+    }
 
     return NextResponse.json(coupon);
   } catch (error: any) {

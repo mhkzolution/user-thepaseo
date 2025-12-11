@@ -87,13 +87,27 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return NextResponse.json({ error: "ไม่พบคูปองนี้" }, { status: 404 });
     }
 
-    const now = new Date();
+    const now = Date.now();
 
-    // ✅ ตรวจสอบช่วงเวลาแจกคูปอง
-    if (coupon.startDate && coupon.startDate > now)
+    if (!coupon.startDate) {
+      return NextResponse.json({ error: "คูปองยังไม่ได้กำหนดวันเริ่ม" }, { status: 400 });
+    }
+
+    if (!coupon.endDate) {
+      return NextResponse.json({ error: "คูปองยังไม่ได้กำหนดวันสิ้นสุด" }, { status: 400 });
+    }
+
+    const startTime = new Date(coupon.startDate).getTime();
+    const endTime = new Date(coupon.endDate).getTime();
+
+    if (startTime > now) {
       return NextResponse.json({ error: "คูปองนี้ยังไม่เริ่มแจก" }, { status: 400 });
-    if (coupon.endDate && coupon.endDate < now)
+    }
+
+    if (endTime < now) {
       return NextResponse.json({ error: "คูปองนี้หมดระยะเวลาการแจกแล้ว" }, { status: 400 });
+    }
+
 
     // ✅ ตรวจสอบจำนวนคงเหลือ
     if (coupon.quantity !== null && coupon.quantity <= 0)

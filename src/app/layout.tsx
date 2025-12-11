@@ -27,7 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th" className="scroll-smooth">
+    <html
+      lang="th"
+      className="scroll-smooth"
+      suppressHydrationWarning
+    >
       <body
         className={`${prompt.className} antialiased bg-fixed bg-gradient-to-t from-paseo to-gray-200 text-gray-900 h-full`}
       >

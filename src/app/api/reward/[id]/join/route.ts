@@ -101,7 +101,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     if (!reward) return NextResponse.json({ error: "Reward not found" }, { status: 404 });
 
     const now = new Date();
-    if (reward.startDate > now) return NextResponse.json({ error: "ยังไม่เปิดให้แลก" }, { status: 400 });
+    const start = new Date(reward.startDate).getTime();
+    const current = new Date().getTime();
+
+    if (start > current) {
+      return NextResponse.json({ error: "ยังไม่เปิดให้แลก" }, { status: 400 });
+    }
     if (reward.endDate < now) return NextResponse.json({ error: "หมดอายุแล้ว" }, { status: 400 });
     if (reward.quantity && reward._count.participations >= reward.quantity)
       return NextResponse.json({ error: "รางวัลหมดแล้ว" }, { status: 400 });

@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import BackButton from '@/components/BackButton/page';
 import Loading from '@/components/loading';
 import RichTextEditor from "@/components/RichTextEditor/page";
+import TagSelector from "@/components/TagSelector";
+
+import { IoIosAddCircle } from "react-icons/io";
 
 export default function EditShopPage() {
   const router = useRouter();
@@ -17,6 +20,8 @@ export default function EditShopPage() {
   const [uploading, setUploading] = useState(false);
   const [branches, setBranches] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+
   const [form, setForm] = useState({
     name: '',
     logoUrl: '',
@@ -52,6 +57,8 @@ export default function EditShopPage() {
           branchId: shop.branchId || '',
         });
 
+        setTags(shop.tags?.map((t: any) => t.id) || []);
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -83,17 +90,18 @@ export default function EditShopPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      ...form,
+      tags,
+    };
+
     await fetch(`/api/admin/shop/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     router.push('/admin/shop');
   };
-
-  if (loading) return 
-  <Loading />
-  ;
 
   return (
     <div>
@@ -240,6 +248,8 @@ export default function EditShopPage() {
                   </select>
                 </div>
               </div>
+
+              <TagSelector value={tags} onChange={setTags} />
 
               <button
                 type="submit"

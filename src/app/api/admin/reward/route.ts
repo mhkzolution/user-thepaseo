@@ -25,13 +25,37 @@ export async function GET(req: Request) {
     },
   });
 
+  const rewardIds = rewards.map((r) => r.id);
+
+  const tagRows = await prisma.tagRelation.findMany({
+    where: {
+      targetId: { in: rewardIds },
+      targetType: "reward",
+    },
+    include: { tag: true },
+  });
+
+  // group tags ตาม rewardId
+  const tagsByReward: Record<string, any[]> = {};
+  for (const row of tagRows) {
+    if (!tagsByReward[row.targetId]) tagsByReward[row.targetId] = [];
+    tagsByReward[row.targetId].push(row.tag);
+  }
+
+  // รวม tags เข้า reward
+  const rewardsWithTags = rewards.map((r) => ({
+    ...r,
+    tags: tagsByReward[r.id] || [],
+  }));
+
   const totalPages = Math.ceil(totalItems / pageSize);
 
   return NextResponse.json({
-    data: rewards,
+    data: rewardsWithTags,
     pagination: { page, totalPages, totalItems },
   });
 }
+
 
 // ✅ POST: สร้าง reward ใหม่
 export async function POST(req: Request) {
@@ -81,6 +105,9 @@ export async function POST(req: Request) {
       imageUrl = `/uploads/admin/reward/${filename}`;
     }
 
+    const tagsRaw = formData.get("tags")?.toString() || "[]";
+    const tags: string[] = JSON.parse(tagsRaw);
+
     // ✅ สร้าง reward พร้อม flag ว่าเป็น redemption หรือไม่
     const reward = await prisma.reward.create({
       data: {
@@ -104,6 +131,16 @@ export async function POST(req: Request) {
         branches: true,
       },
     });
+
+    if (tags.length > 0) {
+      await prisma.tagRelation.createMany({
+        data: tags.map((tagId) => ({
+          tagId,
+          targetId: reward.id,
+          targetType: "reward",
+        })),
+      });
+    }
 
     return NextResponse.json(reward);
   } catch (error: any) {

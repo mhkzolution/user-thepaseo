@@ -6,41 +6,55 @@ const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const shopId = searchParams.get("shopId"); // ✅ รับ shopId จาก query
+  const shopId = searchParams.get("shopId");
 
   try {
     const now = new Date();
-    const sevenDaysAfter = new Date(now);
-    sevenDaysAfter.setDate(now.getDate() - 0);
+    
+    const next14Days = new Date(now);
+    next14Days.setDate(now.getDate() + 14);
+
+    const sevenDaysBefore = new Date(now);
+    sevenDaysBefore.setDate(now.getDate() - 7);
 
     const events = await prisma.event.findMany({
       where: {
-        ...(shopId
-          ? { shops: { some: { id: shopId } } } // ✅ ถ้ามี shopId ให้กรองเฉพาะร้านนั้น
-          : {}),
+        ...(shopId ? { shops: { some: { id: shopId } } } : {}),
 
         OR: [
-          { startDate: { gte: now } }, // ยังไม่เริ่ม
+          // 1️⃣ อีเวนต์ที่ยังไม่เริ่ม แต่จะเริ่มภายใน 14 วัน
+          {
+            startDate: {
+              gte: now,
+              lte: next14Days,
+            },
+          },
+
+          // 2️⃣ อีเวนต์ที่กำลังจัดอยู่
           {
             AND: [
               { startDate: { lte: now } },
               { endDate: { gte: now } },
             ],
-          }, // กำลังจัด
+          },
+
+          // 3️⃣ อีเวนต์ที่เพิ่งจบภายใน 7 วัน
           {
             AND: [
               { endDate: { lt: now } },
-              { endDate: { gte: sevenDaysAfter } },
+              { endDate: { gte: sevenDaysBefore } },
             ],
-          }, // เพิ่งจบ
+          },
         ],
       },
+
       include: {
         branches: true,
         shops: true,
         registrations: true,
       },
-      orderBy: { createdAt: "desc" },
+
+      orderBy: { startDate: "asc" }, // เรียงตามวันที่เริ่ม จะได้แสดงลำดับถูกต้อง
     });
 
     const formatted = events.map((r) => ({
@@ -59,3 +73,4 @@ export async function GET(req: Request) {
     await prisma.$disconnect();
   }
 }
+

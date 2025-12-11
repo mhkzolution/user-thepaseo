@@ -28,6 +28,7 @@ type Coupon = {
   isRedemption: string;
   branches: { id: string; name: string }[];
   shops: { id: string; name: string }[];
+  tags?: any[];
 };
 
 export default function AdminCouponsPage() {
@@ -79,6 +80,7 @@ export default function AdminCouponsPage() {
               <th className="p-2 border">ชื่อ</th>
               <th className="p-2 border">สาขา</th>
               <th className="p-2 border">ร้าน</th>
+              <th className="p-2 border">แท็ก</th>
               <th className="p-2 border">พอยท์</th>
               <th className="p-2 border">จำนวน</th>
               <th className="p-2 border">เริ่ม</th>
@@ -121,6 +123,15 @@ export default function AdminCouponsPage() {
                     ))
                   ) : (
                     <span className="text-gray-400 text-sm">-</span>
+                  )}
+                </td>
+                <td className="p-2 border">
+                  {c.tags && c.tags.length > 0 ? (
+                    c.tags.map(tag => (
+                      <span key={tag.id} className="px-2 py-1 text-xs bg-paseo-hover text-black rounded-full mr-1">{tag.name}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
                   )}
                 </td>
                 <td className="p-2 border text-start whitespace-nowrap">

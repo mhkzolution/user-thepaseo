@@ -19,6 +19,18 @@ export default function UseRewardModal({ show, onClose, userRewardId }: UseRewar
   const [usingReward, setUsingReward] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+    useEffect(() => {
+      if (show) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }, [show]);
+
   useEffect(() => {
     if (!show || !userRewardId) return;
 
@@ -102,7 +114,14 @@ export default function UseRewardModal({ show, onClose, userRewardId }: UseRewar
                     {/* ✅ รายละเอียด */}
                     <div className="p-4 px-4 pt-0 md:p-10 md:pt-0">
                     <div className="flex flex-col justify-between align-start gap-4 bg-white p-6 rounded-lg">
-                        <h1 className="text-2xl font-bold">{reward.reward?.name}</h1>
+                        {reward.reward?.expiresAt && (
+                        <p className="text-sm text-gray-500">
+                            หมดอายุ:{" "}
+                            {new Date(reward.reward.expiresAt).toLocaleDateString("th-TH")}
+                        </p>
+                        )}
+
+                        <h1 className="text-base font-bold">{reward.reward?.name}</h1>
 
                         {reward.reward?.description && (
                         <div className="mb-4">
@@ -113,12 +132,6 @@ export default function UseRewardModal({ show, onClose, userRewardId }: UseRewar
                         </div>
                         )}
 
-                        {reward.reward?.expiresAt && (
-                        <p className="text-sm text-gray-500">
-                            หมดอายุ:{" "}
-                            {new Date(reward.reward.expiresAt).toLocaleDateString("th-TH")}
-                        </p>
-                        )}
                     </div>
                     </div>
 

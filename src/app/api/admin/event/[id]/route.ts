@@ -46,6 +46,9 @@ export async function PATCH(
       imageUrl = `/uploads/admin/event/${filename}`;
     }
 
+    const tagsRaw = formData.get("tags")?.toString() || "[]";
+    const tags: string[] = JSON.parse(tagsRaw);
+
     // build update object
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
@@ -73,6 +76,22 @@ export async function PATCH(
       include: { shops: true, branches: true },
     });
 
+    // delete old tags
+    await prisma.tagRelation.deleteMany({
+      where: { targetId: id, targetType: "event" },
+    });
+
+    // add new tags
+    if (tags.length > 0) {
+      await prisma.tagRelation.createMany({
+        data: tags.map((tagId) => ({
+          tagId,
+          targetId: id,
+          targetType: "event",
+        })),
+      });
+    }
+
     return NextResponse.json(event);
   } catch (err: any) {
     console.error("PATCH event error:", err);
@@ -94,12 +113,93 @@ export async function GET(
         registrations: { include: { user: true } },
       },
     });
+
+    const tagRows = await prisma.tagRelation.findMany({
+      where: {
+        targetId: id,
+        targetType: "event",
+      },
+      include: { tag: true },
+    });
+
+    const tagIds = tagRows.map(e => e.tagId);
+    const tags = tagRows.map(e => e.tag);
+
     if (!event) {
       return NextResponse.json({ error: "event not found" }, { status: 404 });
     }
-    return NextResponse.json(event);
+
+    return NextResponse.json({
+      ...event,
+      tagIds,
+      tags,
+    });
   } catch (err: any) {
     console.error("GET event error:", err);
     return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    // หา event พร้อม relations ที่ต้องใช้ (registrations, branches, shops)
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        registrations: true,
+        branches: true,
+        shops: true,
+      },
+    });
+
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // 1) ลบ TagRelation ของ event
+    await prisma.tagRelation.deleteMany({
+      where: { targetId: id, targetType: "event" },
+    });
+
+    // 2) ถ้ามี registration/participation/อื่น ๆ ที่เกี่ยวข้อง ให้ลบทิ้ง (ชื่อ model ตาม schema ของคุณ)
+    // ถ้า model ของคุณชื่อแตกต่าง ให้แก้ชื่อฟังก์ชันด้านล่างให้ตรง
+    await prisma.eventRegistration.deleteMany({
+      where: { eventId: id },
+    });
+
+    // 3) ถอดความสัมพันธ์กับ branches / shops (optional - ป้องกัน constraint)
+    await prisma.event.update({
+      where: { id },
+      data: {
+        branches: { set: [] },
+        shops: { set: [] },
+      },
+    });
+
+    // 4) ลบไฟล์รูปภาพ (ถ้ามี) โดยใช้ fs/promises
+    if (event.imageUrl) {
+      const filePath = path.join(process.cwd(), "public", event.imageUrl);
+      try {
+        await fs.unlink(filePath);
+      } catch (err) {
+        // ถ้าไฟล์ไม่มีหรือเกิด error ในการลบ ให้ log แล้วไปต่อได้
+        console.warn("Warning: failed to unlink event image", filePath, err);
+      }
+    }
+
+    // 5) ลบ event จริง
+    await prisma.event.delete({ where: { id } });
+
+    return NextResponse.json({ success: true, message: "Event deleted successfully" });
+  } catch (error: any) {
+    console.error("❌ DELETE event error:", error);
+    return NextResponse.json({ error: error.message || "Server Error" }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
