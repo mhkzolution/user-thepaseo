@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Image from "next/image";
 import html2canvas from "html2canvas";
 import FavoriteButton from "@/components/FavoriteButton/page";
@@ -32,7 +33,8 @@ type Event = {
 };
 
 export default function EventSinglePage() {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user } = useContext(AuthContext);
   const { id } = useParams();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,9 @@ export default function EventSinglePage() {
   useEffect(() => {
     const fetchBalance = async () => {
       try {
-        const res = await fetch("/api/points/balance");
+        const res = await fetch(`${API_URL}/points/balance`, {
+          credentials: "include",
+        });
         if (!res.ok) return;
         const data = await res.json();
         setPointBalance(data.balance || 0);
@@ -55,16 +59,17 @@ export default function EventSinglePage() {
         setPointBalance(0);
       }
     };
-    if (session?.user?.id) fetchBalance();
-  }, [session?.user?.id]);
+    if (user?.id) fetchBalance();
+  }, [user?.id]);
 
   // ✅ โหลดข้อมูล Event
   useEffect(() => {
     const fetchEvent = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/event/${id}`, {
-          headers: { "x-user-id": session?.user?.id || "" },
+        const res = await fetch(`${API_URL}/event/${id}`, {
+          credentials: "include",
+          headers: { "x-user-id": user?.id || "" },
         });
         if (!res.ok) throw new Error("ไม่พบ Event");
         const data = await res.json();
@@ -76,23 +81,51 @@ export default function EventSinglePage() {
       }
     };
     if (id) fetchEvent();
-  }, [id, session?.user?.id]);
+  }, [id, user?.id]);
 
   // ✅ ฟังก์ชันเข้าร่วมกิจกรรม
   const handleJoin = async () => {
     if (!event || event.isJoined) return;
+
     setJoining(true);
+
     try {
-      const res = await fetch(`/api/event/${id}/join`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "ไม่สามารถเข้าร่วมได้");
+      // 1️⃣ join event
+      const joinRes = await fetch(`${API_URL}/event/${id}/join`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const joinData = await joinRes.json();
+
+      if (!joinRes.ok) {
+        throw new Error(joinData.error || "ไม่สามารถเข้าร่วมได้");
+      }
+
       alert("🎉 เข้าร่วมกิจกรรมสำเร็จ!");
+
       setEvent((prev) =>
-        prev ? { ...prev, isJoined: true, joinedCount: prev.joinedCount + 1 } : prev
+        prev
+          ? {
+              ...prev,
+              isJoined: true,
+              joinedCount: prev.joinedCount + 1,
+            }
+          : prev
       );
-      // อัปเดตแต้มใหม่
-      const bal = await fetch("/api/points/balance").then((r) => r.json());
-      setPointBalance(bal.balance || 0);
+
+      // 2️⃣ อัปเดตแต้ม
+      const balanceRes = await fetch(`${API_URL}/points/balance`, {
+        credentials: "include",
+      });
+
+      if (!balanceRes.ok) {
+        throw new Error("โหลดแต้มไม่สำเร็จ");
+      }
+
+      const balanceData = await balanceRes.json();
+      setPointBalance(balanceData.balance || 0);
+
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาด");
     } finally {
@@ -201,61 +234,61 @@ export default function EventSinglePage() {
   }
 
   return (
-    <div>
-      <HeaderMobile />
-    
-      <div className="max-w-2xl mx-auto p-0 -mb-14 md:mt-20 md:-mb-16 rounded-xl">
-        <div className="w-full pt-4 px-10 md:pt-0 md:px-20 md:pb-0">
-          <UserProfile />
+      <div>
+        <HeaderMobile />
+      
+        <div className="max-w-2xl mx-auto -mb-14 md:mt-20 md:-mb-16 pt-16  rounded-xl">
+          <div className="w-full px-10 md:pt-0 md:px-20 md:pb-0">
+            <UserProfile  />
+          </div>
         </div>
-      </div>
-      <div
-        ref={captureRef}
-        className="capture relative max-w-2xl shadow-md mx-auto p-0 pt-20 bg-gray-100 rounded-5xl"
-      >
-
-        <div className="p-4 md:p-10">
+        <div
+          ref={captureRef}
+          className="capture relative max-w-2xl mx-auto md:pt-10 md:pb-0 pb-14 md:mb-10 pt-20 bg-gray-100 rounded-t-5xl rounded-b-xl flex flex-col md:gap-6 gap-4"
+        >
+  
+          <div className="px-4 md:px-10">
           {event.imageUrl &&
             <Image
               width={600}
               height={600}
               src={event.imageUrl}
               alt={event.name}
-              className="w-full h-full object-cover rounded-2xl shadow-md"
+              className="w-full h-full object-cover rounded-2xl shadow border border-gray-100"
             />
           }
 
         </div>
 
-        <div className="p-4 px-4 pt-0 md:p-10 md:pt-0">
-          <div className="flex flex-row justify-between align-start gap-4 bg-white p-6 rounded-2xl shadow-md">
+         <div className="px-4 md:px-10">
+            <div className="flex flex-row justify-between align-start gap-4 bg-white md:p-6 p-4 rounded-2xl shadow border border-gray-100">
             <div className="flex flex-col gap-3">
-              <h1 className="text-lg font-bold">{event.name}</h1>
+              <h1 className="text-sm font-bold">{event.name}</h1>
 
               <div className="flex flex-row item-center align-center gap-4">
-                <FaRegCalendarCheck className="text-xl" />
-                <p className="text-base text-gray-500">
+                <FaRegCalendarCheck size={24} />
+                <p className="text-sm text-gray-500">
                   ตั้งแต่ {start_day} - {end_day} {end_month_long} {end_year} นี้
                 </p>
               </div>
 
             {event.pointCost > 0 && (
               <div className="flex flex-row item-center align-center gap-4">
-                <CiBitcoin className="text-xl" />
-                <p className="text-gray-600">ใช้แต้ม: {event.pointCost}</p>
+                <CiBitcoin size={24} />
+                <p className="text-sm text-gray-600">ใช้แต้ม: {event.pointCost}</p>
               </div>
             )}
 
             {event.pointEarn > 0 && (
               <div className="flex flex-row item-center align-center gap-4">
-                <CiBitcoin className="text-xl" />
-                <p className="text-gray-600">ได้รับแต้ม: {event.pointEarn}</p>
+                <CiBitcoin size={24} />
+                <p className="text-sm text-gray-600">ได้รับแต้ม: {event.pointEarn}</p>
               </div>
             )}
 
             <div className="flex flex-row item-center align-center gap-4">
-              <CiBitcoin className="text-xl" />
-              <p className="text-gray-600">
+              <CiBitcoin size={24} />
+              <p className="text-sm text-gray-600">
                 แต้มของคุณ:{" "}
                 <span className="text-green-600 font-semibold">
                   {pointBalance}
@@ -264,23 +297,25 @@ export default function EventSinglePage() {
             </div>
 
             <div className="flex flex-row item-center align-center gap-4">
-              <CiBitcoin className="text-xl" />
-              <p className="text-gray-600">
+              <CiBitcoin size={24} />
+              <p className="text-sm text-gray-600">
                 ผู้เข้าร่วม: {event.joinedCount}/{event.quantity}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col items-center gap-4">
-            {session?.user?.id && (
+            {user?.id && (
               <FavoriteButton
                 targetId={event.id}
                 targetType="EVENT"
-                userId={session.user.id}
+                userId={user.id}
               />
             )}
-            <button onClick={handleCapture}>
-              <PiDotsThreeOutlineLight className="text-2xl shadow-md" />
+            <button
+              onClick={handleCapture}
+            >
+              <PiDotsThreeOutlineLight size={24} />
             </button>
             <ShareButton title={event.name} linkShare={event.linkShare} />
           </div>
@@ -290,14 +325,13 @@ export default function EventSinglePage() {
         </div>
 
         {event.description && (
-        <div className="p-4 px-4 pt-0 md:p-10 md:pt-0">
-          <div className="flex flex-col justify-between align-start gap-4 bg-white p-6 rounded-2xl shadow-md">
+        <div className="px-4 md:px-10">
+          <div className="flex flex-col justify-between align-start gap-4 bg-white md:p-6 p-4 rounded-2xl shadow border border-gray-100">
 
-            
               <div>
-                <h3 className="text-lg font-bold mb-4">รายละเอียด</h3>
+                <h3 className="text-sm font-bold mb-4">รายละเอียด</h3>
                 <div
-                  className="prose text-base"
+                  className="prose text-sm"
                   dangerouslySetInnerHTML={{ __html: event.description }}
                 />
               </div>
@@ -309,13 +343,13 @@ export default function EventSinglePage() {
 
 
         {event.terms && (
-        <div className="p-4 px-4 pt-0 md:p-10 md:pt-0">
-          <div className="flex flex-col justify-between align-start gap-4 bg-white p-6 rounded-2xl shadow-md">
+        <div className="px-4 md:px-10">
+          <div className="flex flex-col justify-between align-start gap-4 bg-white md:p-6 p-4 rounded-2xl shadow border border-gray-100">
 
-              <div>
-                <h3 className="text-lg font-bold mb-4">เงื่อนไขกิจกรรม</h3>
+              <div className="mb-4">
+                <h3 className="text-sm font-bold mb-4">เงื่อนไขกิจกรรม</h3>
                 <div
-                  className="prose text-base"
+                  className="prose text-sm"
                   dangerouslySetInnerHTML={{ __html: event.terms }}
                 />
               </div>
@@ -325,7 +359,7 @@ export default function EventSinglePage() {
         )}
 
         {/* ✅ ปุ่มเข้าร่วม */}
-        <div className="max-w-2xl shadow-md mr-auto ml-auto bg-white overflow-hidden w-full p-4 pb-20 md:p-4 text-black rounded-t-2xl shadow-md shadow-sm border border-gray-200">
+        <div className="max-w-2xl mx-auto bg-white w-full p-4 pb-4 md:p-4 md:rounded-2xl rounded-t-2xl shadow-sm border border-gray-200">
           <button
             disabled={disabled || joining}
             onClick={() => {
@@ -341,7 +375,7 @@ export default function EventSinglePage() {
         {showConfirmModal && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
             <div className="bg-white p-6 rounded-xl max-w-sm w-full text-center shadow-lg">
-              <h2 className="text-lg font-semibold mb-2">ยืนยันการเข้าร่วม</h2>
+              <h2 className="text-sm font-semibold mb-2">ยืนยันการเข้าร่วม</h2>
               <p className="text-gray-700 mb-4">
                 คุณต้องการเข้าร่วมกิจกรรมนี้ โดยใช้ {event.pointCost} พอยต์หรือไม่?
               </p>

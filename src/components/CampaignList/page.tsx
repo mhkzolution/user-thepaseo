@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import Link from "next/link";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import FavoriteButton from "@/components/FavoriteButton/page";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Loading from '@/components/loading';
 
 type Campaign = {
@@ -18,14 +20,15 @@ type Campaign = {
 };
 
 export default function CampaignList() {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user } = useContext(AuthContext);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCampaigns = async () => {
       try {
-        const res = await fetch("/api/campaign");
+        const res = await fetchWithAuth(`${API_URL}/campaign`);
         if (!res.ok) throw new Error("Failed to fetch campaign");
         const data = await res.json();
         setCampaigns(data);
@@ -59,9 +62,11 @@ export default function CampaignList() {
 
   return (
     <div className="p-0 max-w-5xl mx-auto mb-6">
-      <div className="flex flex-row justify-between mb-4">
-        <h1 className="text-xl font-bold">Campaign</h1>
-        <Link href="/campaign" className="text-base">ดูทั้งหมด</Link>
+      <div className="flex flex-row items-center justify-between mb-4">
+        <h1 className="text-xl font-bold">แคมเปญ</h1>
+        <Link href="/campaign" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
+          ดูทั้งหมด
+        </Link>
       </div>
 
       <section className="embla_post">
@@ -71,11 +76,11 @@ export default function CampaignList() {
               <div className="embla__slide_campaign relative w-full" key={r.id}>
                 {/* ส่วนที่เป็น action bar */}
                 <div className="absolute blur2 flex justify-center top-2 left-6 w-10 h-10 rounded-full border border-gray-200">
-                  {session?.user?.id && (
+                  {user?.id && (
                     <FavoriteButton
                       targetId={r.id}
                       targetType="CAMPAIGN"
-                      userId={session.user.id}
+                      userId={user.id}
                     />
                   )}
                 </div>

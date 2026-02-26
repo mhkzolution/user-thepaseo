@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import { loginWithLineHybrid } from "@/lib/liff-login";
 import { useRouter } from 'next/navigation'
 import { FaLine } from "react-icons/fa6";
@@ -14,6 +15,9 @@ import Loading from '@/components/loading';
 import HeaderMobile from '@/components/HeaderMobile/page';
 
 export default function LoginPage() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { setUser } = useContext(AuthContext)
+  const { refreshUser } = useContext(AuthContext)
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
@@ -22,6 +26,7 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [countdown, setCountdown] = useState(0)
+  const [token, setToken] = useState<string | null>(null)
 
   const router = useRouter()
 
@@ -42,11 +47,11 @@ useEffect(() => {
     }
 
     setLoading(true)
-    const res = await fetch('/api/auth/check-credentials', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(`${API_URL}/auth/check-credentials`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone }),
-    })
+    });
     const data = await res.json()
     setLoading(false)
 
@@ -61,22 +66,34 @@ useEffect(() => {
   // ฟังก์ชันเดิมสำหรับส่ง OTP
   const handleRequestOtp = async () => {
     if (countdown > 0) return
-    setOtpError('')
+
+    setOtpError("")
     setOtpSent(false)
 
-    const res = await fetch('/api/auth/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone }),
+    const res = await fetch(`${API_URL}/auth/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone,
+        purpose: "VERIFY_PHONE",
+      }),
     })
 
-    if (res.ok) {
-      setOtpSent(true)
-      setCountdown(60)
-    } else {
-      const data = await res.json()
-      setOtpError(data.error || 'ไม่สามารถส่ง OTP ได้')
+    if (!res.ok) {
+      let errorMessage = "ไม่สามารถส่ง OTP ได้"
+
+      try {
+        const data = await res.json()
+        errorMessage = data?.error || errorMessage
+      } catch {}
+
+      setOtpError(errorMessage)
+      return
     }
+
+    // ✅ สำเร็จ
+    setOtpSent(true)
+    setCountdown(60)
   }
 
   // ฟังก์ชันใหม่สำหรับ Step 2 (ตรวจสอบเบอร์/รหัสผ่าน)
@@ -92,18 +109,40 @@ useEffect(() => {
   // ฟังก์ชันใหม่สำหรับ Step 3 (ยืนยัน OTP)
   const handleStep3 = async (e: React.FormEvent) => {
     e.preventDefault()
-    setOtpError('')
+    setOtpError("")
 
-    const res = await signIn('credentials', {
-      phone,
-      otp,
-      redirect: false,
+    const res = await fetch(`${API_URL}/auth/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone,
+        otp,
+        purpose: "VERIFY_PHONE",
+      }),
     })
 
-    if (!res?.ok) {
-      setOtpError('OTP ไม่ถูกต้องหรือหมดอายุ')
+    const data = await res.json()
+
+    if (!res.ok) {
+      setOtpError(data?.error || "OTP ไม่ถูกต้อง")
+      return
     }
+
+    localStorage.setItem("token", data.token)
+    setToken(data.token)
+    await refreshUser()
+
+    setTimeout(() => {
+      router.replace("/")
+    }, 5000)
   }
+
+  useEffect(() => {
+  const storedToken = localStorage.getItem("token")
+  if (storedToken) {
+    setToken(storedToken)
+  }
+}, [])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -115,14 +154,6 @@ useEffect(() => {
     return () => clearInterval(interval)
   }, [countdown])
 
-  const { status } = useSession()
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      router.push('/')
-    }
-  }, [status])
-
   if (loading) {
     return (
       <Loading />
@@ -132,7 +163,7 @@ useEffect(() => {
   return (
     <div className="max-w-lg mx-auto p-0 mb-20 md:mb-0 mb-0 rounded-xl relative overflow-hidden">
         <HeaderMobile showBack={false} showFavorite={false} />
-        <div className="mb-0 py-4 px-4 md:px-4">
+        <div className="md:pt-4 pt-16 mb-0 py-4 px-4 md:px-4">
           <BannerLogin />
         </div>
         
@@ -259,6 +290,13 @@ useEffect(() => {
                   >
                     ยืนยัน OTP
                   </Button>
+
+                  {token && (
+  <div className="mt-4 p-3 bg-gray-100 rounded text-xs break-all">
+    <strong>JWT Token:</strong>
+    <p>{token}</p>
+  </div>
+)}
                 </form>
               </div>
             </>

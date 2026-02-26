@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Image from "next/image";
 
-import HeaderMobile from '@/components/HeaderMobile/page';
-
 export default function RewardDetailPage() {
-    const router = useRouter();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const router = useRouter();
   const { id } = useParams();
   const [reward, setReward] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,8 @@ export default function RewardDetailPage() {
   useEffect(() => {
     async function fetchReward() {
       try {
-        const res = await fetch(`/api/profile/reward/${id}`, {
+        
+        const res = await fetchWithAuth(`${API_URL}/profile/reward/${id}`, {
           method: "GET",
         });
         const data = await res.json();
@@ -35,29 +36,27 @@ export default function RewardDetailPage() {
     fetchReward();
   }, [id]);
 
-    async function handleUseReward() {
-        setUsingReward(true);
-        try {
-            const res = await fetch(`/api/reward/${id}/use`, { method: "POST" });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "ไม่สามารถใช้รางวัลได้");
+  async function handleUseReward() {
+      setUsingReward(true);
+      try {
+          const res = await fetchWithAuth(`${API_URL}/reward/${id}/use`, { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "ไม่สามารถใช้รางวัลได้");
 
-            // ✅ ตั้งค่าข้อมูลหลังใช้รางวัล
-            setReward({
-            ...reward,
-            redeemed: true,
-            redeemedAt: new Date().toISOString(),
-            });
+          // ⭐ โหลดข้อมูล rewardParticipation ที่อัปเดตจริง ๆ จาก DB
+          const refresh = await fetchWithAuth(`${API_URL}/profile/reward/${id}`);
+          const freshData = await refresh.json();
 
-            // ✅ เปิด Modal แจ้งผลลัพธ์
-            setSuccess("✅ ใช้รางวัลเรียบร้อยแล้ว");
-            setShowModal(true);
-        } catch (err: any) {
-            alert(err.message);
-        } finally {
-            setUsingReward(false);
-        }
-    }
+          setReward(freshData);          // 👈 อัปเดต reward state ใหม่จริง
+          setSuccess("ใช้รางวัลสำเร็จแล้ว"); // 👈 เปิด modal แสดงผลลัพธ์
+          setShowModal(true);
+
+      } catch (err: any) {
+          alert(err.message);
+      } finally {
+          setUsingReward(false);
+      }
+  }
 
   if (loading)
     return <div className="p-6 text-center text-gray-500">กำลังโหลด...</div>;
@@ -71,9 +70,7 @@ export default function RewardDetailPage() {
     : false;
 
   return (
-    <div className="max-w-2xl mx-auto p-0 px-0 mb-0 md:mt-20 md:mb-20 mb-4 rounded-xl">
-        <HeaderMobile />
-
+    <>
         <div className="relative max-w-2xl mx-auto p-0 pt-10 bg-gray-100 rounded-5xl shadow-md">
 
             {/* รหัส Redeem */}
@@ -205,6 +202,6 @@ export default function RewardDetailPage() {
         </div>
         </div>
         )}
-    </div>
+    </>
   );
 }

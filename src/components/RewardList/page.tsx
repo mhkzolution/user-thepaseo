@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Link from "next/link";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import FavoriteButton from "@/components/FavoriteButton/page";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/loading";
 import { RiCoupon2Fill } from "react-icons/ri";
 
@@ -22,7 +24,8 @@ type Reward = {
 };
 
 export default function RewardList({ shopId }: { shopId?: string }) {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel();
@@ -30,8 +33,10 @@ export default function RewardList({ shopId }: { shopId?: string }) {
   useEffect(() => {
     const fetchRewards = async () => {
       try {
-        const url = shopId ? `/api/reward?shopId=${shopId}` : `/api/reward`; // ✅ เพิ่ม shopId
-        const res = await fetch(url);
+        const url = shopId
+          ? `${API_URL}/reward?shopId=${shopId}`
+          : `${API_URL}/reward`;
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error("Failed to fetch rewards");
         const data = await res.json();
         setRewards(data);
@@ -61,10 +66,10 @@ export default function RewardList({ shopId }: { shopId?: string }) {
 
   return (
     <div className="p-0 max-w-5xl mx-auto mb-6">
-      <div className="flex flex-row justify-between mb-4">
+      <div className="flex flex-row items-center justify-between mb-4">
         <h1 className="text-xl font-bold">รางวัลสะสมแต้ม</h1>
         {!shopId && ( // ✅ ซ่อนปุ่ม “ดูทั้งหมด” ถ้าอยู่ในร้าน
-          <Link href="/reward" className="text-base">
+          <Link href="/reward" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
             ดูทั้งหมด
           </Link>
         )}
@@ -89,11 +94,11 @@ export default function RewardList({ shopId }: { shopId?: string }) {
                   key={r.id}
                 >
                   <div className="absolute flex justify-center top-6 left-10 w-10 h-10 rounded-full border border-gray-200 blur2 z-10">
-                    {session?.user?.id && (
+                    {user?.id && (
                       <FavoriteButton
                         targetId={r.id}
                         targetType="REWARD"
-                        userId={session.user.id}
+                        userId={user.id}
                       />
                     )}
                   </div>
@@ -105,25 +110,17 @@ export default function RewardList({ shopId }: { shopId?: string }) {
                   >
                     <div className="relative w-full h-full flex flex-col shadow-lg">
                       <div className="relative w-full h-full flex flex-col gap-2 p-4 pb-2 bg-gray-100 rounded-2xl ticket-notch">
-                        {r.imageUrl ? (
+                        <div className="relative w-full rounded-xl overflow-hidden bg-white pt-125%">
                           <Image
-                            width={600}
-                            height={600}
-                            src={r.imageUrl}
+                            src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
-                            className="h-40 object-cover rounded-xl"
+                            fill
+                            className="object-cover"
+                            sizes="160px"
                           />
-                          ) : (
-                          <Image
-                            width={600}
-                            height={600}
-                            src='/main/no-image.png'
-                            alt={r.name}
-                            className="h-40 object-cover rounded-xl border bg-white p-6"
-                          />
-                        )}
+                        </div>
 
-                        <div className="w-full" style={{ minHeight: "1.5rem" }}>
+                          <div className="w-full" style={{ minHeight: "1.5rem" }}>
                             <h3 className="text-xs md:text-sm font-bold leading-5 tracking-wide">
                               {r.name}
                             </h3>
@@ -156,7 +153,7 @@ export default function RewardList({ shopId }: { shopId?: string }) {
                             </span>
                           </button>
                         </div>
-                      </div>
+                    </div>
                   </Link>
                 </div>
               );

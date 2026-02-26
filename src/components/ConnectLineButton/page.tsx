@@ -1,18 +1,18 @@
 "use client"
 
-import { useSession } from "next-auth/react"
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react"
 import liff from "@line/liff"
 import { FaLine } from "react-icons/fa6";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
 
 export default function ConnectLineButton() {
-  const { data: session, status } = useSession()
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [isLiffReady, setIsLiffReady] = useState(false)
   const [isInLineApp, setIsInLineApp] = useState(false)
   const [loading, setLoading] = useState(false)
-
-  const user = session?.user as any
 
   useEffect(() => {
     const initLiff = async () => {
@@ -51,9 +51,10 @@ export default function ConnectLineButton() {
       }
 
       const idToken = liff.getIDToken()
-      const res = await fetch("/api/auth/link-line", {
+      const res = await fetch(`${API_URL}/auth/link-line`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // สำคัญมาก
         body: JSON.stringify({ idToken, userId: user?.id }),
       })
 
@@ -76,7 +77,7 @@ export default function ConnectLineButton() {
   const isConnected = !!user?.lineId || !!user?.lineToken
 
   // 🔄 Loading
-  if (status === "loading") {
+  if (authLoading) {
     return (
       <button
         disabled

@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import { RiCoupon2Fill, RiCoupon2Line, RiCoupon5Line } from "react-icons/ri";
 import { TbBorderAll } from "react-icons/tb";
 
@@ -31,7 +32,8 @@ type Reward = {
 type Tab = "all" | "coupon" | "reward";
 
 export default function CouponRewardList() {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,13 +43,17 @@ export default function CouponRewardList() {
     const fetchData = async () => {
       try {
         // Fetch coupons
-        const couponRes = await fetch("/api/coupon");
+        const couponRes = await fetch(`${API_URL}/coupon`, {
+          credentials: "include",
+        });
         if (!couponRes.ok) throw new Error("Failed to fetch coupons");
         const couponData = await couponRes.json();
         setCoupons(couponData);
 
         // Fetch rewards
-        const rewardRes = await fetch("/api/reward");
+        const rewardRes = await fetch(`${API_URL}/reward`, {
+          credentials: "include",
+        });
         if (!rewardRes.ok) throw new Error("Failed to fetch rewards");
         const rewardData = await rewardRes.json();
         setRewards(rewardData);

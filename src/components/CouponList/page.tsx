@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
 import Loading from "@/components/loading";
@@ -20,8 +21,9 @@ type Coupon = {
   pointCost: string;
 };
 
-export default function CouponList({ shopId }: { shopId?: string }) { // ✅ เพิ่ม prop
-  const { data: session } = useSession();
+export default function CouponList({ shopId }: { shopId?: string }) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user } = useContext(AuthContext);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel();
@@ -30,8 +32,13 @@ export default function CouponList({ shopId }: { shopId?: string }) { // ✅ เ
     const fetchCoupons = async () => {
       try {
         // ✅ ถ้ามี shopId ให้เรียกเฉพาะของร้านนั้น
-        const url = shopId ? `/api/coupon?shopId=${shopId}` : `/api/coupon`;
-        const res = await fetch(url);
+        const url = shopId
+          ? `${API_URL}/coupon?shopId=${shopId}`
+          : `${API_URL}/coupon`;
+
+        const res = await fetch(url, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch coupons");
         const data = await res.json();
         setCoupons(data);
@@ -61,10 +68,10 @@ export default function CouponList({ shopId }: { shopId?: string }) { // ✅ เ
 
   return (
     <div className="p-0 max-w-5xl mx-auto mb-0">
-      <div className="flex flex-row justify-between mb-4">
+      <div className="flex flex-row items-center justify-between mb-4">
         <h1 className="text-xl font-bold">คูปอง</h1>
         {!shopId && (
-          <Link href="/coupon" className="text-base">
+          <Link href="/coupon" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
             ดูทั้งหมด
           </Link>
         )}
@@ -90,11 +97,11 @@ export default function CouponList({ shopId }: { shopId?: string }) { // ✅ เ
                 >
                   {/* ปุ่ม Favorite */}
                   <div className="absolute flex justify-center top-6 left-10 w-10 h-10 rounded-full border border-gray-200 blur2 z-10">
-                    {session?.user?.id && (
+                    {user?.id && (
                       <FavoriteButton
                         targetId={r.id}
                         targetType="COUPON"
-                        userId={session.user.id}
+                        userId={user.id}
                       />
                     )}
                   </div>
@@ -106,23 +113,15 @@ export default function CouponList({ shopId }: { shopId?: string }) { // ✅ เ
                   >
                     <div className="relative w-full h-full flex flex-col shadow-lg">
                       <div className="relative w-full h-full flex flex-col gap-2 p-4 pb-2 bg-gray-100 rounded-2xl ticket-notch">
-                        {r.imageUrl ? (
+                        <div className="relative w-full rounded-xl overflow-hidden bg-white pt-100%">
                           <Image
-                            width={600}
-                            height={600}
-                            src={r.imageUrl}
+                            src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
-                            className="h-40 object-cover rounded-xl"
+                            fill
+                            className="object-cover"
+                            sizes="160px"
                           />
-                        ) : (
-                            <Image
-                              width={600}
-                              height={600}
-                              src='/main/no-image.png'
-                              alt={r.name}
-                              className="h-40 object-cover rounded-xl border bg-white p-6"
-                            />
-                        )}
+                        </div>
 
                         <div className="w-full" style={{ minHeight: "1.5rem" }}>
                           <h3 className="text-xs md:text-sm font-bold leading-5 tracking-wide">

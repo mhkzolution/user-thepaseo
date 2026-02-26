@@ -4,7 +4,9 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
 import FavoriteButton from "@/components/FavoriteButton/page";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import Image from "next/image";
 import { FaBorderAll } from "react-icons/fa6";
 import { RiCoupon2Line, RiCoupon5Line } from "react-icons/ri";
@@ -31,7 +33,8 @@ type Branch = {
 };
 
 export default function PrivilegeCampaignList() {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [campaigns, setCampaigns] = useState<PrivilegeItem[]>([]);
   const [events, setEvents] = useState<PrivilegeItem[]>([]);
   const [coupons, setCoupons] = useState<PrivilegeItem[]>([]);
@@ -47,11 +50,15 @@ export default function PrivilegeCampaignList() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const res = await fetch("/api/shop/branch");
+        const res = await fetchWithAuth(`${API_URL}/shop/branch`);
         if (!res.ok) throw new Error("Failed to fetch branches");
         const data = await res.json();
-        // เพิ่ม “ทั้งหมด” ไว้ด้านหน้า
-        setBranches([{ id: "all", name: "ทั้งหมด" }, ...data]);
+
+        const filteredBranches = data.filter(
+          (branch: Branch) => branch.name !== "บางนา"
+        );
+
+        setBranches([{ id: "all", name: "ทั้งหมด" }, ...filteredBranches]);
       } catch (err: any) {
         setError("ไม่สามารถโหลดข้อมูลสาขาได้");
       }
@@ -70,9 +77,9 @@ export default function PrivilegeCampaignList() {
 
         const url =
           selectedBranch && selectedBranch !== "all"
-            ? `/api/privileges?branchId=${selectedBranch}`
-            : "/api/privileges";
-        const res = await fetch(url);
+            ? `${API_URL}/privileges?branchId=${selectedBranch}`
+            : `${API_URL}/privileges`;
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error("Failed to fetch privileges");
         const data = await res.json();
 
@@ -112,10 +119,10 @@ export default function PrivilegeCampaignList() {
           onClick={() =>
             setSelectedBranch(branch.id === "all" ? null : branch.id)
           }
-          className={`flex flex-col flex-1 py-2 px-4 w-20% rounded-xl items-center gap-1 transition hover:bg-paseo-hover ${
+          className={`flex flex-col flex-1 py-2 px-1 w-20% rounded-xl items-center gap-1 transition hover:bg-paseo-hover ${
             selectedBranch === branch.id || (!selectedBranch && branch.id === "all")
-              ? 'bg-paseo-hover text-sm text-black border border-paseo'
-              : 'text-sm text-gray-700 border hover:bg-paseo-hover'
+              ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
+              : 'text-black hover:text-gray-700 bg-gray-50 shadow'
           }`}
           aria-selected={selectedBranch === branch.id}
           role="tab"
@@ -168,11 +175,11 @@ export default function PrivilegeCampaignList() {
               {campaigns.map((item) => (
                 <div className="embla__slide_campaign relative w-full" key={item.id}>
                   <div className="absolute blur2 flex justify-center top-2 left-6 w-10 h-10 rounded-full border border-gray-200">
-                    {session?.user?.id && (
+                    {user?.id && (
                       <FavoriteButton
                         targetId={item.id}
                         targetType={item.type}
-                        userId={session.user.id}
+                        userId={user.id}
                       />
                     )}
                   </div>
@@ -287,11 +294,11 @@ export default function PrivilegeCampaignList() {
               return (
                 <div className="embla__slide_campaign relative w-full flex flex-col" key={r.id}>
                   <div className="absolute blur flex justify-center top-8 left-8 w-10 h-10 rounded-full shadow-sm border border-gray-200">
-                    {session?.user?.id && (
+                    {user?.id && (
                       <FavoriteButton
                         targetId={r.id}
                         targetType="EVENT"
-                        userId={session.user.id}
+                        userId={user.id}
                       />
                     )}
                   </div>
@@ -377,8 +384,8 @@ export default function PrivilegeCampaignList() {
             onClick={() => setSelectedType("ALL")}
             className={`flex flex-col py-2 px-4 w-20% rounded-xl flex items-center gap-1 hover:bg-paseo-hover ${
               selectedType === "ALL"
-                ? 'bg-paseo-hover text-sm text-black border border-paseo'
-                : 'text-sm text-gray-700 border hover:bg-paseo-hover'
+                ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
+                : 'text-black hover:text-gray-700 bg-gray-50 shadow'
             }`}
             aria-selected={selectedType === "ALL"}
             role="tab"
@@ -390,8 +397,8 @@ export default function PrivilegeCampaignList() {
             onClick={() => setSelectedType("COUPON")}
             className={`flex flex-col py-2 px-4 w-20% rounded-xl flex items-center gap-1 hover:bg-paseo-hover ${
               selectedType === "COUPON"
-                ? 'bg-paseo-hover text-sm text-black border border-paseo'
-                : 'text-sm text-gray-700 border hover:bg-paseo-hover'
+                ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
+                : 'text-black hover:text-gray-700 bg-gray-50 shadow'
             }`}
             aria-selected={selectedType === "COUPON"}
             role="tab"
@@ -403,8 +410,8 @@ export default function PrivilegeCampaignList() {
             onClick={() => setSelectedType("REWARD")}
             className={`flex flex-col py-2 px-4 w-20% rounded-xl flex items-center gap-1 hover:bg-paseo-hover ${
               selectedType === "REWARD"
-                ? 'bg-paseo-hover text-sm text-black border border-paseo'
-                : 'text-sm text-gray-700 border hover:bg-paseo-hover'
+                ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
+                : 'text-black hover:text-gray-700 bg-gray-50 shadow'
             }`}
             aria-selected={selectedType === "REWARD"}
             role="tab"
@@ -462,13 +469,13 @@ export default function PrivilegeCampaignList() {
                   >
                     <div className="relative w-full h-full flex flex-col shadow-lg">
                       <div className="relative w-full h-full flex flex-col gap-2 p-4 pb-2 bg-gray-100 rounded-2xl ticket-notch">
-                        <div className="w-full">
+                        <div className="relative w-full rounded-xl overflow-hidden bg-white pt-125%">
                           <Image
-                            src={r.imageUrl || "/fallback.png"}
+                            src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
-                            width={100}
-                            height={100}
-                            className="w-full h-40 object-cover rounded-lg shadow-lg"
+                            fill
+                            className="object-cover"
+                            sizes="160px"
                           />
                         </div>
 

@@ -1,17 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Image from "next/image";
 
 export default function MyCouponsPage() {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user } = useContext(AuthContext);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCoupons = async () => {
-      const res = await fetch("/api/user/coupon");
+      const res = await fetch(`${API_URL}/user/coupon`, {
+        credentials: "include",
+      });
       const data = await res.json();
       setCoupons(data);
       setLoading(false);

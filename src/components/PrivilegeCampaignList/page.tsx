@@ -4,7 +4,9 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
 import FavoriteButton from "@/components/FavoriteButton/page";
-import { useSession } from "next-auth/react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/loading";
 import Image from "next/image";
 import { TbBorderAll } from "react-icons/tb"; // Import FaBorderAll icon
@@ -25,7 +27,8 @@ type Branch = {
 };
 
 export default function PrivilegeCampaignList() {
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { user, loading: authLoading } = useContext(AuthContext);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,9 +46,9 @@ export default function PrivilegeCampaignList() {
     const fetchCampaigns = async () => {
       try {
         const url = selectedBranch
-          ? `/api/campaign?branchId=${selectedBranch}`
-          : "/api/campaign";
-        const res = await fetch(url);
+          ? `${API_URL}/campaign?branchId=${selectedBranch}`
+          : `${API_URL}/campaign`;
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error("Failed to fetch campaign");
         const data = await res.json();
         setCampaigns(data);
@@ -115,11 +118,11 @@ export default function PrivilegeCampaignList() {
               {campaigns.map((r) => (
                 <div className="embla__slide_campaign relative w-full" key={r.id}>
                   <div className="absolute blur2 flex justify-center top-2 left-6 w-10 h-10 rounded-full shadow-sm border border-gray-200">
-                    {session?.user?.id && (
+                    {user?.id && (
                       <FavoriteButton
                         targetId={r.id}
                         targetType="CAMPAIGN"
-                        userId={session.user.id}
+                        userId={user.id}
                       />
                     )}
                   </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import { IoHeartOutline } from "react-icons/io5";
 import { IoHeartSharp } from "react-icons/io5";
 
@@ -11,14 +12,16 @@ type Props = {
 };
 
 export default function FavoriteButton({ targetId, targetType, userId }: Props) {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
   if (!userId) return;
   async function fetchStatus() {
-    const res = await fetch(
-      `/api/favorite?userId=${userId}&targetId=${targetId}&targetType=${targetType}`
+    const res = await fetchWithAuth(
+      `${API_URL}/favorite?userId=${userId}&targetId=${targetId}&targetType=${targetType}`
     );
+
     const data = await res.json();
     setIsFavorite(data.isFavorite);
   }
@@ -27,9 +30,8 @@ export default function FavoriteButton({ targetId, targetType, userId }: Props) 
 
   const toggle = async () => {
     if (!userId) return;
-    const res = await fetch(`/api/favorite`, {
+    const res = await fetchWithAuth(`${API_URL}/favorite`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, targetId, targetType }),
     });
     const data = await res.json();

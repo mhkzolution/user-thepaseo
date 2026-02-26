@@ -1,0 +1,75 @@
+import { PrismaClient, OtpPurpose } from "@prisma/client"
+
+const prisma = new PrismaClient()
+
+const isDev =
+  process.env.NODE_ENV === "development" ||
+  process.env.OTP_SMS_ENABLED === "false"
+
+export async function verifyOtp({
+  phone,
+  otp,
+  purpose,
+}: {
+  phone: string
+  otp: string
+  purpose: OtpPurpose
+}) {
+  const record = await prisma.otpVerification.findFirst({
+    where: {
+      phone,
+      purpose,
+      verifiedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
+  if (!record) {
+    throw new Error("ไม่พบ OTP หรือ OTP หมดอายุ")
+  }
+
+  // ✅ DEV MODE → เทียบตรงกับ OTP_TEST_CODE
+  if (isDev) {
+    const testCode = process.env.OTP_TEST_CODE || "123456"
+
+    if (otp !== testCode) {
+      throw new Error("OTP ไม่ถูกต้อง (DEV)")
+    }
+
+    await prisma.otpVerification.update({
+      where: { id: record.id },
+      data: { verifiedAt: new Date() },
+    })
+
+    return { success: true }
+  }
+
+  // ---------- PROD MODE ----------
+  const res = await fetch("https://apicall.deesmsx.com/v1/otp/verify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      accept: "application/json",
+    },
+    body: JSON.stringify({
+      apiKey: process.env.DEESMSX_API_KEY,
+      secretKey: process.env.DEESMSX_SECRET_KEY,
+      token: record.token,
+      pin: otp,
+    }),
+  })
+
+  const data = await res.json()
+
+  if (!res.ok || data?.code !== "0") {
+    throw new Error(data?.msg || "OTP ไม่ถูกต้อง")
+  }
+
+  await prisma.otpVerification.update({
+    where: { id: record.id },
+    data: { verifiedAt: new Date() },
+  })
+
+  return { success: true }
+}

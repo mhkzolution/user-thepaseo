@@ -27,10 +27,13 @@ export default function BannerUploadTermPage() {
     [Autoplay({ delay: 5000, stopOnInteraction: true })]
   )
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  
   useEffect(() => {
     const fetchBanners = async () => {
-      try {
-        const res = await fetch("/api/banner/banneruploadterm")
+    try {
+      const res = await fetch(`${API_URL}/banner/banneruploadterm`);
+
         if (!res.ok) throw new Error("Failed to fetch banners")
         const data = await res.json()
         const now = new Date()
@@ -80,7 +83,11 @@ export default function BannerUploadTermPage() {
                   className="w-full flex aspect-square items-center justify-center"
                 >
                   <Image
-                    src={banner.imageUrl}
+                    src={
+                      banner.imageUrl
+                        ? `${process.env.NEXT_PUBLIC_STORAGE_BASE_URL}${banner.imageUrl}`
+                        : "/main/no-image.png"
+                    }
                     alt={banner.title}
                     width={600}
                     height={600}

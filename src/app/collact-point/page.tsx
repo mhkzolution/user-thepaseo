@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import Link from 'next/link';
 import BannerPoint from "@/components/BannerPoint/page"
 import { FaCloudUploadAlt } from "react-icons/fa";
@@ -11,24 +12,10 @@ import Loading from '@/components/loading';
 import HeaderMobile from '@/components/HeaderMobile/page';
 
 export default function CollactPointPage() {
-  const [user, setUser] = useState<any>(null);
+  const { user, loading } = useContext(AuthContext);
 
-  useEffect(() => {
-      const fetchProfile = async () => {
-        const res = await fetch("/api/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data);
-        }
-      };
-      fetchProfile();
-    }, []);
-  
-    if (!user) {
-      return (
-          <Loading />
-        );
-    }
+  if (loading) return <Loading />;
+  if (!user) return <Loading />;
 
 
   return (

@@ -1,3 +1,4 @@
+// components/bannerlogin/page.tsx
 "use client"
 
 import React, { useEffect, useState } from "react"
@@ -19,6 +20,7 @@ type BannerLogin = {
 }
 
 export default function BannerLoginPage() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [banners, setBanners] = useState<BannerLogin[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -27,30 +29,32 @@ export default function BannerLoginPage() {
     [Autoplay({ delay: 5000, stopOnInteraction: true })]
   )
 
-  useEffect(() => {
-    const fetchBanners = async () => {
-      try {
-        const res = await fetch("/api/banner/bannerlogin")
-        if (!res.ok) throw new Error("Failed to fetch banners")
-        const data = await res.json()
-        const now = new Date()
-        // กรองแบนเนอร์ที่ isActive และยังไม่ถึง endDate
-        const activeBanners = data
-          .filter((banner: BannerLogin) => {
-            const endDate = banner.endDate ? new Date(banner.endDate) : null
-            return banner.isActive && (!endDate || endDate >= now)
-          })
-          .sort((a: BannerLogin, b: BannerLogin) => a.order - b.order)
-        setBanners(activeBanners)
-      } catch (error) {
-        console.error("Error fetching banners:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+useEffect(() => {
+  const fetchBanners = async () => {
+    try {
+      const res = await fetch(`${API_URL}/banner/bannerlogin`);
+      if (!res.ok) throw new Error("Failed to fetch banners")
+      const data = await res.json()
+      const now = new Date()
 
-    fetchBanners()
-  }, [])
+      const activeBanners = data
+        .filter((banner: BannerLogin) => {
+          const endDate = banner.endDate ? new Date(banner.endDate) : null
+          return banner.isActive && (!endDate || endDate >= now)
+        })
+        .sort((a: BannerLogin, b: BannerLogin) => a.order - b.order)
+
+      setBanners(activeBanners)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  fetchBanners()
+}, [])
+
 
   useEffect(() => {
   }, [emblaApi])

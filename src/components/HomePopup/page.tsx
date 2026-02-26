@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { IoMdClose } from 'react-icons/io';
@@ -19,6 +20,7 @@ interface Popup {
 }
 
 export default function HomePopup() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [popups, setPopups] = useState<Popup[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +34,7 @@ export default function HomePopup() {
     const fetchPopups = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/banner/popup');
+        const res = await fetchWithAuth(`${API_URL}/banner/popup`);
         if (!res.ok) {
           console.error('Failed to fetch popups:', res.status);
           return;
@@ -82,7 +84,7 @@ export default function HomePopup() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overlay p-4">
-      <div className="bg-transparent max-w-md w-[90%] relative">
+      <div className="bg-transparent max-w-md w-full relative">
         <button
           className="absolute z-50 top-2 right-2 text-white p-2 rounded-full flex justify-center items-center bg-white shadow"
           onClick={() => setIsOpen(false)}

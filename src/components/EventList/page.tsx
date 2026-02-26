@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import FavoriteButton from "@/components/FavoriteButton/page";
-import { useSession } from "next-auth/react";
+import { useContext } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
 import { BsClipboardCheck } from "react-icons/bs";
 
 type Event = {
@@ -20,15 +21,21 @@ type Event = {
 
 
 export default function EventList({ shopId }: { shopId?: string }) { // ✅ เพิ่ม prop
-  const { data: session } = useSession();
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+    const { user } = useContext(AuthContext);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const url = shopId ? `/api/event?shopId=${shopId}` : `/api/event`; // ✅ ใช้ shopId ถ้ามี
-        const res = await fetch(url);
+        const url = shopId
+          ? `${API_URL}/event?shopId=${shopId}`
+          : `${API_URL}/event`;
+
+        const res = await fetch(url, {
+          credentials: "include",
+        });
         if (!res.ok) throw new Error("Failed to fetch events");
         const data = await res.json();
         setEvents(data);
@@ -59,10 +66,10 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
 
   return (
     <div className="w-full p-0 max-w-5xl mx-auto mb-0">
-      <div className="flex flex-row justify-between mb-4">
+      <div className="flex flex-row items-center justify-between mb-4">
         <h1 className="text-xl font-bold">กิจกรรม</h1>
         {!shopId && ( // ✅ ซ่อนปุ่ม “ดูทั้งหมด” เมื่ออยู่ในร้าน
-          <Link href="/event" className="text-base">
+          <Link href="/event" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
             ดูทั้งหมด
           </Link>
         )}
@@ -87,11 +94,11 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
           return (
             <div className=" relative w-full flex flex-col" key={r.id}>
               <div className="absolute blur2 flex justify-center top-6 left-6 w-10 h-10 rounded-full shadow-sm border border-gray-200">
-                {session?.user?.id && (
+                {user?.id && (
                   <FavoriteButton
                     targetId={r.id}
                     targetType="EVENT"
-                    userId={session.user.id}
+                    userId={user.id}
                   />
                 )}
               </div>
@@ -101,23 +108,15 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
                 className="w-full flex flex-row gap-4 p-4 border border-gray-200 rounded-xl shadow overflow-hidden transition bg-white h-full"
               >
                 <div className="w-40%">
-                  {r.imageUrl ? (
+                  <div className="relative w-full rounded-xl overflow-hidden bg-white pt-125%">
                     <Image
-                      width={600}
-                      height={600}
-                      src={r.imageUrl}
+                      src={r.imageUrl || "/main/no-image.png"}
                       alt={r.name}
-                      className="w-full h-40 md:h-56 object-cover rounded-xl"
+                      fill
+                      className="object-cover"
+                      sizes="160px"
                     />
-                  ) : (
-                      <Image
-                        width={600}
-                        height={600}
-                        src='/main/no-image.png'
-                        alt={r.name}
-                        className="object-cover rounded-xl border bg-white p-6"
-                      />
-                  )}
+                  </div>
                 </div>
 
                 <div className="w-60% flex flex-col">

@@ -1,8 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession, signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link';
 import BannerPoint from "@/components/BannerPoint/page"
 

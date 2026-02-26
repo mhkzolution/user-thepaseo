@@ -1,10 +1,12 @@
 "use client";
 
 import liff from "@line/liff";
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import { signIn } from "next-auth/react";
 import { initLiff } from "./liff-client";
 
 export async function loginWithLineHybrid() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
   // 1) ตรวจ User-Agent ก่อนเลย  
   const ua = navigator.userAgent.toLowerCase();
   const isLineUA = ua.includes("line");
@@ -69,22 +71,26 @@ export async function loginWithLineHybrid() {
   // ------------------------------
   // 5) ดึง ID Token
   // ------------------------------
-  const idToken = liff.getIDToken();
+const idToken = liff.getIDToken();
 
-  if (!idToken) {
-    console.log("❌ No ID Token → re-login LIFF");
-    liff.login();
-    return;
+if (!idToken) {
+  liff.login();
+  return;
+}
+
+  const res = await fetchWithAuth(`${API_URL}/auth/line`, {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  })
+
+  const data = await res.json()
+
+  if (!res.ok) {
+    alert("LINE login failed")
+    return
   }
 
-  console.log("🎉 Got ID Token from LIFF");
+  localStorage.setItem("token", data.token)
 
-  // ------------------------------
-  // 6) ส่งไปยัง NextAuth (provider: line-liff)
-  // ------------------------------
-  return signIn("line-liff", {
-    idToken,
-    redirect: true,
-    callbackUrl: "/",
-  });
+  window.location.href = "/"
 }
