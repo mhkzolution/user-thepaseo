@@ -75,7 +75,7 @@ export default function ThaiAddressSelect({ value, onChange, label }: Props) {
   )
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-2">
       {/* จังหวัด */}
       <SearchSelect
         label="จังหวัด"

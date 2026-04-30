@@ -1,10 +1,11 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { AuthContext } from "@/contexts/AuthContext";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import BannerUpload from "@/components/BannerUpload/page";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react"
-import Image from "next/image";
 import HeaderMobile from '@/components/HeaderMobile/page';
 
 import { CiReceipt } from "react-icons/ci";
@@ -15,6 +16,7 @@ import { MdPictureAsPdf } from "react-icons/md";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 
 export default function UploadPage() {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [emblaRef, emblaApi] = useEmblaCarousel({ dragFree: true });
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -62,8 +64,14 @@ export default function UploadPage() {
     const formData = new FormData();
     files.forEach((file) => formData.append("images", file));
 
-    const res = await fetch("/api/receipt/upload", {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(`${API_URL}/receipt/upload`, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // ❗ ไม่ต้องใส่ Content-Type
+      },
       body: formData,
     });
 
@@ -88,7 +96,7 @@ export default function UploadPage() {
   useEffect(() => {
     const fetchTerms = async () => {
       try {
-        const res = await fetch("/api/admin/receipts/terms");
+        const res = await fetchWithAuth(`${API_URL}/admin/receipts/terms`);
         const data = await res.json();
 
         setTerms({
@@ -107,10 +115,10 @@ export default function UploadPage() {
     }, [emblaApi])
 
   return (
-    <div className="max-w-2xl mx-auto p-0 px-0 mb-20 md:mt-20 md:mb-0 mb-4 rounded-xl">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
       <HeaderMobile showBack={true} />
       
-      <div className="md:pt-4 pt-16 mb-0 py-4 px-4 md:px-4">
+      <div className="md:mt-16 mt-0 mb-0 md:pt-4 pt-16 pb-3 px-3 md:px-4">
         <BannerUpload />
       </div>
 
@@ -118,7 +126,7 @@ export default function UploadPage() {
         {/* ปุ่ม Test */}
         <div className="w-full flex justify-center mb-4 -top-20 absolute flex-col items-center">
           <Button
-            className="rounded-full h-40 w-40 text-xl text-center bg-paseo-hover text-paseo flex flex-col border-4 border-paseo mb-2"
+            className="rounded-full h-40 w-40 text-xl text-center bg-paseo-hover text-paseo flex flex-col border-4 border-paseo mb-3"
             onClick={() => setShowOptions(!showOptions)}
           >
             <IoReceipt size={64} />
@@ -212,10 +220,10 @@ export default function UploadPage() {
 
         {/* ส่วน preview */}
         <div
-          className="space-y-4 p-10 z-60"
+          className="space-y-3 py-10 px-10 pb-4 z-60"
           style={{ paddingTop: "7rem" }}
         >
-          <div className="mt-6 mb-6">
+          <div className="mt-8 mb-6">
 
             <p className="text-sm text-gray-600 mb-2">
               ใบเสร็จที่แนบ ( {files.length} / 10 )
@@ -241,7 +249,7 @@ export default function UploadPage() {
                         </button>
 
                         {file.type.startsWith("image/") ? (
-                          <Image
+                          <img
                             width={600}
                             height={600}
                             src={URL.createObjectURL(file)}
@@ -287,15 +295,15 @@ export default function UploadPage() {
 
         </div>
 
-        <div className="flex flex-col items-center relative">
+        <div className="w-full flex flex-col items-center relative">
           {terms && (
-            <div className="flex flex-col items-center relative mt-6">
+            <div className="w-full flex flex-col items-center relative md:px-10 px-4 pt-4 md:pb-10 pb-4">
 
               {/* Images */}
               {terms.images.length > 0 && (
-                <div className="w-full px-10 flex flex-col gap-4">
+                <div className="w-full flex flex-col gap-4">
                   {terms.images.map((img) => (
-                    <Image
+                    <img
                       key={img}
                       src={img}
                       width={800}
@@ -309,24 +317,6 @@ export default function UploadPage() {
             </div>
           )}
 
-            <div className="flex flex-row relative">
-              <Image
-                src="/upload-l.png"
-                width={500}
-                height={500}
-                alt="ThePaseo"
-                className="cover"
-              />
-
-              <Image
-                src="/upload-r.png"
-                width={500}
-                height={500}
-                alt="ThePaseo"
-                className="cover"
-              />
-
-            </div>
 
           </div>
       </div>

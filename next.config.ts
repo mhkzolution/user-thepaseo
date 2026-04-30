@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ปิด turbopack — บังคับใช้ Webpack
-  experimental: {
-    turbo: false,
-  },
-
   distDir: ".next",
 
   images: {

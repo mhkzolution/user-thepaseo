@@ -3,20 +3,28 @@
 import { useEffect, useState } from 'react'
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
-import { loginWithLineHybrid } from "@/lib/liff-login";
-import { useRouter } from 'next/navigation'
+import Image from 'next/image';
 import { FaLine } from "react-icons/fa6";
 import Link from 'next/link';
-import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot, } from "@/components/ui/input-otp"
-import { REGEXP_ONLY_DIGITS } from "input-otp"
+import OTPInputSimple from "@/components/ui/input-otp"
 import { Button } from "@/components/ui/button"
 import BannerLogin from "@/components/BannerLogin/page"
 import Loading from '@/components/loading';
-import HeaderMobile from '@/components/HeaderMobile/page';
+
+import { ArrowLeft } from "lucide-react"
+
+function formatThaiPhone(phone: string) {
+  const cleaned = phone.replace(/\D/g, "").slice(0, 10)
+
+  if (cleaned.length <= 3) return cleaned
+  if (cleaned.length <= 7) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`
+  }
+  return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 7)} ${cleaned.slice(7)}`
+}
 
 export default function LoginPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { setUser } = useContext(AuthContext)
   const { refreshUser } = useContext(AuthContext)
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [phone, setPhone] = useState('')
@@ -28,7 +36,9 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0)
   const [token, setToken] = useState<string | null>(null)
 
-  const router = useRouter()
+  const handleLineLogin = () => {
+    window.location.href = `${API_URL}/auth/line/start`
+  }
 
 useEffect(() => {
   import("@/lib/liff-client").then((module) => {
@@ -129,20 +139,10 @@ useEffect(() => {
     }
 
     localStorage.setItem("token", data.token)
-    setToken(data.token)
     await refreshUser()
-
-    setTimeout(() => {
-      router.replace("/")
-    }, 5000)
+    // full navigation — หลีกเลี่ยง RSC soft-nav ที่อาจโดน cache / redirect ค้าง
+    window.location.assign("/")
   }
-
-  useEffect(() => {
-  const storedToken = localStorage.getItem("token")
-  if (storedToken) {
-    setToken(storedToken)
-  }
-}, [])
 
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -161,22 +161,51 @@ useEffect(() => {
   }
 
   return (
-    <div className="max-w-lg mx-auto p-0 mb-20 md:mb-0 mb-0 rounded-xl relative overflow-hidden">
-        <HeaderMobile showBack={false} showFavorite={false} />
+    <div className="max-w-lg mx-auto h-screen p-0 mb-0 md:mb-0 mb-0 rounded-t-xl relative overflow-hidden">
+
+        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+          <div className="relative flex flex-row justify-center">
+
+            <div className="flex flex-row justify-center gap-2 h-min">
+              <Image
+                src="/logo.png"
+                alt="Thepaseo"
+                width={40}
+                height={40}
+                unoptimized
+              />
+            </div>
+    
+          </div>
+        </div>
+
         <div className="md:pt-4 pt-16 mb-0 py-4 px-4 md:px-4">
           <BannerLogin />
         </div>
         
-        <div className="w-full p-10 m-0 rounded-t-5xl bg-white shadow z-50 md:relative fixed bottom-0">
+        <div className="w-full h-full py-8 px-10 m-0 rounded-t-3xl bg-white shadow z-50 md:relative">
+
+          {step > 1 && (
+            <button
+              onClick={() => {
+                if (step === 3) setOtp("")
+                setStep((prev) => (prev - 1) as any)
+              }}
+              disabled={loading}
+              className="absolute top-6 left-10 w-8 h-8 flex items-center justify-center border rounded-full text-xs"
+            >
+              <ArrowLeft size={24} />
+            </button>
+          )}
 
           {/* --- Step 1: แสดงปุ่มเข้าสู่ระบบด้วย LINE และปุ่มสำหรับเบอร์โทรศัพท์ --- */}
           {step === 1 && (
             <>
               <div className="flex flex-col justify-center items-center space-y-6">
 
-                <h2 className="text-l font-semibold mb-5 text-center text-black">เข้าสู่ระบบ</h2>
+                <h2 className="text-lg font-semibold mb-5 text-center text-black">เข้าสู่ระบบ</h2>
                 <button
-                  onClick={loginWithLineHybrid}
+                  onClick={handleLineLogin}
                   className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center bg-paseo"
                   >
                   <FaLine className="h-6 w-6 text-white" />
@@ -185,7 +214,7 @@ useEffect(() => {
 
                 <button
                   onClick={() => setStep(2)}
-                  className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center" style={{ backgroundColor: '#9DC93C' }}
+                  className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center bg-paseo"
                 >
                   <span>เข้าสู่ระบบด้วยเบอร์โทรศัพท์</span>
                 </button>
@@ -198,36 +227,28 @@ useEffect(() => {
             <>
               <div className="w-full flex flex-col justify-center items-center space-y-6">
 
-                <h2 className="text-l font-semibold mb-5 text-center text-ิสฟแา">เข้าสู่ระบบด้วยเบอร์โทรศัพท์</h2>
-                <form onSubmit={handleStep2} className="w-full space-y-4">
+                <h2 className="text-lg font-semibold mb-5 text-center text-black">เข้าสู่ระบบด้วยเบอร์โทรศัพท์</h2>
+                <form onSubmit={handleStep2} className="w-full space-y-6">
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
                     placeholder="เบอร์โทรศัพท์"
-                    className="w-full pt-2 pb-2 pl-4 pr-4 border rounded-full bg-gray-100 focus:outline-none focus:ring focus:ring-paseo"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pt-2 pb-2 pl-4 pr-4 border rounded-full bg-gray-100 focus:outline-none focus:ring focus:ring-paseo text-center"
+                    value={formatThaiPhone(phone)}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, "").slice(0, 10)
+                      setPhone(raw)
+                    }}
                   />
                   {error && <p className="text-red-500 text-sm">{error}</p>}
                   <button
                     type="submit"
-                    className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center" style={{ backgroundColor: '#9DC93C' }}
+                    className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center bg-paseo"
                     disabled={loading}
                   >
                     {loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
                   </button>
                   
-                  {/* ปุ่ม "กลับ" ที่เพิ่มเข้ามาใหม่ */}
-                  <div className="flex flex-col items-center justify-center mt-4">
-                    <span>หรือ</span>
-                    <button
-                      onClick={loginWithLineHybrid}
-                      className="w-full text-white p-2 md:p-2 rounded-full flex justify-center items-center bg-paseo"
-                    >
-                      <FaLine className="h-6 w-6 text-white" />
-                      <span className="flex-shrink mx-4 text-white">เข้าสู่ระบบด้วย LINE</span>
-                    </button>
-                    
-                  </div>
                 </form>
             </div>
           </>
@@ -238,28 +259,19 @@ useEffect(() => {
             <>
               <div className="w-full flex flex-col justify-center items-center space-y-6">
 
-                <h2 className="text-l font-semibold mb-5 text-center">ยืนยัน OTP</h2>
-                <form onSubmit={handleStep3} className="w-full space-y-4">
+                <h2 className="text-lg font-semibold text-center">ยืนยัน OTP</h2>
+                <form onSubmit={handleStep3} className="w-full space-y-2">
                   <p className="text-sm text-gray-600">
                     ได้ส่งรหัส OTP ไปยังเบอร์ <strong>{phone}</strong>
                   </p>
                     <div className="flex flex-col gap-2 w-full justify-center items-center space-y-2">
-                    <InputOTP
-                      maxLength={6}
-                      pattern={REGEXP_ONLY_DIGITS}
+                    <OTPInputSimple
                       value={otp}
                       onChange={(val) => {
                         setOtp(val)
                         setOtpError("")
                       }}
-                      className="flex justify-center"
-                    >
-                      <InputOTPGroup>
-                        {[...Array(6)].map((_, i) => (
-                          <InputOTPSlot key={i} index={i} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
+                    />
 
                     {otpError && (
                       <p className="text-red-500 text-sm text-center">{otpError}</p>
@@ -286,17 +298,10 @@ useEffect(() => {
                   </div>
                   <Button
                   type="submit"
-                    className="w-full text-white p-2 md:p-2 rounded-xl flex justify-center items-center" style={{ backgroundColor: '#9DC93C' }}
+                    className="w-full text-white p-2 md:p-2 rounded-xl flex justify-center items-center bg-paseo"
                   >
                     ยืนยัน OTP
                   </Button>
-
-                  {token && (
-  <div className="mt-4 p-3 bg-gray-100 rounded text-xs break-all">
-    <strong>JWT Token:</strong>
-    <p>{token}</p>
-  </div>
-)}
                 </form>
               </div>
             </>
@@ -304,7 +309,7 @@ useEffect(() => {
 
           <div className="text-center mt-4">
             ยังไม่มีบัญชี?{' '}
-            <Link href="/auth/register" className="font-bold" style={{ color: '#9DC93C' }}>
+            <Link href="/auth/register" className="font-bold text-paseo">
               สมัครสมาชิก
             </Link>
           </div>

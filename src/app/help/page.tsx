@@ -12,9 +12,9 @@ import axios from "axios";
 import Loading from "@/components/loading";
 import SimpleAccordion from "@/components/SimpleAccordion";
 
-import { CiSearch } from 'react-icons/ci';
 import { FaPhone } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
+import { CiSearch, CiCircleRemove } from 'react-icons/ci';
 
 interface Help {
   id: string;
@@ -103,24 +103,45 @@ export default function HelpPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-0 px-0 mb-20 md:mt-20 md:mb-0 mb-4 rounded-xl">
-          <HeaderMobile />
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+      <HeaderMobile />
 
-      <div className="relative max-w-2xl mx-auto md:pt-6 pt-20 bg-white rounded-t-5xl rounded-b-lg shadow-md flex flex-col gap-4">
-        <div className="px-4 pb-10">
-
-          <h1 className="text-2xl font-bold mb-6 text-center">คำถามที่พบบ่อย / Help</h1>
+      <div className="md:mt-16 mt-0 mb-0 md:pt-4 pt-16">
+        <div className="relative max-w-2xl mx-auto md:pt-10 py-8 md:px-8 px-4 md:mt-0 mt-0 bg-white rounded-3xl shadow-md flex flex-col gap-4">
+          <div className="px-4 pt-0 md:px-10 md:pt-0">
+            <div className="flex flex-row gap-2 px-4">
+              <span className="text-base font-bold">คำถามที่พบบ่อย / Help</span>
+            </div>
+          </div>
 
           {/* 🔍 ช่องค้นหา */}
-          <div className="px-4 pt-0 md:px-10 md:pt-0 mb-4">
-            <div className="relative ">
-              <Input
-                placeholder="ค้นหาคำถามหรือคำตอบ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border p-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-paseo pl-10 pr-10"
-              />
-              <CiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <div className="flex flex-col gap-4 px-4">
+
+            <div className="px-4 pt-0 md:px-10 md:pt-0 mb-2">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="ค้นหาคำถามหรือคำตอบ..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-gray-50 p-2 rounded-full w-full focus:outline-none focus:ring-2 focus:ring-paseo pl-10 pr-10"
+                />
+
+                <CiSearch
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <CiCircleRemove size={20} />
+                  </button>
+                )}
+              </div>
+
             </div>
           </div>
 
@@ -133,7 +154,7 @@ export default function HelpPage() {
                   searchWords={[searchQuery]}
                   autoEscape
                   textToHighlight={h.question}
-                  highlightClassName="bg-yellow-200"
+                  highlightClassName="bg-yellow-300 rounded-sm"
                 />
               ),
               content: (
@@ -150,13 +171,13 @@ export default function HelpPage() {
           />
 
           {/* 📞 ส่วนติดต่อท้ายหน้า */}
-          <div className="pt-6 mt-8 border-t flex flex-col">
+          <div className="pt-4 mt-4 border-t flex flex-col">
             <div className="mb-4">
-              <p className="text-lg text-center text-gray-700">
+              <p className="text-sm text-center text-gray-700">
                 หากยังไม่ได้คำตอบ
               </p>
 
-              <p className="text-lg text-center text-gray-700">
+              <p className="text-sm text-center text-gray-700">
                 คุณสามารถติดต่อเจ้าหน้าที่ได้โดยตรง
               </p>
             </div>

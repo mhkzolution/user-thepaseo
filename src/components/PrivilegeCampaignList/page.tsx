@@ -3,10 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
-import FavoriteButton from "@/components/FavoriteButton/page";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import { useContext } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/loading";
 import Image from "next/image";
 import { TbBorderAll } from "react-icons/tb"; // Import FaBorderAll icon
@@ -28,7 +25,6 @@ type Branch = {
 
 export default function PrivilegeCampaignList() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user, loading: authLoading } = useContext(AuthContext);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,6 +95,7 @@ export default function PrivilegeCampaignList() {
                   width={32}
                   height={32}
                   className="mr-2"
+                  unoptimized
                 />
               )
             )}
@@ -117,15 +114,6 @@ export default function PrivilegeCampaignList() {
             <div className="embla__container_post">
               {campaigns.map((r) => (
                 <div className="embla__slide_campaign relative w-full" key={r.id}>
-                  <div className="absolute blur2 flex justify-center top-2 left-6 w-10 h-10 rounded-full shadow-sm border border-gray-200">
-                    {user?.id && (
-                      <FavoriteButton
-                        targetId={r.id}
-                        targetType="CAMPAIGN"
-                        userId={user.id}
-                      />
-                    )}
-                  </div>
                   <Link href={`/campaign/${r.id}`}>
                     <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl hover:shadow-lg transition shadow">
                       <div className="w-50%">
@@ -136,6 +124,7 @@ export default function PrivilegeCampaignList() {
                           src={r.imageUrl}
                           alt={r.name}
                           className="w-full h-48 md:h-64 object-cover rounded-l-2xl"
+                          unoptimized
                         />
                       ) : (
                           <Image
@@ -144,6 +133,7 @@ export default function PrivilegeCampaignList() {
                             src='/main/no-image.png'
                             alt={r.name}
                             className="w-full h-48 md:h-64 object-cover rounded-l-2xl border bg-white p-6"
+                            unoptimized
                           />
                       )}
                       </div>

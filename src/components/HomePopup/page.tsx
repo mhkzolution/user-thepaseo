@@ -123,6 +123,7 @@ export default function HomePopup() {
                       loading={index === 0 ? undefined : "lazy"}
                       placeholder="blur"
                       blurDataURL="/blur-placeholder.jpg"
+                      unoptimized
                     />
                   </Link>
                 </div>

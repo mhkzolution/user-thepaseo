@@ -64,19 +64,17 @@ export default function NewHomePage({ user }: NewHomePageProps) {
     <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
       <HeaderMobile showBack={false} />
 
-      <div className="w-full px-0 md:pt-6 pt-12 md:p-10 md:pb-0">
-
-        <div className="mb-0 pt-4 px-6 md:px-10">
-          <UserProfile showOn="mobile" />
+      <div className="md:hidden p-0 md:mt-20 mt-9 rounded-xl">
+        <div className="w-full pt-4 pb-0 px-4 md:pt-0 md:px-20 md:pb-0">
+          <UserProfile showOn="both" />
         </div>
-
       </div>
       
-      <div className="mb-0 py-4 px-6 md:px-4">
+      <div className="md:mt-16 mt-0 mb-0 py-4 px-4 md:px-4">
         <BannerHome />
       </div>
 
-      <div className="w-full pt-4 p-4 md:p-10 rounded-xl rounded-t-5xl bg-white relative shadow-sm">
+      <div className="w-full pt-4 p-4 md:p-10 rounded-xl rounded-t-3xl bg-white relative shadow-sm">
 
         <div className="w-full mb-4 rounded-xl bg-white relative flex flex-col items-center">
           <button

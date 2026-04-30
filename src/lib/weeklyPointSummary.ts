@@ -171,7 +171,7 @@ function buildWeeklyFlex({
             style: "primary",
             action: {
               type: "uri",
-              label: "ดูประวัติแต้ม",
+              label: "ดูประวัติพอยท์",
               uri: profileUri || process.env.NEXT_PUBLIC_APP_URL || "https://your-app/point-history",
             },
           },

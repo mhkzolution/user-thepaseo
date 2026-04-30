@@ -12,8 +12,8 @@ const prompt = Prompt({
 
 // ✅ metadata: สำหรับ title, description, etc.
 export const metadata: Metadata = {
-  title: "The Paseo : Reward Membership App",
-  description: "สะสมแต้มและแลกของรางวัลกับเรา",
+  title: "Paseo Life Member program",
+  description: "สะสมพอยท์และแลกของรางวัลกับเรา",
 };
 
 // ✅ viewport: สำหรับ themeColor, viewport settings

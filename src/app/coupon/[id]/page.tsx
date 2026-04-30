@@ -6,9 +6,9 @@ import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import Image from "next/image";
-import { FaRegCalendarCheck } from "react-icons/fa";
+import { CiCalendar } from "react-icons/ci";
 import { CiBitcoin } from "react-icons/ci";
-import { PiDotsThreeOutlineLight } from "react-icons/pi";
+import { IoMdMore } from "react-icons/io";
 import Loading from "@/components/loading";
 import UserProfile from "@/components/UserProfile/page";
 import ShareButton from "@/components/ShareButton/page";
@@ -16,8 +16,7 @@ import FavoriteButton from "@/components/FavoriteButton/page";
 import html2canvas from "html2canvas";
 import HeaderMobile from '@/components/HeaderMobile/page';
 import UseCouponModal from "@/components/coupon/UseCouponModal";
-
-
+import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
 
 type Coupon = {
   id: string;
@@ -44,7 +43,7 @@ type Coupon = {
 
 export default function CouponSinglePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user } = useContext(AuthContext);
+  const { user, loading: authLoading } = useContext(AuthContext);
   const { id } = useParams();
 
   const [coupon, setCoupon] = useState<Coupon | null>(null);
@@ -59,7 +58,21 @@ export default function CouponSinglePage() {
 
   const captureRef = useRef<HTMLDivElement>(null);
 
-  // ✅ ดึงแต้มของผู้ใช้
+  const sanitizePublicUrl = (value?: string | null) => {
+    if (!value || typeof value !== "string") return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes("null")) return null;
+    try {
+      const parsed = new URL(trimmed);
+      if (!parsed.protocol.startsWith("http")) return null;
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  };
+
+  // ✅ ดึงพอยท์ของผู้ใช้
   const fetchBalance = useCallback(async () => {
     try {
       const res = await fetchWithAuth(`${API_URL}/points/balance`);
@@ -89,11 +102,28 @@ export default function CouponSinglePage() {
 
   // ✅ โหลดข้อมูลเมื่อเริ่มต้น
   useEffect(() => {
-    if (user?.id) {
-      fetchBalance();
-      fetchCoupon();
+    const reloadKey = `auth-retry:${window.location.pathname}`;
+
+    if (authLoading) {
+      setLoading(true);
+      return;
     }
-  }, [user?.id, fetchBalance, fetchCoupon]);
+
+    if (!user?.id) {
+      if (sessionStorage.getItem(reloadKey) !== "1") {
+        sessionStorage.setItem(reloadKey, "1");
+        window.location.reload();
+        return;
+      }
+      setError("ไม่สามารถยืนยันผู้ใช้ได้ กรุณาเข้าสู่ระบบใหม่");
+      setLoading(false);
+      return;
+    }
+
+    sessionStorage.removeItem(reloadKey);
+    fetchBalance();
+    fetchCoupon();
+  }, [user?.id, authLoading, fetchBalance, fetchCoupon]);
 
   // ✅ ฟังก์ชันรับคูปอง
 const handleClaim = async () => {
@@ -129,9 +159,18 @@ const handleClaim = async () => {
     );
 
   const now = new Date();
-  const startDate = new Date(coupon.startDate);
-  const endDate = new Date(coupon.endDate);
+  const startDate = dateFromBangkokWallClock(coupon.startDate);
+  const endDate = dateFromBangkokWallClock(coupon.endDate);
   const canJoin = !coupon.isReceived && now >= startDate && now <= endDate;
+  const hasValidSchedule =
+    !!coupon.startDate &&
+    !!coupon.endDate &&
+    !Number.isNaN(startDate.getTime()) &&
+    !Number.isNaN(endDate.getTime());
+  const isNotStartedYet = hasValidSchedule && now < startDate;
+  const isEnded = hasValidSchedule && now > endDate;
+  const displayImageUrl = sanitizePublicUrl(coupon.imageUrl);
+  const displayShareUrl = sanitizePublicUrl(coupon.linkShare);
 
   const monthNames = [
     "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
@@ -142,11 +181,13 @@ const handleClaim = async () => {
     year: "numeric",
     month: "long",
     day: "numeric",
+    timeZone: "Asia/Bangkok",
   };
   const timeOptions: Intl.DateTimeFormatOptions = {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "Asia/Bangkok",
   };
 
   let status = "";
@@ -160,16 +201,19 @@ const handleClaim = async () => {
 
   const start_day = startDate.getDate();
   const start_month_index = startDate.getMonth();
-  const start_year = startDate.getFullYear();
+  const start_year = startDate.getFullYear() + 543;
 
   const end_day = endDate.getDate();
   const end_month_index = endDate.getMonth();
-  const end_year = endDate.getFullYear();
+  const end_year = endDate.getFullYear() + 543;
 
   const start_month_text = monthNames[start_month_index];
   const end_month_text = monthNames[end_month_index];
 
-  const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
+  const monthOptions: Intl.DateTimeFormatOptions = {
+    month: "long",
+    timeZone: "Asia/Bangkok",
+  };
   const start_month_long = startDate.toLocaleDateString("th-TH", monthOptions);
   const end_month_long = endDate.toLocaleDateString("th-TH", monthOptions);
 
@@ -182,8 +226,18 @@ const handleClaim = async () => {
           year: "numeric",
           month: "short",
           day: "numeric",
+          timeZone: "Asia/Bangkok",
         })
       : "-";
+
+  const formatThai = (date: Date) => {
+    return new Intl.DateTimeFormat("th-TH", {
+      timeZone: "Asia/Bangkok",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
 
   const handleCapture = async () => {
     if (!captureRef.current) return;
@@ -208,155 +262,211 @@ const handleClaim = async () => {
 
   // ✅ แสดงปุ่มตามสถานะ
   const renderButton = () => {
-    if (coupon.isExpired)
-      return <button disabled className="btn-disable">คูปองหมดอายุแล้ว</button>;
-    if (coupon.isFull)
-      return <button disabled className="btn-disable">คูปองหมดแล้ว</button>;
-    if (coupon.pointCost > pointBalance)
-      return (
-        <button disabled className="btn-disable">
-          แต้มไม่เพียงพอ (มี {pointBalance} / ต้องใช้ {coupon.pointCost})
-        </button>
-      );
-    if (coupon.maxPerUser && coupon.receivedCount >= coupon.maxPerUser)
-      return (
-        <button disabled className="btn-disable">
-          คุณรับครบแล้ว ({coupon.receivedCount}/{coupon.maxPerUser})
-        </button>
-      );
+    let disabled = false;
+    let message = "";
+    let showAction = true;
+
+    if (!hasValidSchedule) {
+      disabled = true;
+      message = "คูปองยังไม่ได้กำหนดช่วงเวลาแจก";
+      showAction = false;
+    } else if (isNotStartedYet) {
+      disabled = true;
+      message = "คูปองนี้ยังไม่เริ่มแจก";
+    } else if (isEnded) {
+      disabled = true;
+      message = "คูปองหมดอายุแล้ว";
+      showAction = false;
+    } else if (coupon.isFull) {
+      disabled = true;
+      message = "คูปองหมดแล้ว";
+      showAction = false;
+    } else if (coupon.pointCost > pointBalance) {
+      disabled = true;
+      message = `พอยท์ไม่เพียงพอ`;
+    } else if (coupon.maxPerUser && coupon.receivedCount >= coupon.maxPerUser) {
+      disabled = true;
+      message = `คุณรับครบแล้ว (${coupon.receivedCount}/${coupon.maxPerUser})`;
+    }
 
     return (
-      <button
-        onClick={() => setShowConfirmModal(true)}
-        disabled={joining}
-        className="btn-main"
-      >
-        {joining ? "กำลังรับคูปอง..." : "รับคูปองนี้"}
-        {coupon.maxPerUser && (
-          <span className="text-xs block mt-1 text-gray-600 leading-none">
-            รับได้ {coupon.maxPerUser} ครั้ง / รับไปแล้ว {coupon.receivedCount} ครั้ง
-          </span>
+      <div className="flex flex-row justify-between items-center gap-4">
+        
+        {/* INFO */}
+        <div className="flex flex-col gap-1">
+          {coupon.maxPerUser && (
+            <span className="text-sm text-gray-600 leading-none">
+              รับได้ {coupon.maxPerUser} ครั้ง / รับไปแล้ว {coupon.receivedCount} ครั้ง
+            </span>
+          )}
+
+          <p className="text-sm text-black">
+            พอยท์ของคุณ : <b>{pointBalance}</b> พอยท์
+          </p>
+
+          {message && (
+            <span className="text-xs text-red-500">{message}</span>
+          )}
+        </div>
+
+        {/* BUTTON */}
+        {showAction && (
+          <button
+            onClick={() => setShowConfirmModal(true)}
+            disabled={disabled || joining}
+            className={`py-2 px-8 rounded-full ${
+              disabled ? "bg-gray-300" : "bg-paseo"
+            }`}
+          >
+            <span className="text-sm font-bold text-white">
+              {joining ? "กำลังรับคูปอง..." : "รับคูปองนี้"}
+            </span>
+          </button>
         )}
-      </button>
+      </div>
     );
   };
 
   return (
-      <div>
+      <div className="md:pt-10 pt-16">
         <HeaderMobile />
-      
-        <div className="max-w-2xl mx-auto -mb-14 md:mt-20 md:-mb-16 pt-16  rounded-xl">
-          <div className="w-full px-10 md:pt-0 md:px-20 md:pb-0">
-            <UserProfile  />
-          </div>
-        </div>
+
         <div
           ref={captureRef}
-          className="capture relative max-w-2xl mx-auto md:pt-10 md:pb-0 pb-14 md:mb-10 pt-20 bg-gray-100 rounded-t-5xl rounded-b-xl flex flex-col  md:gap-6 gap-4"
+          className="capture relative max-w-2xl mx-auto md:pt-10 md:pb-0 pb-40 md:mb-10 pt-8 md:mt-6 mt-0 bg-white rounded-3xl flex flex-col md:gap-6 gap-4"
         >
   
-          <div className="px-4 md:px-10">
-            {coupon.imageUrl && (
+          <div className="px-8 md:px-10">
+            {displayImageUrl && (
               <Image
                 width={600}
                 height={600}
-                src={coupon.imageUrl}
+                src={displayImageUrl}
                 alt={coupon.name}
-                className="w-full h-full object-cover rounded-2xl shadow border border-gray-100"
+                className="w-full h-full object-cover rounded-xl"
+                unoptimized
               />
             )}
+
+            <div className="w-full flex flex-row justify-end px-4 py-2 items-center gap-4">
+              {user?.id && (
+                <FavoriteButton
+                  targetId={coupon.id}
+                  targetType="COUPON"
+                />
+              )}
+              
+              <ShareButton
+                title={coupon?.name || "Event"}
+                linkShare={displayShareUrl ?? undefined}
+              />
+
+              <button
+                onClick={handleCapture}
+              >
+                <IoMdMore size={24} />
+              </button>
+            </div>
           </div>
 
-          <div className="px-4 md:px-10">
-            <div className="flex flex-row justify-between align-start gap-4 bg-white md:p-6 p-4 rounded-2xl shadow border border-gray-100">
-              <div className="flex flex-col gap-3">
-                <h1 className="text-sm font-bold mb-2">{coupon.name}</h1>
+          <div className="px-8 md:px-10">
+            <div className="flex flex-row justify-between align-start px-6">
+              <h1 className="text-sm font-bold text-center">{coupon.name}</h1>
+            </div>
+          </div>
+
+          <div className="px-8 md:px-10">
+            <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-6 rounded-xl">
+              <div className="flex flex-col gap-2">
                 <div className="flex flex-row item-center align-center gap-4">
-                  <FaRegCalendarCheck size={24} />
-                  <p className="text-sm text-gray-500">
-                    ตั้งแต่ {start_day} - {end_day} {end_month_long} {end_year} นี้
+                  <CiCalendar size={24} />
+                  <p className="text-sm text-black">
+                    วันที่ {formatThai(startDate)} - {formatThai(endDate)} นี้
                   </p>
                 </div>
   
                 {coupon.pointCost > 0 && 
                 <div className="flex flex-row item-center align-center gap-4">
-                  <CiBitcoin size={24} />
-                  <p className="text-sm text-gray-600">ค่าใช้จ่าย: {coupon.pointCost} พอยต์</p>
+                  <Image
+                    src="/icon/icon-point.png"
+                    alt="Thepaseo"
+                    width={100}
+                    height={100}
+                    className="w-6 h-6 object-contain"
+                    unoptimized
+                  />
+                  <p className="text-sm text-black">จำนวนพอยท์ : {coupon.pointCost} พอยท์</p>
                 </div>
                 }
   
                 {coupon.pointEarn > 0 && 
                 <div className="flex flex-row item-center align-center gap-4">
-                  <CiBitcoin size={24} />
-                  <p className="text-sm text-gray-600">ผู้เข้าร่วมจะได้รับ: {coupon.pointEarn} พอยต์</p>
+                  <Image
+                    src="/icon/icon-point.png"
+                    alt="Thepaseo"
+                    width={100}
+                    height={100}
+                    className="w-6 h-6 object-contain"
+                    unoptimized
+                  />
+                  <p className="text-sm text-black">ผู้เข้าร่วมจะได้รับ: {coupon.pointEarn} พอยท์</p>
                 </div>
                 }
   
                 <div className="flex flex-row item-center align-center gap-4">
-                  <CiBitcoin size={24} />
-                  <p className="text-sm text-gray-600">
-                    แต้มของคุณ: <span className="font-semibold text-green-600">{pointBalance}</span> พอยต์
+                  <Image
+                    src="/icon/icon-point.png"
+                    alt="Thepaseo"
+                    width={100}
+                    height={100}
+                    className="w-6 h-6 object-contain"
+                    unoptimized
+                  />
+                  <p className="text-sm text-black">
+                    พอยท์ของคุณ : {pointBalance} พอยท์
                   </p>
                 </div>
-              </div>
-  
-              <div className="flex flex-col items-center gap-2">
-                {user?.id && (
-                  <FavoriteButton
-                    targetId={coupon.id}
-                    targetType="COUPON"
-                    userId={user.id}
-                  />
-                )}
-                <button
-                  onClick={handleCapture}
-                >
-                  <PiDotsThreeOutlineLight size={24} />
-                </button>
-                <ShareButton
-                  title={coupon?.name || "Event"}
-                  linkShare={coupon?.linkShare}
-                />
+                
               </div>
   
             </div>
             
           </div>
 
-        <div className="px-4 md:px-10">
-          <div className="flex flex-col justify-between align-start gap-4 bg-white md:p-6 p-4 rounded-2xl shadow border border-gray-100">
-            {coupon.description && (
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold mb-2">รายละเอียด</h3>
-                <div
-                  className="prose text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: coupon.description }}
-                />
-              </div>
-            )}
+          <div className="px-8 md:px-10">
+            <div className="flex flex-col justify-between align-start gap-4">
+              {coupon.description && (
+                <div className="mb-4">
+                  <span className="text-base font-bold">รายละเอียด</span>
+                  <div
+                    className="text-sm prose text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: coupon.description }}
+                  />
+                </div>
+              )}
 
-            {coupon.terms && (
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">เงื่อนไข</h3>
-                <div
-                  className="prose text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: coupon.terms }}
-                />
-              </div>
-            )}
+              {coupon.terms && (
+                <div className="mb-4">
+                  <span className="text-base font-bold">เงื่อนไข</span>
+                  <div
+                    className="text-sm prose text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: coupon.terms }}
+                  />
+                </div>
+              )}
 
-            {coupon.locationLabel && 
-              <div className="mb-4">
-                <h3 className="text-lg font-bold mb-4">จุดแลกรับของราลวัล</h3>
-              <p className="text-gray-700">{coupon.locationLabel}</p>
-              </div>
-            }
+              {coupon.locationLabel && 
+                <div className="mb-4">
+                  <span className="text-base font-bold">จุดแลกรับของราลวัล</span>
+                  <p className="text-sm text-gray-700">{coupon.locationLabel}</p>
+                </div>
+              }
             </div>
 
           </div>
 
         {/* ✅ ปุ่มรับคูปอง */}
-        <div className="max-w-2xl mx-auto bg-white w-full p-4 pb-4 md:p-4 md:rounded-2xl rounded-t-2xl shadow-sm border border-gray-200">
+        <div className="md:relative md:bottom-0 md:border-0 md:rounded-xl fixed bottom-12 max-w-2xl mx-auto bg-white w-full p-4 pb-6 md:p-8 border">
           {renderButton()}
         </div>
 
@@ -370,7 +480,7 @@ const handleClaim = async () => {
             <div className="bg-white p-6 rounded-xl shadow-md max-w-sm w-full text-center">
               <h2 className="text-lg font-semibold mb-2">ยืนยันการรับคูปอง</h2>
               <p className="text-gray-700 mb-4">
-                ต้องการใช้ {coupon.pointCost} พอยต์เพื่อรับคูปองนี้หรือไม่?
+                ต้องการใช้ {coupon.pointCost} พอยท์เพื่อรับคูปองนี้หรือไม่?
               </p>
 
               <div className="flex justify-center gap-3">

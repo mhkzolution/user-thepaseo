@@ -82,16 +82,13 @@ export default function BannerPointPage() {
                 className="w-full flex aspect-square items-center justify-center"
               >
                 <Image
-                    src={
-                      banner.imageUrl
-                        ? `${process.env.NEXT_PUBLIC_STORAGE_BASE_URL}${banner.imageUrl}`
-                        : "/main/no-image.png"
-                    }
+                  src={banner.imageUrl}
                   alt={banner.title}
                   width={600}
                   height={600}
                   className="object-contain w-full h-full shadow"
                   loading="lazy"
+                  unoptimized
                 />
               </Link>
             </div>

@@ -1,71 +1,72 @@
 "use client"
 
-import * as React from "react"
-import { OTPInput, OTPInputContext } from "input-otp"
-import { Minus } from "lucide-react"
+import { useRef } from "react"
 
-import { cn } from "@/lib/utils"
+type Props = {
+  value: string
+  onChange: (val: string) => void
+}
 
-const InputOTP = React.forwardRef<
-  React.ElementRef<typeof OTPInput>,
-  React.ComponentPropsWithoutRef<typeof OTPInput>
->(({ className, containerClassName, ...props }, ref) => (
-  <OTPInput
-    ref={ref}
-    containerClassName={cn(
-      "flex items-center gap-2 has-[:disabled]:opacity-50",
-      containerClassName
-    )}
-    className={cn("disabled:cursor-not-allowed", className)}
-    {...props}
-  />
-))
-InputOTP.displayName = "InputOTP"
+export default function OTPInputSimple({ value, onChange }: Props) {
+  const inputsRef = useRef<Array<HTMLInputElement | null>>([])
 
-const InputOTPGroup = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div">
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("flex items-center gap-4", className)} {...props} />
-))
-InputOTPGroup.displayName = "InputOTPGroup"
+  const handleChange = (index: number, val: string) => {
+    if (!/^\d?$/.test(val)) return
 
-const InputOTPSlot = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div"> & { index: number }
->(({ index, className, ...props }, ref) => {
-  const inputOTPContext = React.useContext(OTPInputContext)
-  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
+    const newValue = value.split("")
+    newValue[index] = val
+    const joined = newValue.join("").slice(0, 6)
+
+    onChange(joined)
+
+    // auto next
+    if (val && index < 5) {
+      inputsRef.current[index + 1]?.focus()
+    }
+  }
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace") {
+      if (!value[index] && index > 0) {
+        inputsRef.current[index - 1]?.focus()
+      }
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6)
+    if (!paste) return
+
+    onChange(paste)
+
+    paste.split("").forEach((char, i) => {
+      if (inputsRef.current[i]) {
+        inputsRef.current[i]!.value = char
+      }
+    })
+
+    inputsRef.current[Math.min(paste.length, 5)]?.focus()
+  }
 
   return (
-    <div
-      ref={ref}
-      className={cn(
-        "relative flex h-10 w-10 items-center justify-center border-2 rounded-md border-input text-sm shadow-sm transition-all first:rounded-l-xl first:border-l last:rounded-r-md",
-        isActive && "z-10 ring-1 ring-ring",
-        className
-      )}
-      {...props}
-    >
-      {char}
-      {hasFakeCaret && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
-        </div>
-      )}
+    <div className="flex gap-3 justify-center" onPaste={handlePaste}>
+      {[...Array(6)].map((_, i) => (
+        <input
+          key={i}
+          ref={(el) => {
+            inputsRef.current[i] = el
+          }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={value[i] || ""}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          className="w-12 h-12 text-center text-lg font-semibold border-2 rounded-xl
+                     focus:outline-none focus:ring-2 focus:ring-paseo
+                     border-gray-300 transition"
+        />
+      ))}
     </div>
   )
-})
-InputOTPSlot.displayName = "InputOTPSlot"
-
-const InputOTPSeparator = React.forwardRef<
-  React.ElementRef<"div">,
-  React.ComponentPropsWithoutRef<"div">
->(({ ...props }, ref) => (
-  <div ref={ref} role="separator" {...props}>
-    <Minus />
-  </div>
-))
-InputOTPSeparator.displayName = "InputOTPSeparator"
-
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }
+}

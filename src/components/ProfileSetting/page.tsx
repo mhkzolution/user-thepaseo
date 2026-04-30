@@ -49,7 +49,7 @@ export default function ProfileSetting() {
 
   return (
     <GreenCard title="โปรไฟล์ของคุณ">
-        <div className="profile-setting p-4 mb:p-2 bg-gray-50 rounded-xl shadow border border-gray-100">
+        <div className="profile-setting p-4 mb:p-2 bg-gray-50 rounded-xl border border-gray-200">
             <div className="profile-setting-header flex flex-row justify-between items-center mb-4">
                 <div className="profile-setting-header-1 flex flex-row items-center gap-2">
                     <FaAddressCard className="text-paseo" size={24}/>

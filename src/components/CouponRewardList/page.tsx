@@ -8,6 +8,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { RiCoupon2Fill, RiCoupon2Line, RiCoupon5Line } from "react-icons/ri";
 import { TbBorderAll } from "react-icons/tb";
+import Loading from "@/components/loading";
 
 type Coupon = {
   id: string;
@@ -82,9 +83,7 @@ export default function CouponRewardList() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-5xl mx-auto text-center">
-        <p>กำลังโหลด...</p>
-      </div>
+      <Loading />
     );
   }
 
@@ -162,11 +161,11 @@ export default function CouponRewardList() {
 
           const start_day = startDate.getDate();
           const start_month_index = startDate.getMonth();
-          const start_year = startDate.getFullYear();
+          const start_year = startDate.getFullYear() + 543;
 
           const end_day = endDate.getDate();
           const end_month_index = endDate.getMonth();
-          const end_year = endDate.getFullYear();
+          const end_year = endDate.getFullYear() + 543;
 
           const monthNames = [
             "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
@@ -189,16 +188,15 @@ export default function CouponRewardList() {
               >
                 <div className="relative w-full h-full flex flex-col shadow-lg">
                   <div className="relative w-full h-full flex flex-col gap-2 p-4 pb-2 bg-gray-100 rounded-2xl ticket-notch">
-                    <div className="w-full">
-                      {r.imageUrl && (
-                        <Image
-                          src={r.imageUrl}
-                          alt={r.name}
-                          width={100}
-                          height={100}
-                          className="w-full h-40 object-cover rounded-lg shadow-lg"
-                        />
-                      )}
+                    <div className="w-full aspect-square rounded-xl overflow-hidden bg-white">
+                      <Image
+                        src={r.imageUrl || "/main/no-image.png"}
+                        alt={r.name}
+                        width={300}
+                        height={300}
+                        className="w-full h-full object-cover"
+                        unoptimized
+                      />
                     </div>
 
                     <div className="w-full" style={{ height: "2rem" }}>

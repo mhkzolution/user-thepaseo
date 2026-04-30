@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"; 
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import Loading from '@/components/loading';
+import Image from "next/image";
 
 import { FaClock } from "react-icons/fa";
 import { RiBitCoinFill } from "react-icons/ri";
@@ -22,7 +23,9 @@ type UploadReceipt = {
 };
 
 export default function HistoryScorePage() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+    "https://admin.thepaseo.co.th/api";
   const [balance, setBalance] = useState(0);
   const [uploads, setUpload] = useState<UploadReceipt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,8 +134,11 @@ export default function HistoryScorePage() {
 
         <div className="space-y-4 w-full">
           {filteredUploads.map((r) => (
-            <div key={r.id} className="flex flex-row items-center gap-2 p-4 rounded-xl shadow-sm bg-white border">
-              <div className="w-10%">
+            <div
+              key={r.id}
+              className="flex flex-row items-center md:gap-4 gap-2 md:p-4 p-4 rounded-xl shadow-sm bg-white border"
+            >
+              <div className="w-14 h-14 flex flex-row justify-center items-center bg-gray-100 p-2 rounded-full">
                 <FaReceipt size={24} className="text-paseo" />
               </div>
 
@@ -145,7 +151,14 @@ export default function HistoryScorePage() {
                       </div>
 
                       <div className="flex flex-row justify-start gap-2 w-20%">
-                        <RiBitCoinFill size={24} className="text-paseo" style={{ color: '#FFD32C' }}/>
+                        <Image
+                          src="/icon/icon-point.png"
+                          alt="Thepaseo"
+                          width={24}
+                          height={24}
+                          className="w-5 h-5 object-contain"
+                          unoptimized
+                        />
                         <span className="text-sm font-bold text-paseo">
                           +{r.approvedPoints ?? 0}
                         </span>

@@ -35,6 +35,7 @@ export default function UserCard({ name, phone, dateOfBirth, point, avatar }: Us
                             width={80}
                             height={80}
                             className="rounded-full object-cover shadow-sm"
+                            unoptimized
                             />
                     ) : (
                         <FaRegUserCircle className="text-4xl" />

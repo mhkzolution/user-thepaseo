@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
-import FavoriteButton from "@/components/FavoriteButton/page";
-import { useContext } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import Image from "next/image";
-import { FaBorderAll } from "react-icons/fa6";
-import { RiCoupon2Line, RiCoupon5Line } from "react-icons/ri";
 import Loading from "@/components/loading";
 import { BsClipboardCheck } from "react-icons/bs";
+import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
 
 type PrivilegeItem = {
   id: string;
@@ -20,10 +16,11 @@ type PrivilegeItem = {
   imageUrl?: string;
   participantCount: number;
   type: "CAMPAIGN" | "EVENT" | "COUPON" | "REWARD";
-  startDate?: string;
-  endDate?: string;
+  startDate: string;
+  endDate: string;
   pointCost?: number;
   createdAt?: string;
+  joined?: boolean;
 };
 
 type Branch = {
@@ -34,7 +31,6 @@ type Branch = {
 
 export default function PrivilegeCampaignList() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user, loading: authLoading } = useContext(AuthContext);
   const [campaigns, setCampaigns] = useState<PrivilegeItem[]>([]);
   const [events, setEvents] = useState<PrivilegeItem[]>([]);
   const [coupons, setCoupons] = useState<PrivilegeItem[]>([]);
@@ -45,12 +41,18 @@ export default function PrivilegeCampaignList() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [privilegesError, setPrivilegesError] = useState<string | null>(null);
+  const [privilegesRetryKey, setPrivilegesRetryKey] = useState(0);
+  const firstPrivilegesDone = useRef(false);
 
   // ✅ Fetch Branches from API
   useEffect(() => {
+    const ac = new AbortController();
     const fetchBranches = async () => {
       try {
-        const res = await fetchWithAuth(`${API_URL}/shop/branch`);
+        const res = await fetchWithAuth(`${API_URL}/shop/branch`, {
+          signal: ac.signal,
+        });
         if (!res.ok) throw new Error("Failed to fetch branches");
         const data = await res.json();
 
@@ -58,47 +60,69 @@ export default function PrivilegeCampaignList() {
           (branch: Branch) => branch.name !== "บางนา"
         );
 
-        setBranches([{ id: "all", name: "ทั้งหมด" }, ...filteredBranches]);
-      } catch (err: any) {
-        setError("ไม่สามารถโหลดข้อมูลสาขาได้");
+        if (ac.signal.aborted) return;
+        setBranches([
+          ...filteredBranches,
+          { id: "all", name: "ทั้งหมด" },
+        ]);
+        setError(null);
+      } catch (err: unknown) {
+        if (ac.signal.aborted || (err as Error)?.name === "AbortError") return;
+        setBranches([{ id: "all", name: "ทั้งหมด" }]);
+        setError("ไม่สามารถโหลดรายการสาขาได้ — แสดงโหมดทั้งหมด");
       }
     };
     fetchBranches();
+    return () => ac.abort();
   }, []);
 
   // ✅ Fetch Privileges
   useEffect(() => {
+    const ac = new AbortController();
     const fetchPrivileges = async () => {
+      const isFirst = !firstPrivilegesDone.current;
       try {
-        // ถ้าเป็นการโหลดครั้งแรก → loading เต็มหน้า
-        if (loading) setLoading(true);
-        // ถ้าไม่ใช่ครั้งแรก → แค่ refresh เฉย ๆ
+        if (isFirst) setLoading(true);
         else setIsRefreshing(true);
+
+        setPrivilegesError(null);
 
         const url =
           selectedBranch && selectedBranch !== "all"
             ? `${API_URL}/privileges?branchId=${selectedBranch}`
             : `${API_URL}/privileges`;
-        const res = await fetchWithAuth(url);
+        const res = await fetchWithAuth(
+          url,
+          { signal: ac.signal },
+          { maxRetries: 3, baseDelayMs: 500 }
+        );
         if (!res.ok) throw new Error("Failed to fetch privileges");
         const data = await res.json();
 
-        setCampaigns(data.campaigns);
-        setEvents(data.events);
-        setCoupons(data.coupons);
-        setRewards(data.rewards);
-      } catch (error) {
-        console.error(error);
+        if (ac.signal.aborted) return;
+        setCampaigns(data.campaigns ?? []);
+        setEvents(data.events ?? []);
+        setCoupons(data.coupons ?? []);
+        setRewards(data.rewards ?? []);
+      } catch (e: unknown) {
+        if (ac.signal.aborted || (e as Error)?.name === "AbortError") return;
+        console.error(e);
+        setPrivilegesError(
+          "โหลดสิทธิพิเศษไม่สำเร็จ กดลองใหม่หรือรอสักครู่แล้วลองอีกครั้ง"
+        );
       } finally {
-        // โหลดครั้งแรกจบ → setLoading false
-        if (loading) setLoading(false);
-        // โหลดซ้ำจบ → setIsRefreshing false
+        if (ac.signal.aborted) return;
         setIsRefreshing(false);
+        if (isFirst) {
+          firstPrivilegesDone.current = true;
+          setLoading(false);
+        }
       }
     };
 
     fetchPrivileges();
-  }, [selectedBranch]);
+    return () => ac.abort();
+  }, [selectedBranch, privilegesRetryKey]);
 
   const [campaignEmblaRef] = useEmblaCarousel();
 
@@ -106,30 +130,42 @@ export default function PrivilegeCampaignList() {
     return <Loading />;
   }
 
-  if (error) {
+  if (error && branches.length === 0) {
     return <p className="text-center text-red-500 mt-10">{error}</p>;
   }
 
   // ✅ Branch Tabs (Dynamic from API)
   const renderBranchTabs = () => (
-    <div className="w-100 flex flex-wrap gap-2 mb-4" role="tablist">
+    <div className="flex justify-center gap-4 mb-4" role="tablist">
       {branches.map((branch) => (
         <button
           key={branch.id}
           onClick={() =>
             setSelectedBranch(branch.id === "all" ? null : branch.id)
           }
-          className={`flex flex-col flex-1 py-2 px-1 w-20% rounded-xl items-center gap-1 transition hover:bg-paseo-hover ${
-            selectedBranch === branch.id || (!selectedBranch && branch.id === "all")
-              ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
-              : 'text-black hover:text-gray-700 bg-gray-50 shadow'
-          }`}
+          className="flex flex-col items-center gap-3 transition h-full"
           aria-selected={selectedBranch === branch.id}
           role="tab"
         >
-          <div className="h-12 w-12 flex justify-center items-center">
+          {/* LOGO */}
+          <div
+            className={`w-20 h-20 p-2 aspect-square rounded-xl overflow-hidden flex items-center justify-center border transition
+              ${
+                selectedBranch === branch.id ||
+                (!selectedBranch && branch.id === "all")
+                  ? "bg-gray-50 border-paseo-dark"
+                  : "bg-white border-gray-200"
+              }`}
+            >
             {branch.id === "all" ? (
-              <FaBorderAll size={32} />
+              <Image
+                src="/icon/icon-all.png"
+                alt="all"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+                unoptimized
+              />
             ) : branch.imageUrl ? (
               <Image
                 src={
@@ -140,21 +176,27 @@ export default function PrivilegeCampaignList() {
                     : "/images/no-image.png"
                 }
                 alt={branch.name}
-                width={48}
-                height={48}
-                className="object-cover"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+                unoptimized
               />
             ) : (
               <Image
                 src="/images/no-image.png"
                 alt={branch.name}
-                width={48}
-                height={48}
-                className="object-cover"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+                unoptimized
               />
             )}
           </div>
-          <span className="text-xs md:text-sm">{branch.name}</span>
+
+          {/* NAME */}
+          <span className="text-xs md:text-sm font-semibold text-center leading-tight">
+            {branch.name}
+          </span>
         </button>
       ))}
     </div>
@@ -174,15 +216,6 @@ export default function PrivilegeCampaignList() {
             <div className="embla__container_post">
               {campaigns.map((item) => (
                 <div className="embla__slide_campaign relative w-full" key={item.id}>
-                  <div className="absolute blur2 flex justify-center top-2 left-6 w-10 h-10 rounded-full border border-gray-200">
-                    {user?.id && (
-                      <FavoriteButton
-                        targetId={item.id}
-                        targetType={item.type}
-                        userId={user.id}
-                      />
-                    )}
-                  </div>
                   <Link href={`/campaign/${item.id}`}>
                     <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl transition">
                       <div className="w-40%">
@@ -192,7 +225,8 @@ export default function PrivilegeCampaignList() {
                             height={600}
                             src={item.imageUrl}
                             alt={item.name}
-                            className="w-full h-48 md:h-64 object-cover rounded-l-2xl"
+                            className="w-full object-cover rounded-l-2xl"
+                            unoptimized
                           />
                           ) : (
                             <Image
@@ -201,10 +235,11 @@ export default function PrivilegeCampaignList() {
                               src='/main/no-image.png'
                               alt={item.name}
                               className="object-cover rounded-xl border bg-white p-6"
+                              unoptimized
                             />
                           )}
                       </div>
-                      <div className="flex flex-col flex-grow w-60% p-4 gap-4">
+                      <div className="flex flex-col flex-grow w-60% p-4 gap-2">
                         <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">
                           {item.name}
                         </h3>
@@ -252,94 +287,104 @@ export default function PrivilegeCampaignList() {
 
     return (
       <div className="mb-8">
-        <h2 className="text-lg font-bold mb-4">อีเวนต์</h2>
+        <h2 className="text-lg font-bold mb-4">กิจกรรม</h2>
         {events.length === 0 ? (
           <div className="p-6 text-center">
-            <p>ยังไม่มีอีเวนต์</p>
+            <p>ยังไม่มีกิจกรรม</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-1 md:grid-cols-3 auto-rows-fr">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 md:grid-cols-1 auto-rows-fr">
             {events.map((r) => {
-              const startDate = new Date(r.startDate!);
-              const endDate = new Date(r.endDate!);
+             const startDate = dateFromBangkokWallClock(r.startDate);
+              const endDate = dateFromBangkokWallClock(r.endDate);
               const now = new Date();
 
               let status = "";
               if (now < startDate) {
-                status = "กำลังจะจัด";
+                status = "เร็วๆนี้";
               } else if (now >= startDate && now <= endDate) {
                 status = "กำลังจัด";
               } else if (now > endDate) {
                 status = "สิ้นสุดแล้ว";
               }
 
-              const start_day = startDate.getDate();
-              const start_month_index = startDate.getMonth();
-              const start_year = startDate.getFullYear();
+              let buttonText = "";
+              let buttonClass = "";
+              let disabled = false;
 
-              const end_day = endDate.getDate();
-              const end_month_index = endDate.getMonth();
-              const end_year = endDate.getFullYear();
+              if (r.joined) {
+                buttonText = "เข้าร่วมแล้ว";
+                buttonClass = "bg-blue-500 text-white";
+                disabled = true;
+              } else if (now < startDate) {
+                buttonText = "เร็วๆนี้";
+                buttonClass = "bg-yellow-400 text-black";
+                disabled = true;
+              } else if (now >= startDate && now <= endDate) {
+                buttonText = "เข้าร่วมกิจกรรม";
+                buttonClass = "bg-paseo text-white";
+              } else {
+                buttonText = "สิ้นสุดแล้ว";
+                buttonClass = "bg-gray-300 text-gray-600";
+                disabled = true;
+              }
 
-              const start_month_text = monthNames[start_month_index];
-              const end_month_text = monthNames[end_month_index];
-
-              const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
-              const start_month_long = startDate.toLocaleDateString("th-TH", monthOptions);
-              const end_month_long = endDate.toLocaleDateString("th-TH", monthOptions);
-
-              const startDate_time = startDate.toLocaleTimeString("th-TH", timeOptions);
-              const endDate_time = endDate.toLocaleTimeString("th-TH", timeOptions);
+              const formatThai = (date: Date) => {
+                return new Intl.DateTimeFormat("th-TH", {
+                  timeZone: "Asia/Bangkok",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }).format(date);
+              };
 
               return (
-                <div className="embla__slide_campaign relative w-full flex flex-col" key={r.id}>
-                  <div className="absolute blur flex justify-center top-8 left-8 w-10 h-10 rounded-full shadow-sm border border-gray-200">
-                    {user?.id && (
-                      <FavoriteButton
-                        targetId={r.id}
-                        targetType="EVENT"
-                        userId={user.id}
-                      />
-                    )}
+                <div className=" relative w-full flex flex-col" key={r.id}>
+    
+                  <Link
+                    href={`/event/${r.id}`}
+                    >
+                    <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl transition flex items-stretch">
+                      <div className="w-40%">
+                        <Image
+                          src={r.imageUrl || "/main/no-image.png"}
+                          alt={r.name}
+                          width={300}
+                          height={300}
+                          className="w-full h-full rounded-l-xl"
+                          unoptimized
+                        />
+                      </div>
+
+                    <div className="flex flex-col w-60% p-4 gap-2 justify-between">
+
+                      <div className="pt-1 flex flex-col flex-grow gap-2">
+                        <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">
+                          {r.name.length > 50 ? r.name.substring(0, 50) + "..." : r.name}
+                        </h3>
+                        <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">
+                          {formatThai(startDate)} - {formatThai(endDate)}
+                        </p>
+                      </div>
+
+                      <div className="px-4 md:px-8">
+
+                      <button
+                        className={`py-2 w-full rounded-full text-sm md:text-base font-bold flex items-center justify-center gap-2 transition ${buttonClass}`}
+                        disabled={disabled}
+                      >
+                        <BsClipboardCheck size={18} />
+                        <span className="text-xs md:text-sm">{buttonText}</span>
+                      </button>
+
+                      </div>
+
+                    </div>
+
                   </div>
 
-                  <Link
-                href={`/event/${r.id}`}
-                className="w-full flex flex-col gap-4 p-4 border border-gray-200 rounded-xl shadow overflow-hidden transition bg-white h-full"
-              >
-                <div className="w-full h-32">
-                  {r.imageUrl && (
-                    <Image
-                      width={600}
-                      height={600}
-                      src={r.imageUrl}
-                      alt={r.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  )}
-                </div>
-
-                <div className="pt-1 flex flex-col flex-grow">
-                  <h3 className="text-xs font-bold line-clamp-1">{r.name}</h3>
-                  <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                    {startDate.getDate()} - {endDate.getDate()} {monthNames[endDate.getMonth()]} {endDate.getFullYear()}
-                  </p>
-                </div>
-
-                <button
-                  className={`py-1 w-full rounded-full text-sm md:text-base font-bold flex flex-row align-center justify-center items-center gap-2 hover:bg-paseo-hover hover:text-black ${
-                    status === "สิ้นสุดแล้ว"
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                      : "bg-paseo text-white"
-                  }`}
-                  disabled={status === "สิ้นสุดแล้ว"}
-                >
-                  <BsClipboardCheck size={20} />
-                  <span className="text-xs">
-                    {status === "สิ้นสุดแล้ว" ? "สิ้นสุดแล้ว" : "เข้าร่วมกิจกรรม"}
-                  </span>
-                </button>
-              </Link>
+                    
+                  </Link>
                 </div>
               );
             })}
@@ -379,47 +424,97 @@ export default function PrivilegeCampaignList() {
     return (
       <div className="mb-8">
         <h2 className="text-lg font-bold mb-4">คูปองและรางวัล</h2>
-        <div className="flex gap-4 mb-4" role="tablist">
-          <button
-            onClick={() => setSelectedType("ALL")}
-            className={`flex flex-col py-2 px-4 w-20% rounded-xl flex items-center gap-1 hover:bg-paseo-hover ${
-              selectedType === "ALL"
-                ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
-                : 'text-black hover:text-gray-700 bg-gray-50 shadow'
-            }`}
-            aria-selected={selectedType === "ALL"}
-            role="tab"
-          >
-            <FaBorderAll size={32} />
-            <span className="text-xs md:text-sm">ทั้งหมด</span>
-          </button>
-          <button
-            onClick={() => setSelectedType("COUPON")}
-            className={`flex flex-col py-2 px-4 w-20% rounded-xl flex items-center gap-1 hover:bg-paseo-hover ${
+        <div className="flex justify-start gap-4 mb-4" role="tablist">
+
+        {/* COUPON */}
+        <button
+          onClick={() => setSelectedType("COUPON")}
+          className="flex flex-col items-center gap-3 transition"
+          role="tab"
+        >
+          <div
+            className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
+            ${
               selectedType === "COUPON"
-                ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
-                : 'text-black hover:text-gray-700 bg-gray-50 shadow'
+                ? "bg-gray-50 border-paseo-dark"
+                : "bg-white border-gray-200"
             }`}
-            aria-selected={selectedType === "COUPON"}
-            role="tab"
           >
-            <RiCoupon5Line size={32} />
-            <span className="text-xs md:text-sm">คูปอง</span>
-          </button>
-          <button
-            onClick={() => setSelectedType("REWARD")}
-            className={`flex flex-col py-2 px-4 w-20% rounded-xl flex items-center gap-1 hover:bg-paseo-hover ${
+            <Image
+              src="/icon/icon-coupon.png"
+              alt="PaseoLife"
+              width={300}
+              height={300}
+              className="w-full h-full rounded-l-xl"
+              unoptimized
+            />
+          </div>
+
+          <span className="text-xs md:text-sm font-semibold">
+            คูปอง
+          </span>
+        </button>
+
+
+        {/* REWARD */}
+        <button
+          onClick={() => setSelectedType("REWARD")}
+          className="flex flex-col items-center gap-3 transition"
+          role="tab"
+        >
+          <div
+            className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
+            ${
               selectedType === "REWARD"
-                ? 'text-black bg-paseo-hover shadow border border-2 border-paseo-dark'
-                : 'text-black hover:text-gray-700 bg-gray-50 shadow'
+                ? "bg-gray-50 border-paseo-dark"
+                : "bg-white border-gray-200"
             }`}
-            aria-selected={selectedType === "REWARD"}
-            role="tab"
           >
-            <RiCoupon2Line size={32} />
-            <span className="text-xs md:text-sm">รางวัล</span>
-          </button>
-        </div>
+            <Image
+              src="/icon/icon-reward.png"
+              alt="PaseoLife"
+              width={300}
+              height={300}
+              className="w-full h-full rounded-l-xl"
+              unoptimized
+            />
+          </div>
+
+          <span className="text-xs md:text-sm font-semibold">
+            รางวัล
+          </span>
+        </button>
+
+        {/* ALL */}
+        <button
+          onClick={() => setSelectedType("ALL")}
+          className="flex flex-col items-center gap-3 transition"
+          role="tab"
+        >
+          <div
+            className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
+            ${
+              selectedType === "ALL"
+                ? "bg-gray-50 border-paseo-dark"
+                : "bg-white border-gray-200"
+            }`}
+          >
+            <Image
+              src="/icon/icon-all.png"
+              alt="all"
+              width={40}
+              height={40}
+              className="w-full h-full object-contain"
+              unoptimized
+            />
+          </div>
+
+          <span className="text-xs md:text-sm font-semibold">
+            ทั้งหมด
+          </span>
+        </button>
+
+      </div>
         {displayedItems.length === 0 ? (
           <div className="p-6 text-center">
             <p>
@@ -448,11 +543,11 @@ export default function PrivilegeCampaignList() {
 
               const start_day = startDate.getDate();
               const start_month_index = startDate.getMonth();
-              const start_year = startDate.getFullYear();
+              const start_year = startDate.getFullYear() + 543;
 
               const end_day = endDate.getDate();
               const end_month_index = endDate.getMonth();
-              const end_year = endDate.getFullYear();
+              const end_year = endDate.getFullYear() + 543;
 
               const start_month_text = monthNames[start_month_index];
               const end_month_text = monthNames[end_month_index];
@@ -468,44 +563,43 @@ export default function PrivilegeCampaignList() {
                     className="w-full h-full flex flex-row p-0 rounded-xl overflow-hidden transition"
                   >
                     <div className="relative w-full h-full flex flex-col shadow-lg">
-                      <div className="relative w-full h-full flex flex-col gap-2 p-4 pb-2 bg-gray-100 rounded-2xl ticket-notch">
-                        <div className="relative w-full rounded-xl overflow-hidden bg-white pt-125%">
+                      <div className="relative w-full h-full flex flex-col">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden bg-white p-3 bg-gray-100">
                           <Image
                             src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
-                            fill
-                            className="object-cover"
-                            sizes="160px"
+                            width={300}
+                            height={300}
+                            className="w-full h-full rounded-xl"
+                            unoptimized
                           />
                         </div>
 
-                        <div className="w-full" style={{ minHeight: "1.5rem" }}>
-                          <h3 className="text-xs font-medium line-clamp-2 leading-tight">{r.name}</h3>
-                        </div>
-                        <div className="w-full mt-auto">
-                          <p className="text-xs text-gray-600 line-clamp-1">
-                            {start_day} - {end_day} {end_month_long} {end_year}
-                          </p>
+                        <div className="w-full rounded-xl flex flex-col gap-2 bg-white p-2 bg-gray-100">
+
+                          <div className="w-full px-1" style={{ minHeight: "2rem" }}>
+                            <h3 className="text-xs font-semibold line-clamp-3 leading-4 text-center">
+                              {r.name.length > 40 ? r.name.substring(0, 40) + "..." : r.name}
+                            </h3>
+                          </div>
+
+                          <button
+                            className={`py-1 w-full rounded-full text-xs md:text-sm font-bold flex flex-row items-center justify-center gap-2 hover:text-black ${
+                              status === "สิ้นสุดแล้ว"
+                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : "bg-paseo text-white"
+                            }`}
+                            disabled={status === "สิ้นสุดแล้ว"}
+                          >
+                            {status === "สิ้นสุดแล้ว"
+                              ? "สิ้นสุดแล้ว"
+                              : Number(r.pointCost) === 0
+                              ? "รับสิทธิ์"
+                              : `${r.pointCost} พอยท์`}
+                          </button>
                         </div>
                       </div>
 
-                      <div className="w-full flex flex-col gap-2 p-4 bg-gray-100 rounded-b-2xl border-t-2 border-black border-dotted">
-                        <button
-                          className={`py-1 w-full rounded-full text-xs md:text-sm font-bold flex flex-row items-center justify-center gap-2 hover:text-black ${
-                            status === "สิ้นสุดแล้ว"
-                              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                              : "bg-paseo text-white"
-                          }`}
-                          disabled={status === "สิ้นสุดแล้ว"}
-                        >
-                          <RiCoupon2Line size={20} />
-                          {status === "สิ้นสุดแล้ว"
-                            ? "สิ้นสุดแล้ว"
-                            : Number(r.pointCost) === 0
-                            ? "รับสิทธิ์"
-                            : `ใช้ ${r.pointCost} พอยท์`}
-                        </button>
-                      </div>
                     </div>
                   </Link>
                 </div>
@@ -519,6 +613,27 @@ export default function PrivilegeCampaignList() {
 
   return (
     <div className="p-0 max-w-5xl mx-auto mb-6">
+      {privilegesError && (
+        <div
+          className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+          role="alert"
+        >
+          <span>{privilegesError}</span>
+          <button
+            type="button"
+            className="shrink-0 rounded-full bg-paseo px-4 py-2 text-xs font-semibold text-white hover:opacity-90"
+            onClick={() => setPrivilegesRetryKey((k) => k + 1)}
+          >
+            ลองโหลดใหม่
+          </button>
+        </div>
+      )}
+      {isRefreshing && (
+        <p className="mb-2 text-center text-xs text-gray-500">กำลังอัปเดต…</p>
+      )}
+      {error && branches.length > 0 && (
+        <p className="mb-2 text-center text-xs text-amber-700">{error}</p>
+      )}
 
       {renderBranchTabs()}
 

@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
-import { InputOTP, InputOTPGroup, InputOTPSlot, } from "@/components/ui/input-otp"
+import OTPInputSimple from "@/components/ui/input-otp"
 import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ import { format } from "date-fns"
 import { th } from "date-fns/locale"
 import BannerRegister from "@/components/BannerRegister/page"
 import HeaderMobile from '@/components/HeaderMobile/page';
+import { AuthContext } from "@/contexts/AuthContext";
 
 import SimpleSelect from '@/components/form/SimpleSelect'
 import FormField from '@/components/form/FormField'
@@ -30,6 +31,65 @@ import { FaUser } from "react-icons/fa";
 interface Interest {
   id: string;
   name: string;
+}
+
+interface Branch {
+  id: string;
+  name: string;
+  type?: string;
+}
+
+const HIDDEN_BRANCH_IDS = new Set([
+  "c7522197-846f-412a-88db-4905bde06911", // บางนา
+]);
+
+function normalizeInterestsPayload(payload: unknown): Interest[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === "object"
+    ? Array.isArray((payload as any).data)
+      ? (payload as any).data
+      : Array.isArray((payload as any).interests)
+      ? (payload as any).interests
+      : []
+    : [];
+
+  return list
+    .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string")
+    .map((i: any) => ({ id: i.id, name: i.name }));
+}
+
+function normalizeBranchesPayload(payload: unknown): Branch[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === "object"
+    ? Array.isArray((payload as any).data)
+      ? (payload as any).data
+      : Array.isArray((payload as any).branches)
+      ? (payload as any).branches
+      : []
+    : [];
+
+  return list
+    .filter((b: any) => b && typeof b.id === "string" && typeof b.name === "string")
+    .map((b: any) => ({
+      id: b.id,
+      name: b.name,
+      type: typeof b.type === "string" ? b.type : undefined,
+    }));
+}
+
+function getTokenFromPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const obj = payload as Record<string, any>;
+  if (typeof obj.token === "string" && obj.token) return obj.token;
+  if (obj.data && typeof obj.data === "object" && typeof obj.data.token === "string") {
+    return obj.data.token;
+  }
+  if (obj.result && typeof obj.result === "object" && typeof obj.result.token === "string") {
+    return obj.result.token;
+  }
+  return null;
 }
 
 type FormState = {
@@ -53,10 +113,11 @@ type FormState = {
 
 export default function RegisterPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const { refreshUser, setUser } = useContext(AuthContext)
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [interests, setInterests] = useState<Interest[]>([]);
-  const [branches, setBranches] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
@@ -65,6 +126,7 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
+  const [checkingPhone, setCheckingPhone] = useState(false)
 
   const [form, setForm] = useState<FormState>({
     firstName: '',
@@ -87,6 +149,20 @@ export default function RegisterPage() {
 
   const stepNames = ['ข้อมูลส่วนตัว', 'ที่อยู่', 'ข้อมูลเพิ่มเติม']
   const thaiPhoneRegex = /^0[689]\d{8}$/
+
+  const checkPhoneDuplicated = async (phone: string) => {
+    const check = await fetch(`${API_URL}/auth/register/check-phone`, {
+      credentials: "include",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    })
+    const checkData = await check.json()
+    return {
+      ok: check.ok,
+      error: checkData?.error || "ไม่สามารถตรวจสอบเบอร์โทรได้",
+    }
+  }
 
   const sendOtp = async () => {
     setError("")
@@ -112,20 +188,20 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchInterests = async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/interest`, {
-          headers: {
-            "x-api-key": process.env.NEXT_PUBLIC_SYSTEM_API_KEY!,
-          },
+        const res = await fetch(`${API_URL}/interests`, {
+          method: "GET",
+          cache: "no-store",
         });
         if (!res.ok) throw new Error("โหลดความสนใจไม่สำเร็จ");
         const data = await res.json();
-        setInterests(data);
+        setInterests(normalizeInterestsPayload(data));
       } catch (error) {
         console.error("Error fetching interests:", error);
+        setInterests([]);
       }
     };
     fetchInterests();
-  }, []);
+  }, [API_URL]);
 
   useEffect(() => {
     const fetchBranches = async () => {
@@ -135,7 +211,10 @@ export default function RegisterPage() {
         });
         if (!res.ok) throw new Error("โหลดสาขาไม่สำเร็จ");
         const data = await res.json();
-        setBranches(data);
+        const normalized = normalizeBranchesPayload(data).filter(
+          (branch) => !HIDDEN_BRANCH_IDS.has(branch.id)
+        );
+        setBranches(normalized);
       } catch (error) {
         console.error("โหลดสาขาไม่สำเร็จ:", error);
       }
@@ -184,18 +263,10 @@ export default function RegisterPage() {
         return
       }
 
-      // ✅ เช็คเบอร์ก่อน
-      const check = await fetch(`${API_URL}/auth/register/check-phone`, {
-        credentials: "include",
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: form.phone }),
-      })
-
-      const checkData = await check.json()
-
+      // ✅ เช็คเบอร์ก่อน (กันหลุดอีกชั้น)
+      const check = await checkPhoneDuplicated(form.phone)
       if (!check.ok) {
-        setError(checkData.error)
+        setError(check.error)
         return
       }
 
@@ -209,6 +280,33 @@ export default function RegisterPage() {
 
     setStep(step + 1)
   }
+
+  useEffect(() => {
+    if (step !== 1) return
+    if (form.phone.length === 0) {
+      setCheckingPhone(false)
+      return
+    }
+    if (!thaiPhoneRegex.test(form.phone)) return
+
+    const timer = setTimeout(async () => {
+      try {
+        setCheckingPhone(true)
+        const result = await checkPhoneDuplicated(form.phone)
+        if (!result.ok) {
+          setError(result.error)
+        } else if (error === "เบอร์นี้ลงทะเบียนแล้ว") {
+          setError("")
+        }
+      } catch {
+        setError("ไม่สามารถตรวจสอบเบอร์โทรได้")
+      } finally {
+        setCheckingPhone(false)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [form.phone, step])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,8 +333,21 @@ export default function RegisterPage() {
         return;
       }
 
-      // ✅ สมัครเสร็จ → redirect เข้า home เลย
-      router.push("/");
+      const token = getTokenFromPayload(data);
+      if (token) {
+        localStorage.setItem("token", token);
+        if (data?.user && typeof data.user === "object") {
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        // refresh เบื้องหลัง เพื่อดึงข้อมูล user เต็มจาก /me แต่ไม่ block การเข้าใช้งาน
+        void refreshUser();
+        window.location.assign("/");
+        return;
+      }
+
+      // fallback: ถ้า backend ยังไม่ส่ง token ให้กลับหน้า login
+      router.push("/auth/login");
       
     } catch (err) {
       console.error(err);
@@ -245,17 +356,31 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto md:py-6 py-4 pb-0 rounded-xl relative">
+    <div className="max-w-lg mx-auto md:py-0 py-6 pb-0 rounded-xl relative">
 
-        <HeaderMobile showBack={false} />
+        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+          <div className="relative flex flex-row justify-center">
 
-        <div className="md:pt-4 pt-14 mb-0 py-4 px-4 md:px-4">
+            <div className="flex flex-row justify-center gap-2 h-min">
+              <Image
+                src="/logo.png"
+                alt="Thepaseo"
+                width={40}
+                height={40}
+                unoptimized
+              />
+            </div>
+    
+          </div>
+        </div>
+
+        <div className="md:pt-4 pt-10 mb-0 py-4 px-4 md:px-4">
           <BannerRegister />
         </div>
 
-        <div className="md:p-10 mb-10 p-4 rounded-3xl bg-white shadow z-50">
+        <div className="w-full h-full py-8 md:px-10 px-4 pb-10 m-0 rounded-t-3xl bg-white shadow z-50 md:relative">
           <div className="flex justify-center items-center gap-4 mb-5">
-            <Image src="/logo-paseo-register.png" width={54} height={54} alt="ThePaseo" />
+            <Image src="/logo-paseo-register.png" width={54} height={54} unoptimized alt="ThePaseo" />
             <h2 className="text-xl font-semibold text-center">สมัครสมาชิก</h2>
           </div>
 
@@ -302,7 +427,7 @@ export default function RegisterPage() {
                       type="text"
                       placeholder="ชื่อ"
                       name="firstName"
-                      className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo"
+                      className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                       onChange={handleChange}
                       value={form.firstName}
                       required
@@ -313,7 +438,7 @@ export default function RegisterPage() {
                       type="text"
                       placeholder="นามสกุล"
                       name="lastName"
-                      className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo"
+                      className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                       onChange={handleChange}
                       value={form.lastName}
                       required
@@ -325,7 +450,7 @@ export default function RegisterPage() {
                   <FormField label="วันเกิด" required>
                     <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={`w-full justify-between rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo font-normal pt-6 pb-4 border ${!date ? "text-gray-400" : ""}`}>
+                        <Button variant="outline" className={`w-full justify-between rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo font-normal py-4 border ${!date ? "text-gray-400" : ""}`}>
                           {date ? format(date, "dd MMMM yyyy", { locale: th }) : "เลือกวันเกิด"}
                           <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
                         </Button>
@@ -363,20 +488,33 @@ export default function RegisterPage() {
                     type="tel"
                     placeholder="เบอร์โทรศัพท์ (เช่น 0812345678)"
                     name="phone"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo"
+                    className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                     onChange={handleChange}
+                    onBlur={async () => {
+                      if (!thaiPhoneRegex.test(form.phone)) return
+                      setCheckingPhone(true)
+                      try {
+                        const result = await checkPhoneDuplicated(form.phone)
+                        if (!result.ok) setError(result.error)
+                      } finally {
+                        setCheckingPhone(false)
+                      }
+                    }}
                     value={form.phone}
                     required
                   />
                 </FormField>
                 {error && error.includes("เบอร์โทร") && <p className="text-red-500 text-sm">{error}</p>}
+                {!error && checkingPhone && (
+                  <p className="text-gray-500 text-sm">กำลังตรวจสอบเบอร์โทร...</p>
+                )}
 
                 <FormField label="อีเมล" required>
                   <Input
                     type="email"
                     placeholder="อีเมล"
                     name="email"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo"
+                    className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                     onChange={handleChange}
                     value={form.email}
                     required
@@ -434,7 +572,7 @@ export default function RegisterPage() {
                   <Input
                     name="address"
                     placeholder="ที่อยู่"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo"
+                    className="w-full py-4 px-4 mb-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                     onChange={handleChange}
                     value={form.address}
                   />
@@ -459,7 +597,14 @@ export default function RegisterPage() {
             {/* Step 3 */}
             {step === 3 && (
               <>
-                <Input name="referralCode" placeholder="รหัสผู้แนะนำ (ถ้ามี)" onChange={handleChange} value={form.referralCode} />
+                <input
+                  name="referralCode"
+                  type="text"
+                  placeholder="รหัสผู้แนะนำ (ถ้ามี)"
+                  value={form.referralCode}
+                  onChange={handleChange}
+                  className="bg-gray-50 p-2 rounded-full w-full focus:outline-none focus:ring-2 focus:ring-paseo px-4"
+                />
                 <p className="font-semibold mb-2 mt-4">ความสนใจ</p>
                 <div className="flex flex-wrap gap-2">
                   {interests.map((i) => {
@@ -468,9 +613,9 @@ export default function RegisterPage() {
                       <Badge
                         key={i.id}
                         onClick={() => toggleInterest(i.id)}
-                        className={cn("cursor-pointer rounded-full px-3 py-1 text-sm transition",
+                        className={cn("cursor-pointer rounded-full px-3 py-1 text-xs transition",
                           selected
-                            ? "bg-color-paseo text-white hover:bg-color-paseo-hover"
+                            ? "bg-paseo text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200")}
                       >
                         {i.name}
@@ -528,23 +673,13 @@ export default function RegisterPage() {
                 <strong>{form.phone}</strong>
               </p>
 
-              <InputOTP
-                maxLength={6}
+              <OTPInputSimple
                 value={otp}
                 onChange={(val) => {
                   setOtp(val)
                   setError("")
                 }}
-                pattern={REGEXP_ONLY_DIGITS}
-                className="flex justify-center mb-4"
-              >
-
-                <InputOTPGroup>
-                  {[...Array(6)].map((_, i) => (
-                    <InputOTPSlot key={i} index={i} />
-                  ))}
-                </InputOTPGroup>
-              </InputOTP>
+              />
 
               {error && (
                 <p className="text-red-500 text-sm text-center mb-2">
@@ -555,7 +690,7 @@ export default function RegisterPage() {
               <div className="flex gap-2 mt-4">
                 <Button
                   variant="outline"
-                  className="w-1/2"
+                  className="w-1/2 bg-gray-100"
                   onClick={() => {
                     setShowOtpModal(false)
                     setOtp("")

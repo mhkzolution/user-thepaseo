@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
 
-import { RiCoupon2Fill } from "react-icons/ri";
-import { TbCoinBitcoinFilled } from "react-icons/tb";
+import { IoTicketOutline } from "react-icons/io5";
+import { IoHeartSharp } from "react-icons/io5";
 
 interface CouponData {
   id: string;
@@ -38,7 +38,7 @@ interface UserProfileData {
   postalCode?: string;
   avatar?: string;
   point: number;
-  unusedCouponCount: number;
+  activeCouponCount: number;
   coupons: CouponData[];
   totalSpending: number;
   referralCode: string;
@@ -58,6 +58,7 @@ const getAvatarUrl = (avatar?: string) => {
 };
 
 const Navbar = () => {
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [user, setUser] = useState<UserProfileData | null>(null);
   const pathname = usePathname();
@@ -70,25 +71,25 @@ const Navbar = () => {
       iconActive: "/uploads/admin/navbar/icon_home_white.svg",
     },
     {
-      label: "อัปโหลดใบเสร็จ",
+      label: "สะสมพอยท์",
       path: "/upload",
       icon: "/uploads/admin/navbar/icon_receipt.svg",
       iconActive: "/uploads/admin/navbar/icon_receipt_white.svg",
     },
     {
-      label: "สิทธิพิเศษ",
+      label: "สิทธิ์",
       path: "/privilege",
       icon: "/uploads/admin/navbar/icon_gift.svg",
       iconActive: "/uploads/admin/navbar/icon_gift_white.svg",
     },
     {
-      label: "Directory",
+      label: "ร้านค้า",
       path: "/directory",
       icon: "/uploads/admin/navbar/icon_shop.svg",
       iconActive: "/uploads/admin/navbar/icon_shop_white.svg",
     },
     {
-      label: "Help",
+      label: "ช่วยเหลือ",
       path: "/help",
       icon: "/uploads/admin/navbar/icon_help.svg",
       iconActive: "/uploads/admin/navbar/icon_help_white.svg",
@@ -110,13 +111,13 @@ const Navbar = () => {
       iconActive: "/uploads/admin/navbar/icon_receipt_white.svg",
     },
     {
-      label: "สิทธิพิเศษ",
+      label: "สิทธิ์",
       path: "/privilege",
       icon: "/uploads/admin/navbar/icon_gift.svg",
       iconActive: "/uploads/admin/navbar/icon_gift_white.svg",
     },
     {
-      label: "Directory",
+      label: "ร้านค้า",
       path: "/directory",
       icon: "/uploads/admin/navbar/icon_shop.svg",
       iconActive: "/uploads/admin/navbar/icon_shop_white.svg",
@@ -187,9 +188,8 @@ const Navbar = () => {
       >
         <div className="fixed relarive w-full overflow-hidden flex flex-row flex-1 z-50 justify-between items-center blur py-2 px-4">
             <div className="flex flex-row justify-center gap-2 h-min w-25%">
-              <Image
-                priority={true}
-                src="/logo.png"
+              <img
+                src={`${BASE_URL}/logo.png`}
                 alt="Thepaseo"
                 width={50}
                 height={50}
@@ -207,14 +207,13 @@ const Navbar = () => {
                     prefetch={false}
                     className={getButtonClass(item.path)}
                   >
-                    <Image
-                      priority={true}
+                    <img
                       src={isActive ? item.iconActive : item.icon}
                       alt={item.label}
                       width={32}
                       height={32}
                     />
-                    <p className="font-medium text-base whitespace-nowrap">{item.label}</p>
+                    <p className="font-medium text-sm whitespace-nowrap">{item.label}</p>
                   </Link>
                 );
               })}
@@ -224,32 +223,35 @@ const Navbar = () => {
 
               <div className="flex flex-row justify-between gap-2">
                 <div className="z-10 flex flex-row text-center items-center gap-2 bg-white p-1 border border-gray-100 rounded-lg shadow-lg">
-                  <Link className=" flex flex-row items-center gap-2 text-lg font-semibold" href="/profile/point">
-                    <div className="md:pr-2 pr-2 border-r border-gray-400">
-                      <TbCoinBitcoinFilled className='text-paseo' size={16}/>
-                    </div>
+                  <Link className="w-full flex flex-row items-center gap-2 text-lg font-semibold" href="/profile/point">
+                      <Image
+                        src="/icon/icon-point.png"
+                        alt="Thepaseo"
+                        width={24}
+                        height={24}
+                        className="w-3 h-3 object-contain"
+                        unoptimized
+                      />
 
-                    <div className="flex flex-row justify-center items-center w-full">
-                      <span className="text-xs font-semibold text-black">
-                        {user.point} 
-                        <span className="text-xs font-semibold text-black"> พอยท์</span>
-                      </span>
-                    </div>
-                    
-                    
-                  </Link>
+                      <div className="flex flex-col justify-center items-start w-full gap-1">
+                        <span className="text-xs leading-none font-medium text-black">พอยท์</span>
+                        <span className="text-xs leading-none font-semibold text-black">
+                          {user.point.toLocaleString()} พอยท์
+                        </span>
+                      </div>
+                      
+                      
+                    </Link>
                 </div>
 
                 <div className="z-10 flex flex-row text-center items-center gap-2 bg-white p-1 border border-gray-100 rounded-lg shadow-lg">
-                  <Link className=" flex flex-row items-center gap-2 text-lg font-semibold" href="/profile/coupon">
-                    <div className="md:pr-2 pr-2 border-r border-gray-400">
-                      <RiCoupon2Fill className='text-paseo' size={16} />
-                    </div>
+                  <Link className="w-full flex flex-row items-center gap-2 text-lg font-semibold" href="/profile/coupon">
+                    <IoTicketOutline className='text-black' size={24} />
 
-                    <div className="flex flex-row justify-center items-center w-full">
-                      <span className="text-xs font-semibold text-black">
-                        {user.unusedCouponCount} 
-                        <span className="text-xs font-semibold text-black"> คูปอง</span>
+                    <div className="flex flex-col justify-center items-start w-full gap-1">
+                      <span className="text-xs leading-none font-medium text-black">คูปอง</span>
+                      <span className="text-xs leading-none font-semibold text-black">
+                        {user.activeCouponCount} ใบ
                       </span>
                     </div>
                     
@@ -263,19 +265,29 @@ const Navbar = () => {
                   href="/profile"
                   className="w-full"
                 >
-                  
-                  {avatarUrl ? (
-                    <Image
-                      src={avatarUrl}
-                      alt={`${user.name}'s avatar`}
-                      width={36}
-                      height={36}
-                      priority
-                      className="rounded-full object-cover shadow-sm w-14 h-14 md:w-18 md:h-18 border border-gray-300 shadow"
-                    />
-                    ) : (
-                      <Image className="text-white" priority={true} src="/uploads/admin/navbar/icon_profile.svg" alt="Thepaseo" width={36} height={36} />
-                    )}
+                  <div className="w-12 h-12 picture-section flex flex-row justify-center">
+                    {avatarUrl ? (
+                      <Image
+                        src={avatarUrl}
+                        alt={`${user.name}'s avatar`}
+                        width={36}
+                        height={36}
+                        priority
+                          className="rounded-full object-cover shadow-sm w-12 h-12"
+                          unoptimized
+                      />
+                      ) : (
+                        <img className="text-white" src="/uploads/admin/navbar/icon_profile.svg" alt="Thepaseo" width={36} height={36} />
+                      )}
+                    </div>
+                </Link>
+              </div>
+              <div className="relative">
+                <Link
+                  href="/favorite"
+                  className="flex flex-row items-center gap-2 p-1 bg-paseo text-white rounded-full"
+                >
+                  <IoHeartSharp size={24} />
                 </Link>
               </div>
             </div>
@@ -291,8 +303,7 @@ const Navbar = () => {
 
             return (
               <Link key={item.path} href={item.path} prefetch={false} className={getMobileButtonClass(item.path)}>
-                <Image
-                  priority={true}
+                <img
                   src={isActive ? item.iconActive : item.icon}
                   alt={item.label}
                   width={24}

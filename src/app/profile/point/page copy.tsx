@@ -215,7 +215,7 @@ return (
                       </div>
 
                         <div className="flex-1">
-                          <h3 className="text-sm font-bold line-clamp-2">{p.description || "รายการแต้ม"}</h3>
+                          <h3 className="text-sm font-bold line-clamp-2">{p.description || "รายการพอยท์"}</h3>
                         </div>
 
                       {p.type === "RECEIPT" && p.receipt && (

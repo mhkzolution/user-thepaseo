@@ -1,12 +1,20 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.thepaseo.member',
-  appName: 'Paseo Member',
+  appId: 'com.thepaseo.user',
+  appName: 'Paseo',
   server: {
-    url: "http://192.168.12.130:3000",
-    cleartext: true
-  }
+    url: "https://user.thepaseo.co.th",
+    cleartext: false,
+    androidScheme: "https",
+    // Allow OAuth/API host + LINE authorization (default is only server.url)
+    allowNavigation: [
+      "user.thepaseo.co.th",
+      "admin.thepaseo.co.th",
+      "access.line.me",
+      "line.me",
+    ],
+  },
 };
 
 export default config;

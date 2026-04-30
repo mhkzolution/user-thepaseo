@@ -1,13 +1,8 @@
 "use client";
 
-import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { RiCoupon2Line } from "react-icons/ri";
-import { MdOutlineControlPointDuplicate } from "react-icons/md";
-import { MdCurrencyExchange } from "react-icons/md";
-import { IoHeartSharp } from "react-icons/io5";
-import { FaHistory } from "react-icons/fa";
+import Image from "next/image";
 
 const MenuProfile = () => {
   const pathname = usePathname();
@@ -16,27 +11,23 @@ const MenuProfile = () => {
     {
       label: "คูปอง",
       path: "/profile/coupon",
-      icon: <RiCoupon2Line className="mb-1" size={24} />,
+      
+      icon: "/icon/icon-profile-coupon.png",
     },
     {
       label: "แลก",
       path: "/profile/reward",
-      icon: <MdCurrencyExchange className="mb-1" size={24} />,
+      icon: "/icon/icon-profile-reward.png",
     },
     {
-      label: "ชื่นชอบ",
-      path: "/favorite",
-      icon: <IoHeartSharp className="mb-1" size={24} />,
-    },
-    {
-      label: "สะสมพ้อยท์",
+      label: "สะสมพอยท์",
       path: "/profile/upload",
-      icon: <MdOutlineControlPointDuplicate className="mb-1" size={24} />,
+      icon: "/icon/icon-profile-collect.png",
     },
     {
       label: "ประวัติพอยท์",
       path: "/profile/point",
-      icon: <FaHistory className="mb-1" size={24} />,
+      icon: "/icon/icon-profile-history.png",
     },
   ];
 
@@ -63,26 +54,45 @@ const MenuProfile = () => {
   };
 
   return (
-    <nav className="profile-btn flex flex-row gap-2 mb:gap-5 justify-center mb-4">
-      {menuItems.map((item) => {
-        const isActive = pathname.replace(/\/$/, "") === item.path.replace(/\/$/, "");
-        const isFavorite = item.path === "/favorite";
-        return (
-          <Link
-            key={item.path}
-            href={item.path}
-            className={`${getButtonClass(item.path)} ${isFavorite ? "hidden md:flex" : ""}`}
-          >
-            {/* ใช้ React.cloneElement เพื่อเพิ่ม className ให้ icon */}
-            {React.cloneElement(item.icon, {
-              className: `mb-1 ${getIconColor(item.path)}`,
-            })}
-            <p className={`md:text-xs text-10px text-center ${isActive ? "text-white" : "text-black"}`}>
-              {item.label}
-            </p>
-          </Link>
-        );
-      })}
+    <nav className="overflow-x-auto">
+      <div className="w-full flex flex-row justify-center md:gap-4 gap-4 pb-2">
+
+        {menuItems.map((item) => {
+          const isActive =
+            pathname.replace(/\/$/, "") === item.path.replace(/\/$/, "");
+
+          return (
+            <Link
+              key={item.path}
+              href={item.path}
+              className="w-full flex flex-col items-center gap-2 transition"
+            >
+              <div
+                className={`md:w-full md:h-16 w-full h-14 p-2 rounded-xl flex items-center justify-center border transition
+                ${
+                  isActive
+                    ? "bg-gray-50 border-paseo-dark"
+                    : "bg-white border-gray-200"
+                }`}
+              >
+                <Image
+                  src={item.icon}
+                  alt={item.label}
+                  width={60}
+                  height={60}
+                  className={`object-contain ${isActive ? "opacity-100" : "opacity-80"}`}
+                  unoptimized
+                />
+              </div>
+
+              <span className="text-xs font-medium text-center leading-tight line-clamp-1">
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+
+      </div>
     </nav>
   );
 };

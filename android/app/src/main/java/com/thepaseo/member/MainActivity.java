@@ -1,4 +1,4 @@
-package com.thepaseo.member;
+package com.thepaseo.user;
 
 import com.getcapacitor.BridgeActivity;
 

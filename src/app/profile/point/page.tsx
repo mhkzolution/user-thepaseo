@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Loading from "@/components/loading";
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
+import Image from "next/image";
 
 import { MdDiscount } from "react-icons/md";
 import { FaClock } from "react-icons/fa";
-import { RiBitCoinFill } from "react-icons/ri";
 import { FaReceipt } from "react-icons/fa";
 
 /* ================= TYPES ================= */
@@ -41,6 +42,9 @@ type UserCoupon = {
 
 /* ================= COMPONENT ================= */
 export default function HistoryScorePage() {
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
+    "https://admin.thepaseo.co.th/api";
   const [balance, setBalance] = useState(0);
   const [points, setPoints] = useState<PointTransaction[]>([]);
   const [coupons, setCoupons] = useState<UserCoupon[]>([]);
@@ -61,9 +65,7 @@ export default function HistoryScorePage() {
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/history?page=${page}&limit=${PAGE_SIZE}`
-        );
+        const res = await fetchWithAuth(`${API_URL}/history?page=${page}&limit=${PAGE_SIZE}`);
         if (!res.ok) throw new Error("Failed to fetch history");
 
         const data = await res.json();
@@ -202,23 +204,30 @@ export default function HistoryScorePage() {
               {filteredPoints.map((p) => (
                 <div
                   key={p.id}
-                  className="flex flex-row items-center gap-2 p-4 rounded-xl shadow-sm bg-white border"
+                  className="flex flex-row items-center md:gap-4 gap-2 md:p-4 p-4 rounded-xl shadow-sm bg-white border"
                 >
-                  <div className="w-10%">
+                  <div className="w-14 h-14 flex flex-row justify-center items-center bg-gray-100 p-2 rounded-full">
                     <FaReceipt size={24} className="text-paseo" />
                   </div>
 
-                  <div className="flex flex-col w-90% gap-2">
+                  <div className="flex flex-col w-full md:gap-2 gap-1">
                     <div className="w-full flex flex-row justify-between">
-                      <div className="flex flex-row gap-2 w-80%">
-                        <FaClock size={16} className="text-paseo" />
+                      <div className="flex flex-row items-center gap-2">
+                        <FaClock size={20} className="text-paseo" />
                         <p className="text-xs text-gray-500">
                           {new Date(p.createdAt).toLocaleString()}
                         </p>
                       </div>
 
-                      <div className="flex flex-row gap-2 w-20%">
-                        <RiBitCoinFill size={24} style={{ color: "#FFD32C" }} />
+                      <div className="flex flex-row gap-2">
+                        <Image
+                          src="/icon/icon-point.png"
+                          alt="Thepaseo"
+                          width={24}
+                          height={24}
+                          className="w-5 h-5 object-contain"
+                          unoptimized
+                        />
                         <span
                           className={`font-bold text-sm ${
                             p.amount > 0 ? "text-paseo" : "text-red-500"
@@ -230,11 +239,11 @@ export default function HistoryScorePage() {
                     </div>
 
                     <h3 className="text-sm font-bold line-clamp-2">
-                      {p.description || "รายการแต้ม"}
+                      {p.description || "รายการพอยท์"}
                     </h3>
 
                     {p.type === "RECEIPT" && p.receipt && (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-0">
                         <div className="flex justify-between">
                           <span className="text-sm">
                             ร้านค้า: {p.receipt.shopName}
@@ -249,10 +258,10 @@ export default function HistoryScorePage() {
                           <span
                             className={
                               p.receipt.status === "APPROVED"
-                                ? "text-paseo"
+                                ? "text-paseo font-semibold"
                                 : p.receipt.status === "REJECTED"
-                                ? "text-red-600"
-                                : "text-gray-600"
+                                ? "text-red-600 font-semibold"
+                                : "text-gray-600 font-semibold"
                             }
                           >
                             {p.receipt.status === "APPROVED"
@@ -316,7 +325,7 @@ export default function HistoryScorePage() {
                   </div>
 
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold">
+                    <h3 className="text-xs font-semibold">
                       {uc.coupon.name}
                     </h3>
                     <p className="text-xs text-gray-500">

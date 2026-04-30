@@ -1,3 +1,0 @@
--- This migration intentionally does nothing.
--- Originally created for removing unique constraints,
--- but schema has already been updated manually.

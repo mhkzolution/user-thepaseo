@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Image from "next/image";
+import Loading from "@/components/loading";
 
 export default function RewardDetailPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -58,8 +59,14 @@ export default function RewardDetailPage() {
       }
   }
 
+  function handleSuccessClose() {
+    setSuccess(null);
+    setShowModal(false);
+    router.push("/profile/reward");
+  }
+
   if (loading)
-    return <div className="p-6 text-center text-gray-500">กำลังโหลด...</div>;
+    return <Loading />;
   if (error)
     return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!reward)
@@ -91,6 +98,7 @@ export default function RewardDetailPage() {
                     src={reward.reward.imageUrl}
                     alt={reward.reward.name}
                     className="w-full h-full object-cover rounded-xl shadow-md"
+                    unoptimized
                   />
                 )}
             </div>
@@ -193,7 +201,7 @@ export default function RewardDetailPage() {
             <h2 className="text-lg font-semibold mb-2">{success}</h2>
             <p className="text-gray-600 mb-4">คุณสามารถกลับไปยังหน้ารายการรางวัลได้</p>
             <button
-                onClick={() => router.push("/profile/reward")}
+                onClick={handleSuccessClose}
                 className="px-4 py-2 rounded-lg bg-paseo text-white font-semibold hover:bg-paseo-hover transition"
             >
                 ตกลง

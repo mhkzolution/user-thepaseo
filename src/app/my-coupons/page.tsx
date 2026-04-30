@@ -4,6 +4,7 @@ import QRCode from "react-qr-code";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import Image from "next/image";
+import Loading from "@/components/loading";
 
 export default function MyCouponsPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -23,7 +24,7 @@ export default function MyCouponsPage() {
     fetchCoupons();
   }, []);
 
-  if (loading) return <p>กำลังโหลด...</p>;
+  if (loading) return <Loading />;
   if (!coupons.length) return <p className="text-center text-gray-500">คุณยังไม่มีคูปอง</p>;
 
   return (
@@ -55,6 +56,7 @@ export default function MyCouponsPage() {
               src={uc.coupon.imageUrl}
               alt={uc.coupon.name}
               className="w-full rounded-lg mb-2 object-cover"
+              unoptimized
             />
           )}
 

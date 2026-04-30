@@ -1,50 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from "react";
-import { fetchWithAuth } from "@/lib/fetchWithAuth"
-import { IoHeartOutline } from "react-icons/io5";
-import { IoHeartSharp } from "react-icons/io5";
+import { IoHeartOutline, IoHeartSharp } from "react-icons/io5";
+import { useFavorite } from "@/contexts/FavoriteContext";
 
 type Props = {
   targetId: string;
   targetType: string;
-  userId: string;
 };
 
-export default function FavoriteButton({ targetId, targetType, userId }: Props) {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const [isFavorite, setIsFavorite] = useState(false);
+export default function FavoriteButton({ targetId, targetType }: Props) {
+  const { isFavorite, toggleFavorite } = useFavorite();
 
-  useEffect(() => {
-  if (!userId) return;
-  async function fetchStatus() {
-    const res = await fetchWithAuth(
-      `${API_URL}/favorite?userId=${userId}&targetId=${targetId}&targetType=${targetType}`
-    );
+  const fav = isFavorite(targetId, targetType);
 
-    const data = await res.json();
-    setIsFavorite(data.isFavorite);
-  }
-  fetchStatus();
-}, [userId, targetId, targetType]);
-
-  const toggle = async () => {
-    if (!userId) return;
-    const res = await fetchWithAuth(`${API_URL}/favorite`, {
-      method: "POST",
-      body: JSON.stringify({ userId, targetId, targetType }),
-    });
-    const data = await res.json();
-    setIsFavorite(data.isFavorite);
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toggleFavorite(targetId, targetType);
   };
 
   return (
     <button
-      onClick={toggle}
+      onClick={handleClick}
       className="text-2xl"
-      aria-label={isFavorite ? "Unfavorite" : "Favorite"}
+      aria-label={fav ? "Unfavorite" : "Favorite"}
     >
-      {isFavorite ? <IoHeartSharp className="text-paseo" /> : <IoHeartOutline />}
+      {fav ? (
+        <IoHeartSharp className="text-paseo" />
+      ) : (
+        <IoHeartOutline />
+      )}
     </button>
   );
 }

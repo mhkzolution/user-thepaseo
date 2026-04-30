@@ -31,6 +31,22 @@ interface Interest {
   name: string;
 }
 
+function normalizeInterestsPayload(payload: unknown): Interest[] {
+  const list = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === "object"
+    ? Array.isArray((payload as any).data)
+      ? (payload as any).data
+      : Array.isArray((payload as any).interests)
+      ? (payload as any).interests
+      : []
+    : [];
+
+  return list
+    .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string")
+    .map((i: any) => ({ id: i.id, name: i.name }));
+}
+
 type FormState = {
   dateOfBirth: string;
   gender: string;
@@ -162,20 +178,21 @@ export default function CompleteProfilePage() {
   useEffect(() => {
     const fetchInterests = async () => {
       try {
-        const res = await fetch(`${API_URL}/admin/interest`, {
-          headers: {
-            "x-api-key": process.env.NEXT_PUBLIC_SYSTEM_API_KEY!,
-          },
+        const res = await fetch(`${API_URL}/interests`, {
+          method: "GET",
+          cache: "no-store",
         });
         if (!res.ok) throw new Error("โหลดความสนใจไม่สำเร็จ");
         const data = await res.json();
-        setInterests(data);
+        const normalized = normalizeInterestsPayload(data);
+        setInterests(normalized);
       } catch (error) {
         console.error("Error fetching interests:", error);
+        setInterests([]);
       }
     };
     fetchInterests();
-  }, []);
+  }, [API_URL]);
 
   const toggleInterest = (id: string) => {
     setForm({
@@ -273,17 +290,31 @@ export default function CompleteProfilePage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto md:py-6 py-4 pb-0 rounded-xl relative">
+    <div className="max-w-lg mx-auto md:py-0 py-6 pb-0 rounded-xl relative">
 
-        <HeaderMobile showBack={false} />
+        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+          <div className="relative flex flex-row justify-center">
 
-        <div className="md:pt-4 pt-14 mb-0 py-4 px-4 md:px-4">
+            <div className="flex flex-row justify-center gap-2 h-min">
+              <Image
+                src="/logo.png"
+                alt="Thepaseo"
+                width={40}
+                height={40}
+                unoptimized
+              />
+            </div>
+    
+          </div>
+        </div>
+
+        <div className="md:pt-4 pt-10 mb-0 py-4 px-4 md:px-4">
           <BannerRegister />
         </div>
 
-        <div className="md:p-10 p-4 m-0 md:mb-20 rounded-3xl bg-white shadow z-50 relative">
+        <div className="md:p-10 p-4 m-0 md:mb-20 rounded-xl bg-white shadow z-50 relative">
           <div className="flex justify-center items-center gap-4 mb-5">
-            <Image src="/logo-paseo-register.png" width={54} height={54} alt="ThePaseo" />
+            <Image src="/logo-paseo-register.png" width={54} height={54} unoptimized alt="ThePaseo" />
             <h2 className="text-xl font-semibold text-center">ข้อมูลเพิ่มเติม</h2>
           </div>
 
@@ -329,7 +360,7 @@ export default function CompleteProfilePage() {
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className={`w-full justify-between rounded-xl bg-white border font-normal pt-6 pb-3 text-xs ${
+                          className={`w-full justify-between rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo font-normal py-4 border ${
                             !date ? 'text-gray-400' : ''
                           }`}
                         >
@@ -373,7 +404,7 @@ export default function CompleteProfilePage() {
                     placeholder="เบอร์โทรศัพท์ (เช่น 0812345678)"
                     name="phone"
                     onChange={handleChange}
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl text-black bg-white-100 focus:outline-none focus:ring focus:ring-paseo"
+                    className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                     value={form.phone}
                     required
                   />
@@ -388,7 +419,7 @@ export default function CompleteProfilePage() {
                     type="email"
                     placeholder="อีเมล *"
                     name="email"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl text-gray-400 bg-white focus:outline-none focus:ring focus:ring-paseo"
+                    className="w-full py-4 px-4 border bg-gray-100 rounded-xl focus:outline-none focus:ring focus:ring-paseo text-sm"
                     value={form.email}
                     required
                   />
@@ -422,6 +453,7 @@ export default function CompleteProfilePage() {
                     }))}
                   />
                 </FormField>
+                
               </div>
             )}
 
@@ -445,33 +477,11 @@ export default function CompleteProfilePage() {
                     type="text"
                     placeholder="ที่อยู่ *"
                     name="address"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-gray-100 focus:outline-none focus:ring focus:ring-paseo"
+                    className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm mb-2"
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     value={form.address}
                   />
                 </FormField>
-
-                {/* <FormField label="บ้านเลขที่" required>
-                  <Input
-                    type="text"
-                    placeholder="บ้านเลขที่ *"
-                    name="houseNumber"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-gray-100 focus:outline-none focus:ring focus:ring-paseo"
-                    onChange={(e) => setForm({ ...form, houseNumber: e.target.value })}
-                    value={form.houseNumber}
-                  />
-                </FormField>
-    
-                <FormField label="ซอย" required>
-                  <Input
-                    type="text"
-                    placeholder="ซอย *"
-                    name="alley"
-                    className="w-full pt-6 pb-4 pl-2 pr-4 border rounded-xl bg-gray-100 focus:outline-none focus:ring focus:ring-paseo"
-                    onChange={(e) => setForm({ ...form, alley: e.target.value })}
-                    value={form.alley}
-                  />
-                </FormField> */}
     
                 <ThaiAddressSelect
                   value={{
@@ -502,9 +512,9 @@ export default function CompleteProfilePage() {
                         key={i.id}
                         onClick={() => toggleInterest(i.id)}
                         className={cn(
-                          "cursor-pointer rounded-full px-3 py-1 text-sm transition",
+                          "cursor-pointer rounded-full px-3 py-1 text-xs transition",
                           selected
-                            ? "bg-paseo text-white hover:bg-paseo-hover"
+                            ? "bg-paseo text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         )}
                       >
@@ -516,8 +526,6 @@ export default function CompleteProfilePage() {
                 {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
               </div>
             )}
-
-            
 
             <div className="md:relative fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center blur rounded-t-xl shadow-lg md:shadow-none border md:border-none md:mt-4">
               {step > 1 ? (

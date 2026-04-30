@@ -5,11 +5,7 @@ import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Link from "next/link";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import FavoriteButton from "@/components/FavoriteButton/page";
-import { useContext } from "react";
-import { AuthContext } from "@/contexts/AuthContext";
 import Loading from "@/components/loading";
-import { RiCoupon2Fill } from "react-icons/ri";
 
 type Reward = {
   id: string;
@@ -25,7 +21,6 @@ type Reward = {
 
 export default function RewardList({ shopId }: { shopId?: string }) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user, loading: authLoading } = useContext(AuthContext);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel();
@@ -66,8 +61,8 @@ export default function RewardList({ shopId }: { shopId?: string }) {
 
   return (
     <div className="p-0 max-w-5xl mx-auto mb-6">
-      <div className="flex flex-row items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">รางวัลสะสมแต้ม</h1>
+      <div className="flex flex-row items-end justify-between mb-3">
+        <span className="text-base font-bold">รางวัล</span>
         {!shopId && ( // ✅ ซ่อนปุ่ม “ดูทั้งหมด” ถ้าอยู่ในร้าน
           <Link href="/reward" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
             ดูทั้งหมด
@@ -93,15 +88,6 @@ export default function RewardList({ shopId }: { shopId?: string }) {
                   className="embla__slide_coupon relative w-full"
                   key={r.id}
                 >
-                  <div className="absolute flex justify-center top-6 left-10 w-10 h-10 rounded-full border border-gray-200 blur2 z-10">
-                    {user?.id && (
-                      <FavoriteButton
-                        targetId={r.id}
-                        targetType="REWARD"
-                        userId={user.id}
-                      />
-                    )}
-                  </div>
 
                   <Link
                     key={r.id}
@@ -109,50 +95,43 @@ export default function RewardList({ shopId }: { shopId?: string }) {
                     className="w-full h-full flex flex-row p-0 rounded-xl overflow-hidden transition"
                   >
                     <div className="relative w-full h-full flex flex-col shadow-lg">
-                      <div className="relative w-full h-full flex flex-col gap-2 p-4 pb-2 bg-gray-100 rounded-2xl ticket-notch">
-                        <div className="relative w-full rounded-xl overflow-hidden bg-white pt-125%">
+                      <div className="relative w-full h-full flex flex-col">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden bg-white p-3 bg-gray-100">
                           <Image
                             src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
-                            fill
-                            className="object-cover"
-                            sizes="160px"
+                            width={300}
+                            height={300}
+                            className="w-full h-full rounded-xl"
+                            unoptimized
                           />
                         </div>
 
-                          <div className="w-full" style={{ minHeight: "1.5rem" }}>
-                            <h3 className="text-xs md:text-sm font-bold leading-5 tracking-wide">
+                        <div className="w-full rounded-xl flex flex-col gap-2 bg-white p-2 bg-gray-100">
+
+                          <div className="w-full px-1" style={{ minHeight: "3rem" }}>
+                            <h3 className="text-xs font-semibold line-clamp-3 leading-4 text-center">
                               {r.name}
                             </h3>
                           </div>
 
-                          <div className="w-full mt-auto">
-                            <p className="text-xs text-gray-600 line-clamp-1">
-                              {startDate.getDate()} - {endDate.getDate()} {monthNames[endDate.getMonth()]} {endDate.getFullYear()}
-                            </p>
-                          </div>
-                          
-                        </div>
-
-                        <div className="w-full flex flex-col gap-2 p-4 bg-gray-100 rounded-b-2xl border-t-2 border-black border-dotted">
                           <button
-                            className={`py-1 w-full rounded-full text-sm md:text-base font-bold flex flex-row align-center justify-center items-center gap-2 hover:bg-paseo-hover hover:text-black ${
-                                status === "สิ้นสุดแล้ว"
-                                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                                    : "bg-paseo text-white"
+                            className={`py-1 w-full rounded-full text-xs md:text-sm font-bold flex flex-row items-center justify-center gap-2 hover:text-black ${
+                              status === "สิ้นสุดแล้ว"
+                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : "bg-paseo text-white"
                             }`}
                             disabled={status === "สิ้นสุดแล้ว"}
                           >
-                            <RiCoupon2Fill size={20} />
-                            <span className="text-xs">
-                              {status === "สิ้นสุดแล้ว"
-                                ? "สิ้นสุดแล้ว"
-                                : Number(r.pointCost) === 0
-                                ? "รับสิทธิ์"
-                                : `ใช้ ${r.pointCost} พอยท์`}
-                            </span>
+                            {status === "สิ้นสุดแล้ว"
+                              ? "สิ้นสุดแล้ว"
+                              : Number(r.pointCost) === 0
+                              ? "รับสิทธิ์"
+                              : `${r.pointCost} พอยท์`}
                           </button>
                         </div>
+                      </div>
+
                     </div>
                   </Link>
                 </div>

@@ -21,7 +21,7 @@ export default function SimpleAccordion({ items }: { items: Item[] }) {
         return (
           <div
             key={item.id}
-            className="border rounded-lg overflow-hidden"
+            className="border rounded-xl overflow-hidden"
           >
             {/* HEADER */}
             <button
@@ -29,8 +29,8 @@ export default function SimpleAccordion({ items }: { items: Item[] }) {
                 setOpenId(isOpen ? null : item.id)
               }
               className={clsx(
-                "w-full flex items-center justify-between px-4 py-4 text-left transition-colors",
-                isOpen && "bg-paseo text-black"
+                "w-full flex items-center justify-between px-2 py-2 text-left transition-colors bg-gray-50",
+                isOpen && "bg-paseo text-black text-sm"
               )}
             >
               <div className="font-medium">{item.title}</div>
@@ -45,7 +45,7 @@ export default function SimpleAccordion({ items }: { items: Item[] }) {
 
             {/* CONTENT */}
             {isOpen && (
-              <div className="px-4 py-3 text-sm bg-white text-gray-700">
+              <div className="px-2 py-2 text-xs bg-white text-gray-700">
                 {item.content}
               </div>
             )}

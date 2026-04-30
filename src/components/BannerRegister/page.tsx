@@ -75,15 +75,12 @@ export default function BannerRegisterPage() {
                   className="w-full flex aspect-square items-center justify-center"
                 >
                   <Image
-                    src={
-                      banner.imageUrl
-                        ? `${process.env.NEXT_PUBLIC_STORAGE_BASE_URL}${banner.imageUrl}`
-                        : "/main/no-image.png"
-                    }
+                    src={banner.imageUrl}
                     alt={banner.title}
                     width={600}
                     height={600}
-                    className="object-cover w-full md:max-h-homebanner max-h-homebanner-mb h-60"
+                    className="object-contain w-full h-full shadow"
+                    unoptimized
                   />
                 </Link>
               </div>

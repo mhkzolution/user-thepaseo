@@ -27,7 +27,7 @@ export async function addPoints(userId: string, amount: number, referenceId?: st
   if (user?.lineId) {
     await sendLineMessage(
       user.lineId,
-      `🎉 คุณได้รับ ${amount} พอยต์\n💬 ${description || "ขอบคุณที่ร่วมกิจกรรมกับเรา!"}\nยอดพอยต์ปัจจุบัน: ${newBalance} พอยต์`
+      `🎉 คุณได้รับ ${amount} พอยท์\n💬 ${description || "ขอบคุณที่ร่วมกิจกรรมกับเรา!"}\nยอดพอยท์ปัจจุบัน: ${newBalance} พอยท์`
     );
   }
 
@@ -60,7 +60,7 @@ export async function deductPoints(userId: string, amount: number, referenceId?:
   if (user?.lineId) {
     await sendLineMessage(
       user.lineId,
-      `❗️คุณใช้พอยต์ ${amount} พอยต์\n💬 ${description || "การแลกรางวัลสำเร็จ!"}\nยอดพอยต์ปัจจุบัน: ${newBalance} พอยต์`
+      `❗️คุณใช้พอยท์ ${amount} พอยท์\n💬 ${description || "การแลกรางวัลสำเร็จ!"}\nยอดพอยท์ปัจจุบัน: ${newBalance} พอยท์`
     );
   }
 

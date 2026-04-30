@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Image from "next/image";
+import Loading from "@/components/loading";
 
 export default function CouponDetailPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -60,8 +61,14 @@ export default function CouponDetailPage() {
     }
   }
 
+  function handleSuccessClose() {
+    setSuccessMessage(null);
+    setShowModal(false);
+    router.push("/profile/coupon");
+  }
+
   if (loading)
-    return <div className="p-6 text-center text-gray-500">กำลังโหลด...</div>;
+    return <Loading />;
   if (error)
     return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!coupon)
@@ -73,7 +80,7 @@ export default function CouponDetailPage() {
 
   return (
     <>
-        <div className="relative max-w-2xl mx-auto p-0 pt-10 bg-gray-100 rounded-5xl shadow-md">
+        <div className="relative max-w-2xl mx-auto p-0 pt-10 bg-gray-100 rounded-3xl shadow-md">
 
           <div className="px-4 pt-0 md:px-10 md:pt-0">
             <div className="bg-gray-50 border rounded-xl p-4 text-center">
@@ -92,6 +99,7 @@ export default function CouponDetailPage() {
                 src={coupon.coupon.imageUrl}
                 alt={coupon.coupon.name}
                 className="w-full h-full object-cover rounded-xl shadow-md"
+                unoptimized
                 />
             )}
           </div>
@@ -195,7 +203,7 @@ export default function CouponDetailPage() {
               <p className="text-gray-600 mb-4">คุณสามารถกลับไปยังหน้าคูปองของคุณได้</p>
 
               <button
-                onClick={() => router.push("/profile/coupon")}
+                onClick={handleSuccessClose}
                 className="px-4 py-2 rounded-lg bg-paseo text-white font-semibold hover:bg-paseo-dark transition"
               >
                 ตกลง

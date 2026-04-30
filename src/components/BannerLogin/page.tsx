@@ -92,6 +92,7 @@ useEffect(() => {
                         width={600}
                         height={600}
                         className="object-contain w-full h-full rounded-xl"
+                        unoptimized
                       />
                     </Link>
                   </div>

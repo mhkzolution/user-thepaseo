@@ -9,7 +9,7 @@ export async function redeemPointsFIFO({
   userId: string;
   amount: number;
 }) {
-  // 1. ดึง wallet ที่ยังไม่หมดอายุ + ยังมีแต้ม
+  // 1. ดึง wallet ที่ยังไม่หมดอายุ + ยังมีพอยท์
   const wallets = await tx.pointWallet.findMany({
     where: {
       userId,

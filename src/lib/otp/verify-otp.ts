@@ -2,10 +2,6 @@ import { PrismaClient, OtpPurpose } from "@prisma/client"
 
 const prisma = new PrismaClient()
 
-const isDev =
-  process.env.NODE_ENV === "development" ||
-  process.env.OTP_SMS_ENABLED === "false"
-
 export async function verifyOtp({
   phone,
   otp,
@@ -15,6 +11,16 @@ export async function verifyOtp({
   otp: string
   purpose: OtpPurpose
 }) {
+
+  // ⭐ TEST MODE (ไม่ต้องเช็ค DB)
+  if (
+    process.env.OTP_SMS_ENABLED === "false" &&
+    otp === process.env.OTP_TEST_CODE
+  ) {
+    return { success: true }
+  }
+
+  // 🔥 production เท่านั้นที่ query DB
   const record = await prisma.otpVerification.findFirst({
     where: {
       phone,
@@ -29,23 +35,6 @@ export async function verifyOtp({
     throw new Error("ไม่พบ OTP หรือ OTP หมดอายุ")
   }
 
-  // ✅ DEV MODE → เทียบตรงกับ OTP_TEST_CODE
-  if (isDev) {
-    const testCode = process.env.OTP_TEST_CODE || "123456"
-
-    if (otp !== testCode) {
-      throw new Error("OTP ไม่ถูกต้อง (DEV)")
-    }
-
-    await prisma.otpVerification.update({
-      where: { id: record.id },
-      data: { verifiedAt: new Date() },
-    })
-
-    return { success: true }
-  }
-
-  // ---------- PROD MODE ----------
   const res = await fetch("https://apicall.deesmsx.com/v1/otp/verify", {
     method: "POST",
     headers: {

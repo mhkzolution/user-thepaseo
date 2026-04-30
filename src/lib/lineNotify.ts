@@ -8,7 +8,7 @@ const CHANNEL_ACCESS_TOKEN = process.env.LINE_MESSAGING_CHANNEL_ACCESS_TOKEN!;
 /**
  * ส่ง Flex Card แจ้งเตือนพอยท์
  * @param userId user ID
- * @param data ข้อมูลแต้ม (type, amount, source, balance)
+ * @param data ข้อมูลพอยท์ (type, amount, source, balance)
  */
 export async function sendLinePointCard(
   userId: string,
@@ -33,8 +33,8 @@ export async function sendLinePointCard(
     const isAdd = data.type === "ADD";
 
     const heroImage = isAdd
-      ? "https://thepaseo.co.th/wp-content/uploads/2023/02/logo-paseo-removebg-preview.png" // แต้มเข้า
-      : "https://thepaseo.co.th/wp-content/uploads/2023/02/logo-paseo-removebg-preview.png"; // แต้มออก
+      ? "https://thepaseo.co.th/wp-content/uploads/2023/02/logo-paseo-removebg-preview.png" // พอยท์เข้า
+      : "https://thepaseo.co.th/wp-content/uploads/2023/02/logo-paseo-removebg-preview.png"; // พอยท์ออก
 
     const title = isAdd ? "🎉 คุณได้รับพอยท์!" : "🔥 ใช้พอยท์สำเร็จ";
     const amountText = `${isAdd ? "+" : "-"}${data.amount.toLocaleString()} พอยท์`;
@@ -95,7 +95,7 @@ export async function sendLinePointCard(
               color: "#9DC93C",
               action: {
                 type: "uri",
-                label: "ดูประวัติแต้ม",
+                label: "ดูประวัติพอยท์",
                 uri: "https://offline-supervisor-dive-poker.trycloudflare.com/point-history",
               },
             },
@@ -120,7 +120,7 @@ export async function sendLinePointCard(
       const errText = await res.text();
       console.error("❌ LINE send error:", errText);
     } else {
-      console.log(`✅ ส่ง card แจ้งเตือนแต้มถึง ${user.name || userId} สำเร็จ`);
+      console.log(`✅ ส่ง card แจ้งเตือนพอยท์ถึง ${user.name || userId} สำเร็จ`);
     }
   } catch (error) {
     console.error("❌ sendLinePointCard error:", error);

@@ -29,7 +29,7 @@ export default function EventPopup({ title, description, imageUrl, linkUrl }: Ev
   <DialogContent className="sm:max-w-lg sm:rounded-2xl p-0 overflow-hidden">
     {imageUrl && (
       <div className="relative w-full h-56">
-        <Image src={imageUrl} alt="event image" fill className="object-cover" />
+        <Image src={imageUrl} alt="event image" fill unoptimized className="object-cover" />
       </div>
     )}
     <div className="p-6">

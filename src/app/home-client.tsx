@@ -1,22 +1,29 @@
 "use client";
 
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthContext } from "@/contexts/AuthContext";
 import NewHomePage from "@/components/NewHomePage/page";
+import Loading from "@/components/loading";
 
 export default function HomeClient() {
   const { user, loading } = useContext(AuthContext);
   const router = useRouter();
 
+  const [checked, setChecked] = useState(false);
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+
+    setChecked(true);
+
+    if (!user) {
       router.replace("/auth/login");
     }
-  }, [loading, user, router]);
+  }, [user, loading, router]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!user) return null;
+  if (!checked) return <Loading />;
+  if (!user) return <Loading />;
 
   return <NewHomePage user={user} />;
 }

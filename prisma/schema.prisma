@@ -29,11 +29,12 @@ model User_Lost {
 model ShopCategory {
   id        String   @id @default(uuid())
   name      String
-  sortOrder Int      @default(0)
   slug      String   @unique
   imageUrl  String?
+  color     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  sortOrder Int      @default(0)
   shops     Shop[]
 }
 
@@ -43,10 +44,12 @@ model Shop {
   logoUrl     String?
   imageUrl    String?
   description String?
-  zone        String?
+  phone       String?
   location    String?
+  isVisible   Boolean  @default(true)
   categoryId  String?
   branchId    String?
+  customRate  Int?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   receipts    Receipt[]     @relation("ShopReceipts")
@@ -57,14 +60,44 @@ model Shop {
   event       Event[]       @relation("EventShops")
   rewards     Reward[]      @relation("RewardShops")
 
+  hours       ShopHour[]
+
+  zoneId String?
+  zone   ShopZone? @relation(fields: [zoneId], references: [id])
   @@index([branchId], map: "Shop_branchId_fkey")
   @@index([categoryId], map: "Shop_categoryId_fkey")
+}
+
+model ShopHour {
+  id        String   @id @default(uuid())
+
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id])
+
+  dayOfWeek Int
+
+  openTime  String
+  closeTime String
+
+  isClosed  Boolean  @default(false)
+
+  @@index([shopId])
+}
+
+model ShopZone {
+  id        String   @id @default(uuid())
+  name      String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shops     Shop[]
 }
 
 model Branch {
   id        String     @id @default(uuid())
   name      String
-  type      BranchType
+  slug      String?
   location  String?
   isActive  Boolean    @default(true)
   createdAt DateTime   @default(now())
@@ -339,6 +372,7 @@ model User {
   coupons                UserCoupon[]
   permissions            Permission[]            @relation("PermissionToUser")
   interests              Interest[]              @relation("UserInterests")
+  broadcastLogs BroadcastLog[]
 
   @@index([branchId], map: "User_branchId_fkey")
 }
@@ -358,6 +392,11 @@ model Receipt {
   reviewedBy        String?
   reviewedAt        DateTime?
   createdAt         DateTime           @default(now())
+
+  receiptNumber   String?
+  receiptDate     DateTime? 
+  receiptTime     String?
+  
   branchId          String?
   shopId            String?
   fileType          String?
@@ -373,6 +412,7 @@ model Receipt {
   @@index([branchId], map: "Receipt_branchId_fkey")
   @@index([reviewedBy], map: "Receipt_reviewedBy_fkey")
   @@index([shopId], map: "Receipt_shopId_fkey")
+  @@index([shopId, receiptNumber])
 }
 
 model UploadTerm {
@@ -731,12 +771,6 @@ enum OtpLogStatus {
   FAILED
 }
 
-enum BranchType {
-  MALL
-  PARK
-  TOWN
-}
-
 enum OtpPurpose {
   REGISTER
   RESET_PASSWORD
@@ -799,4 +833,60 @@ enum PointSource {
   REWARD
   REFERRAL
   ADJUST
+}
+
+model Broadcast {
+  id          String   @id @default(uuid())
+  name        String
+  message     String   @db.Text
+  imageUrl    String?
+
+  filters     Json
+
+  total       Int?     // จำนวน user ตอนยิง
+  success     Int?     // ยิงสำเร็จ
+  failed      Int?     // ยิงพลาด
+
+  status      BroadcastStatus @default(PENDING)
+
+  scheduledAt DateTime?
+  sentAt      DateTime?
+
+  createdAt   DateTime @default(now())
+  createdBy   String?
+
+  logs        BroadcastLog[]
+
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model BroadcastLog {
+  id          String   @id @default(uuid())
+
+  broadcastId String
+  userId      String
+
+  status      BroadcastLogStatus
+  error       String?
+
+  sentAt      DateTime @default(now())
+
+  broadcast   Broadcast @relation(fields: [broadcastId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([broadcastId])
+  @@index([userId])
+}
+
+enum BroadcastStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+enum BroadcastLogStatus {
+  SENT
+  FAILED
 }

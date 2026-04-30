@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from "next/navigation"
+import { MdLogout } from "react-icons/md";
 
 export default function LogoutButton() {
   const router = useRouter()
@@ -14,8 +15,9 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="w-full flex items-center justify-center gap-2 bg-gray-300 rounded-xl shadow-sm py-3 text-black"
+      className="w-full flex items-center justify-center gap-2 bg-gray-300 rounded-full shadow-sm py-2 text-sm text-black"
     >
+      <MdLogout size={24} />
       ออกจากระบบ
     </button>
   )

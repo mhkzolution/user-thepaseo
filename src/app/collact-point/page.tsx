@@ -19,21 +19,14 @@ export default function CollactPointPage() {
 
 
   return (
-    <div className="h-screen max-w-2xl mx-auto p-0 md:mt-20 rounded-2xl overflow-hidden">
+    <div className="max-w-lg mx-auto h-screen p-0 mb-0 md:mb-0 mb-0 rounded-t-xl relative overflow-hidden">
+      <HeaderMobile showBack={true} />
 
-      <HeaderMobile />
-
-      <div className="md:h-30% h-25% max-w-2xl mx-auto p-0 ">
-
-        <div className="rounded-xl w-full pt-4 px-4 md:pt-0 md:px-10 md:pb-0">
-
+      <div className="md:pt-14 pt-16 mb-0 py-4 px-4 md:px-4">
         <BannerPoint />
-
-        </div>
       </div>
         
-
-      <div className="md:h-70% h-75% p-6 pt-16 mt-4 rounded-t-3xl bg-white shadow relative">
+      <div className="w-full h-full py-8 px-10 m-0 rounded-t-3xl bg-white shadow z-50 md:relative">
         <div className="flex flex-col justify-center items-center space-y-6">
 
           
