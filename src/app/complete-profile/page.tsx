@@ -66,7 +66,7 @@ type FormState = {
 
 export default function CompleteProfilePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, refreshUser, setUser } = useContext(AuthContext);
   const router = useRouter()
   const [branches, setBranches] = useState<{ id: string; name: string; type: string }[]>([]);
   const [originalPhone, setOriginalPhone] = useState<string>("")
@@ -98,10 +98,12 @@ export default function CompleteProfilePage() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-  if (!loading && !user) {
-    router.push("/auth/login");
-  }
-  }, [loading, user]);
+    if (loading) return
+    if (user) return
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null
+    if (!token) router.push("/auth/login")
+  }, [loading, user, router])
 
   const thaiPhoneRegex = /^0[689]\d{8}$/
   const stepNames = ['ข้อมูลส่วนตัว', 'ที่อยู่', 'ข้อมูลเพิ่มเติม']
@@ -279,7 +281,18 @@ export default function CompleteProfilePage() {
       const data = await res.json();
       if (res.ok) {
         setSuccess(true);
-        router.push('/profile');
+        const trimmedPhone = form.phone.trim();
+        if (user && setUser && trimmedPhone) {
+          const updated = { ...user, phone: trimmedPhone };
+          setUser(updated);
+          try {
+            localStorage.setItem("user", JSON.stringify(updated));
+          } catch {
+            /* ignore */
+          }
+        }
+        router.push("/profile");
+        void refreshUser();
       } else {
         setError(data.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
       }

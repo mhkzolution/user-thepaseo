@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
@@ -15,8 +16,41 @@ import { GoFileDirectoryFill } from "react-icons/go";
 import { MdPictureAsPdf } from "react-icons/md";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 
+function LoginRequiredDialog({ onGoLogin }: { onGoLogin: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+      style={{ backdropFilter: "blur(2px)" }}
+    >
+      <div
+        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-login-required-title"
+      >
+        <p
+          id="upload-login-required-title"
+          className="mb-6 text-center text-base font-medium text-gray-900"
+        >
+          กรุณาทำการเข้าสู่ระบบ
+        </p>
+        <Button
+          type="button"
+          onClick={onGoLogin}
+          className="h-11 w-full rounded-xl bg-paseo text-base text-white hover:bg-paseo/90"
+        >
+          เข้าสู่ระบบ
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function UploadPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
+  const router = useRouter();
+  const { user, loading: authLoading } = useContext(AuthContext);
+  const [showReloginDialog, setShowReloginDialog] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ dragFree: true });
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -54,17 +88,25 @@ export default function UploadPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const goToLogin = () => {
+    router.replace(`/auth/login?next=${encodeURIComponent("/upload")}`);
+  };
+
   const handleSubmit = async () => {
     if (files.length === 0) {
       alert("กรุณาเลือกไฟล์");
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token || !user) {
+      setShowReloginDialog(true);
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     files.forEach((file) => formData.append("images", file));
-
-    const token = localStorage.getItem("token");
 
     const res = await fetch(`${API_URL}/receipt/upload`, {
       method: "POST",
@@ -114,8 +156,28 @@ export default function UploadPage() {
   useEffect(() => {
     }, [emblaApi])
 
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-2xl p-6 pt-24 text-center text-sm text-gray-500">
+        กำลังโหลดข้อมูล...
+      </div>
+    );
+  }
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const isLoggedIn = Boolean(token && user);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-[50vh] bg-gradient-to-t from-paseo/10 to-gray-100">
+        <LoginRequiredDialog onGoLogin={goToLogin} />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl relative">
       <HeaderMobile showBack={true} />
       
       <div className="md:mt-16 mt-0 mb-0 md:pt-4 pt-16 pb-3 px-3 md:px-4">
@@ -337,6 +399,15 @@ export default function UploadPage() {
                 </div>
               </div>
             )}
+
+      {showReloginDialog && (
+        <LoginRequiredDialog
+          onGoLogin={() => {
+            setShowReloginDialog(false);
+            goToLogin();
+          }}
+        />
+      )}
 
     </div>
   );

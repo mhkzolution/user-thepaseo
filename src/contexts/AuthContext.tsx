@@ -49,9 +49,9 @@ export function AuthProvider({ children }: any) {
         if (u) {
           setUser(u)
           localStorage.setItem("user", JSON.stringify(u))
-        } else {
-          setUser(null)
         }
+        // res OK แต่รูปแบบ JSON ไม่ตรงที่คาด — อย่า setUser(null) เพราะจะไปชนกับ
+        // complete-profile (มี token แต่ user ว่างชั่วคราว) และแข่ง router ใน LIFF
       } else {
         setUser(null)
       }

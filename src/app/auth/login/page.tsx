@@ -140,8 +140,14 @@ useEffect(() => {
 
     localStorage.setItem("token", data.token)
     await refreshUser()
+    const params = new URLSearchParams(window.location.search)
+    const next = params.get("next")?.trim() ?? ""
+    const dest =
+      next.startsWith("/") && !next.startsWith("//") && !next.includes(":")
+        ? next
+        : "/"
     // full navigation — หลีกเลี่ยง RSC soft-nav ที่อาจโดน cache / redirect ค้าง
-    window.location.assign("/")
+    window.location.assign(dest)
   }
 
   useEffect(() => {

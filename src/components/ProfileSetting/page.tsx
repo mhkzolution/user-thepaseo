@@ -36,9 +36,13 @@ export default function ProfileSetting() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const res = await fetchWithAuth(`${API_URL}/profile`);
-      const data = await res.json();
-      if (data.user) setUser(data.user);
+      try {
+        const res = await fetchWithAuth(`${API_URL}/profile`);
+        const data = await res.json();
+        if (data.user) setUser(data.user);
+      } catch {
+        /* กัน unhandled rejection ใน LIFF / WebView */
+      }
     };
     fetchUser();
   }, []);

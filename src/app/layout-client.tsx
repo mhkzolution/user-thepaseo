@@ -18,7 +18,11 @@ function RequirePhoneGuard({ pathname }: { pathname: string }) {
     const phone = typeof user.phone === "string" ? user.phone.trim() : ""
 
     if (!phone) {
-      router.replace('/complete-profile')
+      const onCompleteProfile =
+        pathname === "/complete-profile" || pathname.startsWith("/complete-profile/")
+      if (!onCompleteProfile) {
+        router.replace("/complete-profile")
+      }
     }
   }, [loading, user, pathname, router])
 
