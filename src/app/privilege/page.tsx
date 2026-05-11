@@ -1,8 +1,9 @@
-// app/profile/page.tsx
+// app/privilege/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useContext } from "react";
+import { useRouter } from "next/navigation";
 import { AuthContext } from "@/contexts/AuthContext";
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import UserProfile from '@/components/UserProfile/page';
@@ -11,30 +12,66 @@ import PrivilegeList from '@/components/PrivilegeList/page';
 import HeaderMobile from "@/components/HeaderMobile/page";
 
 
-export default function ProfilePage() {
+export default function PrivilegePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user, setUser } = useContext(AuthContext);
+  const router = useRouter()
+  const { user, loading: authLoading, setUser } = useContext(AuthContext);
+  /** โหลด /profile สำเร็จและ sync user แล้วเท่านั้น — กันค้างโหลดเมื่อ 401 / ไม่มี token */
+  const [profileOk, setProfileOk] = useState(false)
 
   useEffect(() => {
+    if (authLoading) return
+
+    const goLogin = () => {
+      router.replace(`/auth/login?next=${encodeURIComponent("/privilege")}`)
+    }
+
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null
+    if (!token) {
+      goLogin()
+      return
+    }
+
+    let cancelled = false
+
     const fetchProfile = async () => {
-      const res = await fetchWithAuth(`${API_URL}/profile`);
-      if (res.ok) {
-        const data = await res.json();
+      try {
+        const res = await fetchWithAuth(`${API_URL}/profile`)
+        if (cancelled) return
+        if (res.status === 401) {
+          goLogin()
+          return
+        }
+        if (!res.ok) {
+          goLogin()
+          return
+        }
+        const data = await res.json()
+        if (cancelled) return
         if (data?.user && typeof data.user === "object") {
-          setUser(data.user);
+          setUser(data.user)
           try {
-            localStorage.setItem("user", JSON.stringify(data.user));
+            localStorage.setItem("user", JSON.stringify(data.user))
           } catch {
             /* ignore */
           }
+          setProfileOk(true)
+          return
         }
+        goLogin()
+      } catch {
+        if (!cancelled) goLogin()
       }
-    };
-    fetchProfile();
-  }, []);
+    }
+    void fetchProfile()
+    return () => {
+      cancelled = true
+    }
+  }, [API_URL, authLoading, router, setUser])
 
-  if (!user) {
-    return (<Loading />);
+  if (authLoading || !profileOk || !user) {
+    return <Loading />
   }
 
   return (

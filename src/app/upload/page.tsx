@@ -15,42 +15,13 @@ import { MdAddAPhoto } from "react-icons/md";
 import { GoFileDirectoryFill } from "react-icons/go";
 import { MdPictureAsPdf } from "react-icons/md";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
-
-function LoginRequiredDialog({ onGoLogin }: { onGoLogin: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
-      style={{ backdropFilter: "blur(2px)" }}
-    >
-      <div
-        className="w-full max-w-sm rounded-xl bg-white p-6 shadow-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="upload-login-required-title"
-      >
-        <p
-          id="upload-login-required-title"
-          className="mb-6 text-center text-base font-medium text-gray-900"
-        >
-          กรุณาทำการเข้าสู่ระบบ
-        </p>
-        <Button
-          type="button"
-          onClick={onGoLogin}
-          className="h-11 w-full rounded-xl bg-paseo text-base text-white hover:bg-paseo/90"
-        >
-          เข้าสู่ระบบ
-        </Button>
-      </div>
-    </div>
-  );
-}
+import Loading from "@/components/loading";
 
 export default function UploadPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const router = useRouter();
-  const { user, loading: authLoading } = useContext(AuthContext);
-  const [showReloginDialog, setShowReloginDialog] = useState(false);
+  const { user, loading: authLoading, setUser } = useContext(AuthContext);
+  const [profileOk, setProfileOk] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ dragFree: true });
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -67,6 +38,57 @@ export default function UploadPage() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    const goLogin = () => {
+      router.replace(`/auth/login?next=${encodeURIComponent("/upload")}`);
+    };
+
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) {
+      goLogin();
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchProfile = async () => {
+      try {
+        const res = await fetchWithAuth(`${API_URL}/profile`);
+        if (cancelled) return;
+        if (res.status === 401) {
+          goLogin();
+          return;
+        }
+        if (!res.ok) {
+          goLogin();
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.user && typeof data.user === "object") {
+          setUser(data.user);
+          try {
+            localStorage.setItem("user", JSON.stringify(data.user));
+          } catch {
+            /* ignore */
+          }
+          setProfileOk(true);
+          return;
+        }
+        goLogin();
+      } catch {
+        if (!cancelled) goLogin();
+      }
+    };
+    void fetchProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [API_URL, authLoading, router, setUser]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -100,7 +122,7 @@ export default function UploadPage() {
 
     const token = localStorage.getItem("token");
     if (!token || !user) {
-      setShowReloginDialog(true);
+      goToLogin();
       return;
     }
 
@@ -156,24 +178,8 @@ export default function UploadPage() {
   useEffect(() => {
     }, [emblaApi])
 
-  if (authLoading) {
-    return (
-      <div className="mx-auto max-w-2xl p-6 pt-24 text-center text-sm text-gray-500">
-        กำลังโหลดข้อมูล...
-      </div>
-    );
-  }
-
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const isLoggedIn = Boolean(token && user);
-
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-[50vh] bg-gradient-to-t from-paseo/10 to-gray-100">
-        <LoginRequiredDialog onGoLogin={goToLogin} />
-      </div>
-    );
+  if (authLoading || !profileOk || !user) {
+    return <Loading />;
   }
 
   return (
@@ -399,15 +405,6 @@ export default function UploadPage() {
                 </div>
               </div>
             )}
-
-      {showReloginDialog && (
-        <LoginRequiredDialog
-          onGoLogin={() => {
-            setShowReloginDialog(false);
-            goToLogin();
-          }}
-        />
-      )}
 
     </div>
   );

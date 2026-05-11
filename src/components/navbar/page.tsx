@@ -25,6 +25,8 @@ interface CouponData {
 interface UserProfileData {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
   email?: string;
   dateOfBirth?: string;
@@ -269,7 +271,7 @@ const Navbar = () => {
                     {avatarUrl ? (
                       <Image
                         src={avatarUrl}
-                        alt={`${user.name}'s avatar`}
+                        alt={`${user.firstName} ${user.lastName}'s avatar`}
                         width={36}
                         height={36}
                         priority

@@ -11,6 +11,10 @@ html, body {
   overscroll-behavior-y: auto;
 }
 
+body {
+  padding-top: env(safe-area-inset-top);
+}
+
 .embla {
   overflow: hidden;
 }

@@ -22,6 +22,7 @@ import HeaderMobile from '@/components/HeaderMobile/page';
 import SimpleSelect from '@/components/form/SimpleSelect'
 import FormField from '@/components/form/FormField'
 import ThaiAddressSelect from '@/components/address/ThaiAddressSelect'
+import Loading from "@/components/loading"
 
 import { FaSave } from "react-icons/fa";
 import { FaArrowLeft, FaArrowRight } from "react-icons/fa6";
@@ -47,7 +48,37 @@ function normalizeInterestsPayload(payload: unknown): Interest[] {
     .map((i: any) => ({ id: i.id, name: i.name }));
 }
 
+const MIN_PAGE_LOAD_MS = 1000
+
+function sleep(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms))
+}
+
+/** รีทรายเมื่อ 5xx / เครือข่าย จนกว่าจะสำเร็จ — 401 ส่งกลับทันที (ไม่รีทราย) */
+async function fetchUntilOk(
+  url: string,
+  opts?: { auth?: boolean; init?: RequestInit }
+): Promise<Response> {
+  let n = 0
+  for (;;) {
+    try {
+      const res = opts?.auth
+        ? await fetchWithAuth(url, opts.init ?? {}, { maxRetries: 0 })
+        : await fetch(url, { cache: "no-store", ...opts?.init })
+      if (res.status === 401) return res
+      if (res.ok) return res
+    } catch {
+      /* เครือข่าย / timeout — ลองใหม่ */
+    }
+    const backoff = Math.min(800 + n * 300, 8000)
+    await sleep(backoff)
+    n += 1
+  }
+}
+
 type FormState = {
+  firstName: string;
+  lastName: string;
   dateOfBirth: string;
   gender: string;
   phone: string;
@@ -64,19 +95,141 @@ type FormState = {
   interests: string[];
 }
 
+/** ให้ตรงกับ Prisma enum / หน้า profile/edit — กันส่ง "" ทำให้ 500 ตอน complete */
+const GENDER_VALUES = new Set(["MALE", "FEMALE", "OTHER"])
+const OCCUPATION_VALUES = new Set([
+  "STUDENT",
+  "PRIVATE_EMPLOYEE",
+  "STATE_ENTERPRISE",
+  "FREELANCER",
+  "BUSINESS_OWNER",
+  "HOMEMAKER",
+  "OTHER",
+])
+const RESIDENCE_VALUES = new Set(["TOWNHOUSE", "CONDO", "SINGLE_HOUSE"])
+
+function buildCompleteProfilePayload(
+  form: FormState,
+  interestIds: string[]
+): Record<string, unknown> {
+  const trim = (v: string) => (typeof v === "string" ? v.trim() : "")
+
+  const dateOfBirth =
+    form.dateOfBirth &&
+    !Number.isNaN(Date.parse(form.dateOfBirth))
+      ? form.dateOfBirth
+      : undefined
+
+  const payload: Record<string, unknown> = {
+    firstName: trim(form.firstName) || undefined,
+    lastName: trim(form.lastName) || undefined,
+    interests: interestIds,
+    phone: trim(form.phone) || undefined,
+    email: trim(form.email) || undefined,
+    address: trim(form.address) || undefined,
+    subDistrict: trim(form.subDistrict) || undefined,
+    district: trim(form.district) || undefined,
+    province: trim(form.province) || undefined,
+    postalCode: trim(form.postalCode) || undefined,
+  }
+
+  if (dateOfBirth) payload.dateOfBirth = dateOfBirth
+  if (GENDER_VALUES.has(form.gender)) payload.gender = form.gender
+  if (OCCUPATION_VALUES.has(form.occupation))
+    payload.occupation = form.occupation
+  if (RESIDENCE_VALUES.has(form.residenceType))
+    payload.residenceType = form.residenceType
+
+  const branchId = trim(form.branchId)
+  if (branchId) payload.branchId = branchId
+
+  const referralCode = trim(form.referralCode)
+  if (referralCode) payload.referralCode = referralCode
+
+  return payload
+}
+
+async function readProfileCompleteError(res: Response): Promise<string> {
+  const ct = res.headers.get("content-type") || ""
+  try {
+    if (ct.includes("application/json")) {
+      const data = await res.json()
+      const bits: string[] = []
+      if (typeof data?.error === "string" && data.error) bits.push(data.error)
+      if (typeof data?.message === "string" && data.message)
+        bits.push(data.message)
+      if (Array.isArray(data?.issues)) {
+        for (const issue of data.issues) {
+          if (issue?.message) bits.push(String(issue.message))
+        }
+      }
+      if (typeof data?.details === "string" && data.details)
+        bits.push(data.details)
+      return bits.filter(Boolean).join(" — ")
+    }
+    const text = (await res.text()).trim()
+    if (text && text.length < 500) return text
+  } catch {
+    /* ignore */
+  }
+  return ""
+}
+
+/** เช็คกับ /auth/register/check-phone — ข้ามเมื่อเบอร์ตรงกับที่โหลดจาก /profile (เป็นของบัญชีนี้แล้ว) */
+function shouldCheckPhoneAgainstRegisterApi(
+  inputPhone: string,
+  savedPhoneFromProfile: string
+): boolean {
+  const t = inputPhone.trim()
+  const s = savedPhoneFromProfile.trim()
+  if (!t) return false
+  if (s !== "" && t === s) return false
+  return true
+}
+
+async function fetchRegisterPhoneDuplicateCheck(
+  apiUrl: string,
+  phone: string
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${apiUrl}/auth/register/check-phone`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: phone.trim() }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.ok && data.ok === true) return { ok: true }
+    return {
+      ok: false,
+      error:
+        typeof data.error === "string" && data.error
+          ? data.error
+          : "ไม่สามารถใช้เบอร์โทรศัพท์นี้ได้",
+    }
+  } catch {
+    return { ok: false, error: "ไม่สามารถตรวจสอบเบอร์โทรได้" }
+  }
+}
+
 export default function CompleteProfilePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
-  const { user, loading, refreshUser, setUser } = useContext(AuthContext);
+  const { user, loading: authLoading, refreshUser, setUser } = useContext(AuthContext);
   const router = useRouter()
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
   const [branches, setBranches] = useState<{ id: string; name: string; type: string }[]>([]);
   const [originalPhone, setOriginalPhone] = useState<string>("")
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otp, setOtp] = useState("")
   const [otpError, setOtpError] = useState("")
-  const [isPhoneVerified, setIsPhoneVerified] = useState(true)
+  const [checkingPhone, setCheckingPhone] = useState(false)
+  /** เบอร์ที่ยืนยัน OTP ในขั้นตอนนี้แล้ว (สำคัญเมื่อไม่มีเบอร์ในระบบ เช่น ล็อกอิน LINE) */
+  const [otpVerifiedForPhone, setOtpVerifiedForPhone] = useState("")
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false)
   const [interests, setInterests] = useState<Interest[]>([]);
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<FormState>({
+    firstName: "",
+    lastName: "",
     dateOfBirth: "",
     gender: "",
     phone: "",
@@ -98,103 +251,112 @@ export default function CompleteProfilePage() {
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    if (loading) return
+    if (authLoading) return
     if (user) return
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null
     if (!token) router.push("/auth/login")
-  }, [loading, user, router])
+  }, [authLoading, user, router])
 
   const thaiPhoneRegex = /^0[689]\d{8}$/
   const stepNames = ['ข้อมูลส่วนตัว', 'ที่อยู่', 'ข้อมูลเพิ่มเติม']
 
   useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const res = await fetch(`${API_URL}/branch`);
-        if (!res.ok) throw new Error("โหลดสาขาไม่สำเร็จ");
-        const data = await res.json();
-        setBranches(data);
-      } catch (error) {
-        console.error("โหลดสาขาไม่สำเร็จ:", error);
+    if (authLoading) return
+
+    let cancelled = false
+
+    const run = async () => {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null
+      if (!token) {
+        router.push("/auth/login")
+        return
       }
-    };
-    fetchBranches();
-  }, []);
 
-    useEffect(() => {
-      const loadProfile = async () => {
-        try {
-          const token = localStorage.getItem("token");
+      const startedAt = Date.now()
 
-          if (!token) {
-            router.push("/auth/login");
-            return;
+      const [branchRes, profileRes, interestsRes] = await Promise.all([
+        fetchUntilOk(`${API_URL}/branch`),
+        fetchUntilOk(`${API_URL}/profile`, { auth: true }),
+        fetchUntilOk(`${API_URL}/interests`),
+      ])
+
+      if (cancelled) return
+
+      if (profileRes.status === 401) {
+        router.push("/auth/login")
+        return
+      }
+
+      try {
+        const branchData = await branchRes.json()
+        setBranches(Array.isArray(branchData) ? branchData : [])
+
+        const data = await profileRes.json()
+        if (data.user) {
+          setForm((prev) => ({
+            ...prev,
+            firstName: data.user.firstName || prev.firstName,
+            lastName: data.user.lastName || prev.lastName,
+            dateOfBirth: data.user.dateOfBirth || prev.dateOfBirth,
+            gender: data.user.gender || prev.gender,
+            phone: data.user.phone || prev.phone,
+            email: data.user.email || prev.email,
+            address: data.user.address || prev.address,
+            subDistrict: data.user.subDistrict || prev.subDistrict,
+            district: data.user.district || prev.district,
+            province: data.user.province || prev.province,
+            postalCode: data.user.postalCode || prev.postalCode,
+            branchId: data.user.branchId || prev.branchId,
+            occupation: data.user.occupation || prev.occupation,
+            residenceType: data.user.residenceType || prev.residenceType,
+            interests: data.user.interests
+              ? data.user.interests.map((i: any) => i.id)
+              : [],
+          }))
+
+          if (data.user.dateOfBirth) setDate(new Date(data.user.dateOfBirth))
+
+          const savedPhone =
+            typeof data.user.phone === "string" ? data.user.phone.trim() : ""
+          if (savedPhone) {
+            setOriginalPhone(savedPhone)
+            setIsPhoneVerified(true)
+          } else {
+            setOriginalPhone("")
+            setIsPhoneVerified(false)
+            setOtpVerifiedForPhone("")
           }
-
-          const res = await fetchWithAuth(`${API_URL}/profile`)
-
-          if (res.status === 401) {
-            router.push("/auth/login");
-            return;
-          }
-
-          const data = await res.json();
-
-          if (res.ok && data.user) {
-            setForm((prev) => ({
-              ...prev,
-              dateOfBirth: data.user.dateOfBirth || prev.dateOfBirth,
-              gender: data.user.gender || prev.gender,
-              phone: data.user.phone || prev.phone,
-              email: data.user.email || prev.email,
-              address: data.user.address || prev.address,
-              subDistrict: data.user.subDistrict || prev.subDistrict,
-              district: data.user.district || prev.district,
-              province: data.user.province || prev.province,
-              postalCode: data.user.postalCode || prev.postalCode,
-              branchId: data.user.branchId || prev.branchId,
-              occupation: data.user.occupation || prev.occupation,
-              residenceType: data.user.residenceType || prev.residenceType,
-              interests: data.user.interests
-                ? data.user.interests.map((i: any) => i.id)
-                : [],
-            }));
-
-            if (data.user.dateOfBirth)
-              setDate(new Date(data.user.dateOfBirth));
-
-            if (data.user.phone) {
-              setOriginalPhone(data.user.phone);
-              setIsPhoneVerified(true);
-            }
-          }
-        } catch (err) {
-          console.error("โหลดข้อมูล profile ล้มเหลว", err);
         }
-      };
 
-      loadProfile();
-    }, []);
-
-  useEffect(() => {
-    const fetchInterests = async () => {
-      try {
-        const res = await fetch(`${API_URL}/interests`, {
-          method: "GET",
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error("โหลดความสนใจไม่สำเร็จ");
-        const data = await res.json();
-        const normalized = normalizeInterestsPayload(data);
-        setInterests(normalized);
-      } catch (error) {
-        console.error("Error fetching interests:", error);
-        setInterests([]);
+        const interestsRaw = await interestsRes.json()
+        setInterests(normalizeInterestsPayload(interestsRaw))
+      } catch {
+        /* ไม่ควรถึงจุดนี้หลัง res.ok */
       }
-    };
-    fetchInterests();
-  }, [API_URL]);
+
+      const elapsed = Date.now() - startedAt
+      if (elapsed < MIN_PAGE_LOAD_MS) await sleep(MIN_PAGE_LOAD_MS - elapsed)
+      if (!cancelled) setInitialLoadDone(true)
+    }
+
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [authLoading, router, API_URL]);
+
+  /** ตัด interest id ที่ไม่มีใน master (มักเกิดจากข้อมูลเก่าใน DB) — ลด Prisma 500 ตอน complete */
+  useEffect(() => {
+    if (interests.length === 0) return;
+    const valid = new Set(interests.map((i) => i.id));
+    setForm((f) => {
+      const next = f.interests.filter((id) => valid.has(id));
+      if (next.length === f.interests.length) return f;
+      return { ...f, interests: next };
+    });
+  }, [interests]);
 
   const toggleInterest = (id: string) => {
     setForm({
@@ -216,12 +378,32 @@ export default function CompleteProfilePage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
-    if (name === "phone" && !thaiPhoneRegex.test(value)) {
-      setError("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (เช่น 0812345678)");
+    if (name === "phone") {
+      const trimmed = value.trim()
+      const orig = originalPhone.trim()
+      if (trimmed === orig && orig !== "") {
+        setIsPhoneVerified(true)
+      } else {
+        setIsPhoneVerified(false)
+      }
+      if (!thaiPhoneRegex.test(value)) {
+        setError("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (เช่น 0812345678)");
+      } else {
+        setError("");
+      }
     } else {
       setError("");
     }
   };
+
+  /** แก้เบอร์หลังยืนยัน OTP แล้ว → ต้องยืนยันใหม่ */
+  useEffect(() => {
+    if (!otpVerifiedForPhone) return;
+    if (form.phone.trim() !== otpVerifiedForPhone) {
+      setOtpVerifiedForPhone("");
+      setIsPhoneVerified(false);
+    }
+  }, [form.phone, otpVerifiedForPhone]);
 
   const handleNextStep = async () => {
     setError("")
@@ -233,15 +415,31 @@ export default function CompleteProfilePage() {
         return
       }
 
-      // ถ้าเบอร์เปลี่ยน → ต้อง OTP
-      if (form.phone !== originalPhone && !isPhoneVerified) {
-        const res = await fetch(`${API_URL}/auth/send-otp`, {
+      const trimmed = form.phone.trim()
+      const saved = originalPhone.trim()
+      // ไม่มีเบอร์ในระบบ (เช่น LINE): ต้องยืนยัน OTP ทุกครั้งกับเบอร์ที่กรอก
+      // มีเบอร์แล้ว: เปลี่ยนเบอร์ → OTP
+      const needsOtp =
+        saved === ""
+          ? trimmed !== otpVerifiedForPhone
+          : trimmed !== saved && !isPhoneVerified
+
+      if (needsOtp) {
+        if (shouldCheckPhoneAgainstRegisterApi(trimmed, originalPhone)) {
+          const dup = await fetchRegisterPhoneDuplicateCheck(
+            API_URL,
+            trimmed
+          )
+          if (!dup.ok) {
+            setError(dup.error || "ไม่สามารถใช้เบอร์โทรศัพท์นี้ได้")
+            return
+          }
+        }
+        // ใช้ OTP แบบ register (ยืนยันว่าเบอร์รับ SMS ได้ + ยังไม่ถูกใช้ลงทะเบียนคนอื่น) ไม่พึ่ง /auth/verify-otp ที่ตีแบบ login
+        const res = await fetch(`${API_URL}/auth/register/send-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phone: form.phone,
-            purpose: "VERIFY_PHONE",
-          }),
+          body: JSON.stringify({ phone: form.phone }),
         })
 
         if (!res.ok) {
@@ -262,28 +460,84 @@ export default function CompleteProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    if (!form.interests.length) {
-      setError('กรุณาเลือกความสนใจอย่างน้อยหนึ่งอย่าง');
+    setError("");
+    // กด Enter ในขั้น 1–2 จะ submit ฟอร์มได้ — ถ้าโหลด interests จาก /profile มาแล้ว จะผ่าน validate ส่ง API ก่อนจบ step 3
+    if (step !== 3) {
       return;
     }
 
-    if (form.phone !== originalPhone && !isPhoneVerified) {
-      setError("กรุณายืนยันเบอร์โทรศัพท์ก่อนบันทึกข้อมูล")
+    const validInterestIds = new Set(interests.map((i) => i.id));
+    const interestsPayload = form.interests.filter((id) =>
+      validInterestIds.has(id)
+    );
+    if (!interestsPayload.length) {
+      setError("กรุณาเลือกความสนใจอย่างน้อยหนึ่งอย่าง");
+      return;
+    }
+
+    const trimmedPhone = form.phone.trim()
+    const savedPhone = originalPhone.trim()
+    if (savedPhone === "") {
+      if (trimmedPhone !== otpVerifiedForPhone) {
+        setError("กรุณายืนยันเบอร์โทรศัพท์ด้วย OTP ก่อนบันทึกข้อมูล");
+        return;
+      }
+    } else if (trimmedPhone !== savedPhone && !isPhoneVerified) {
+      setError("กรุณายืนยันเบอร์โทรศัพท์ก่อนบันทึกข้อมูล");
+      return;
+    }
+
+    if (shouldCheckPhoneAgainstRegisterApi(trimmedPhone, savedPhone)) {
+      const dup = await fetchRegisterPhoneDuplicateCheck(
+        API_URL,
+        trimmedPhone
+      )
+      if (!dup.ok) {
+        setError(dup.error || "ไม่สามารถใช้เบอร์โทรศัพท์นี้ได้")
+        return
+      }
+    }
+
+    const validBranchIds = new Set(branches.map((b) => b.id))
+    const branchIdTrim = form.branchId.trim()
+    if (!branchIdTrim || !validBranchIds.has(branchIdTrim)) {
+      setError("กรุณาเลือกสาขาที่ทำการสมัคร (หรือรอให้รายการสาขาโหลดแล้วเลือกใหม่)")
       return
     }
 
+    if (
+      !form.dateOfBirth ||
+      !GENDER_VALUES.has(form.gender) ||
+      !OCCUPATION_VALUES.has(form.occupation)
+    ) {
+      setError("ข้อมูลส่วนตัวไม่ครบ — กรุณาย้อนกลับไปกรอกให้ครบ")
+      return
+    }
+
+    if (
+      !RESIDENCE_VALUES.has(form.residenceType) ||
+      !form.address.trim()
+    ) {
+      setError("ที่อยู่ไม่ครบ — กรุณาย้อนกลับไปกรอกให้ครบ")
+      return
+    }
+
+    const payload = buildCompleteProfilePayload(form, interestsPayload)
+
     try {
-      const res = await fetchWithAuth(`${API_URL}/profile/complete`, {
-        method: "POST",
-        body: JSON.stringify(form),
-      })
-      const data = await res.json();
+      const res = await fetchWithAuth(
+        `${API_URL}/profile/complete`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+        { maxRetries: 4, baseDelayMs: 500 }
+      )
       if (res.ok) {
         setSuccess(true);
-        const trimmedPhone = form.phone.trim();
-        if (user && setUser && trimmedPhone) {
-          const updated = { ...user, phone: trimmedPhone };
+        const trimmedPhoneAfter = form.phone.trim();
+        if (user && setUser && trimmedPhoneAfter) {
+          const updated = { ...user, phone: trimmedPhoneAfter };
           setUser(updated);
           try {
             localStorage.setItem("user", JSON.stringify(updated));
@@ -294,13 +548,31 @@ export default function CompleteProfilePage() {
         router.push("/profile");
         void refreshUser();
       } else {
-        setError(data.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+        const fromApi = await readProfileCompleteError(res)
+        const genericNoise =
+          !fromApi ||
+          /^something went wrong$/i.test(fromApi.trim())
+        const fallback500 =
+          "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่ หรือเปลี่ยนความสนใจที่เลือก (หากยังไม่ได้ ติดต่อเจ้าหน้าที่)"
+        let msg: string
+        if (!genericNoise) {
+          msg = fromApi
+        } else if (res.status >= 500) {
+          msg = fallback500
+        } else {
+          msg = fromApi || "เกิดข้อผิดพลาดในการบันทึกข้อมูล"
+        }
+        setError(msg);
       }
     } catch (err) {
       console.error(err);
-      setError('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      setError("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
+
+  if (authLoading || !initialLoadDone) {
+    return <Loading />
+  }
 
   return (
     <div className="max-w-lg mx-auto md:py-0 py-6 pb-0 rounded-xl relative">
@@ -326,17 +598,17 @@ export default function CompleteProfilePage() {
         </div>
 
         <div className="md:p-10 p-4 m-0 md:mb-20 rounded-xl bg-white shadow z-50 relative">
-          <div className="flex justify-center items-center gap-4 mb-5">
-            <Image src="/logo-paseo-register.png" width={54} height={54} unoptimized alt="ThePaseo" />
+          <div className="flex justify-center items-center gap-4 mb-2">
+            <Image src="/logo-paseo-register.png" width={46} height={46} unoptimized alt="ThePaseo" />
             <h2 className="text-xl font-semibold text-center">ข้อมูลเพิ่มเติม</h2>
           </div>
 
           {/* Stepper */}
-          <div className="flex justify-center items-center mb-8">
+          <div className="flex justify-center items-center mb-4">
             {stepNames.map((name, index) => (
               <div key={index} className="flex flex-col flex-auto items-center">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300
+                  className={`flex items-center justify-center w-8 h-8 rounded-full transition-all duration-300
                     ${step > index + 1 ? 'text-white' : ''}
                     ${step === index + 1 ? 'text-white font-bold' : ''}
                     ${step < index + 1 ? 'text-gray-600' : ''}`}
@@ -354,7 +626,7 @@ export default function CompleteProfilePage() {
                     index + 1
                   )}
                 </div>
-                <div className={`text-sm font-medium ${step === index + 1 ? 'text-black-600' : 'text-gray-500'}`}>
+                <div className={`text-xs font-medium ${step === index + 1 ? 'text-black-600' : 'text-gray-500'}`}>
                   {name}
                 </div>
                 {index < stepNames.length - 1 && (
@@ -366,7 +638,33 @@ export default function CompleteProfilePage() {
 
           <form onSubmit={handleSubmit}>
             {step === 1 && (
-              <div className="flex flex-col gap-0 pb-10">
+              <div className="flex flex-col gap-0 pb-16">
+                <div className='flex flex-row gap-2'>
+                  <FormField label="ชื่อ" required>
+                    <Input
+                      type="text"
+                      placeholder="ชื่อของคุณ *"
+                      name="firstName"
+                      className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                      value={form.firstName}
+                      onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                      required
+                    />
+                  </FormField>
+    
+                  <FormField label="นามสกุล" required>
+                    <Input
+                      type="text"
+                      placeholder="นามสกุลของคุณ *"
+                      name="lastName"
+                      className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                      value={form.lastName}
+                      onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                      required
+                    />
+                  </FormField>
+                </div>
+
                 <div className='flex flex-row gap-2'>
                   <FormField label="วันเกิด" required>
                     <Popover open={open} onOpenChange={setOpen}>
@@ -413,15 +711,49 @@ export default function CompleteProfilePage() {
 
                 <FormField label="เบอร์โทรศัพท์" required>
                   <Input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
                     placeholder="เบอร์โทรศัพท์ (เช่น 0812345678)"
                     name="phone"
                     onChange={handleChange}
+                    onBlur={async () => {
+                      if (!thaiPhoneRegex.test(form.phone)) return
+                      if (
+                        !shouldCheckPhoneAgainstRegisterApi(
+                          form.phone,
+                          originalPhone
+                        )
+                      )
+                        return
+                      setCheckingPhone(true)
+                      try {
+                        const result = await fetchRegisterPhoneDuplicateCheck(
+                          API_URL,
+                          form.phone.trim()
+                        )
+                        if (!result.ok)
+                          setError(
+                            result.error || "ไม่สามารถใช้เบอร์โทรศัพท์นี้ได้"
+                          )
+                      } finally {
+                        setCheckingPhone(false)
+                      }
+                    }}
                     className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
                     value={form.phone}
                     required
                   />
-                  {error.includes("เบอร์โทร") && <p className="text-red-500 text-sm">{error}</p>}
+                  {error &&
+                    (error.includes("เบอร์โทร") ||
+                      error.includes("เบอร์นี้") ||
+                      error.includes("บัญชีอื่น")) && (
+                      <p className="text-red-500 text-sm">{error}</p>
+                    )}
+                  {!error && checkingPhone && (
+                    <p className="text-gray-500 text-sm">
+                      กำลังตรวจสอบเบอร์โทร...
+                    </p>
+                  )}
                 </FormField>
 
                 
@@ -472,10 +804,10 @@ export default function CompleteProfilePage() {
 
             {step === 2 && (
               <div className="flex flex-col gap-0 pb-20">
-                <FormField label="ที่อยู่" required>
+                <FormField label="ประเภทที่อยู่" required>
                   <SimpleSelect
                     value={form.residenceType}
-                    placeholder="ที่อยู่ *"
+                    placeholder="ประเภทที่อยู่ *"
                     onChange={(value) => setForm({ ...form, residenceType: value })}
                     options={[
                       { value: 'TOWNHOUSE', label: 'ทาวน์เฮาส์' },
@@ -602,24 +934,26 @@ export default function CompleteProfilePage() {
                 <div className="flex gap-2 mt-4">
                   <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full bg-gray-100"
                     onClick={() => setShowOtpModal(false)}
                   >
                     ยกเลิก
                   </Button>
 
                   <Button
-                    className="w-full"
+                    className="w-full bg-paseo"
                     onClick={async () => {
-                      const res = await fetch(`${API_URL}/auth/verify-otp`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          phone: form.phone,
-                          otp,
-                          purpose: "VERIFY_PHONE",
-                        }),
-                      })
+                      const res = await fetch(
+                        `${API_URL}/auth/register/verify-otp`,
+                        {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            phone: form.phone,
+                            otp,
+                          }),
+                        }
+                      )
 
                       const data = await res.json()
 
@@ -628,9 +962,10 @@ export default function CompleteProfilePage() {
                         return
                       }
 
+                      setOtpVerifiedForPhone(form.phone.trim())
                       setIsPhoneVerified(true)
                       setShowOtpModal(false)
-                      setStep(step + 1)
+                      setStep(2)
                     }}
                   >
                     ยืนยัน OTP

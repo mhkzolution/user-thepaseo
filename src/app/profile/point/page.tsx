@@ -244,11 +244,11 @@ export default function HistoryScorePage() {
 
                     {p.type === "RECEIPT" && p.receipt && (
                       <div className="flex flex-col gap-0">
-                        <div className="flex justify-between">
-                          <span className="text-sm">
+                        <div className="flex flex-col justify-between">
+                          <span className="text-xs">
                             ร้านค้า: {p.receipt.shopName}
                           </span>
-                          <span className="text-sm">
+                          <span className="text-xs">
                             สาขา: {p.receipt.branchName}
                           </span>
                         </div>

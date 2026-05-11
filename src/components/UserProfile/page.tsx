@@ -25,10 +25,18 @@ interface CouponData {
   };
 }
 
+interface PointExpiry {
+  nextExpiresAt: string | null;
+  pointsAtNextExpiry: number;
+  pointExpireYears?: number | null;
+}
+
 // Update the UserProfileData interface to include the full coupons array
 interface UserProfileData {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
   email?: string;
   dateOfBirth?: string;
@@ -49,6 +57,7 @@ interface UserProfileData {
   totalSpending: number;
   referralCode: string;
   referredBy?: string;
+  pointExpiry?: PointExpiry;
 }
 
 interface Props {
@@ -110,6 +119,16 @@ export default function UserProfile({ showOn = "mobile" }: Props) {
     fetchUser();
   }, []);
 
+  function formatDate(date?: string | null) {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleDateString("th-TH", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
   if (!user) return 
     <Loading />
   ;
@@ -143,15 +162,24 @@ export default function UserProfile({ showOn = "mobile" }: Props) {
                   
               </div>
 
-              <div className="w-full flex flex-col gap-3 z-10 ">
+              <div className="w-full flex flex-col gap-2 z-10 ">
 
                 <div className="w-full flex flex-col ml-2">
-                  <p className="text-xl font-semibold">{user.name}</p>
+                  <p className="text-xl font-semibold">{user.firstName || user.name } {user.lastName}</p>
                   <div className="w-full flex flex-row items-center gap-2">
                     <p className="text-xs font-medium leading-none">เบอร์โทรศัพท์</p>
                     <p className="text-xs font-semibold leading-none">
                       {formatPhone(user.phone)}
                     </p>
+                  </div>
+                  
+                  <div className="w-full flex flex-row items-center gap-2 mt-1">
+                    {user.pointExpiry?.nextExpiresAt && user.pointExpiry.pointsAtNextExpiry > 0 && (
+                      <p className="text-xs text-red-500 font-semibold leading-none">
+                        {user.pointExpiry.pointsAtNextExpiry.toLocaleString()} พอยท์
+                        จะหมดวันที่ {formatDate(user.pointExpiry.nextExpiresAt)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -176,6 +204,7 @@ export default function UserProfile({ showOn = "mobile" }: Props) {
                       
                       
                     </Link>
+
                   </div>
 
                   <div className="w-50% z-10 flex flex-row text-center items-center gap-2 bg-white p-1 border border-gray-100 rounded-lg shadow-lg">

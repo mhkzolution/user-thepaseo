@@ -29,7 +29,8 @@ interface Interest {
 
 interface ProfileForm {
   avatar: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   email: string;
   dateOfBirth: string;
@@ -81,7 +82,8 @@ export default function ProfileEditPage() {
   const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
   const [form, setForm] = useState<ProfileForm>({
     avatar: '',
-    name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
     email: '',
     dateOfBirth: '',
@@ -120,7 +122,8 @@ export default function ProfileEditPage() {
 
     return {
       avatar: trimmed(input.avatar) || undefined,
-      name: trimmed(input.name),
+      firstName: trimmed(input.firstName),
+      lastName: trimmed(input.lastName),
       phone: trimmed(input.phone) || undefined,
       email: trimmed(input.email) || undefined,
       dateOfBirth: date || null,
@@ -184,7 +187,15 @@ export default function ProfileEditPage() {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('name', form.name || 'user');
+    
+    const fullName = `${form.firstName || ''}_${form.lastName || ''}`
+      .trim()
+      .replace(/\s+/g, '_')
+      .toLowerCase();
+
+    const fileName = `${fullName}_${Date.now()}`;
+
+    formData.append('firstName', fileName || 'user');
 
     const res = await fetchWithAuth(`${API_URL}/profile/avatar`, {
       method: "POST",
@@ -214,7 +225,8 @@ export default function ProfileEditPage() {
         setForm({
           ...form,
           avatar: userData.user.avatar ?? form.avatar,
-          name: userData.user.name ?? form.name,
+          firstName: userData.user.firstName ?? form.firstName,
+          lastName: userData.user.lastName ?? form.lastName,
           phone: userData.user.phone ?? form.phone,
           email: userData.user.email ?? form.email,
           gender: userData.user.gender ?? form.gender,
@@ -331,17 +343,32 @@ export default function ProfileEditPage() {
                 />
               </div>
             </div>
-            <FormField label="ชื่อที่แสดง" required>
-              <Input
-                type="text"
-                placeholder="ชื่อที่แสดง *"
-                name="name"
-                className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </FormField>
+
+            <div className='flex flex-row gap-2'>
+              <FormField label="ชื่อ" required>
+                <Input
+                  type="text"
+                  placeholder="ชื่อของคุณ *"
+                  name="firstName"
+                  className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                  value={form.firstName}
+                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  required
+                />
+              </FormField>
+
+              <FormField label="นามสกุล" required>
+                <Input
+                  type="text"
+                  placeholder="นามสกุลของคุณ *"
+                  name="lastName"
+                  className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                  value={form.lastName}
+                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  required
+                />
+              </FormField>
+            </div>
 
             <div className='flex flex-row gap-2'>
               <FormField label="วันเกิด" required>
@@ -512,7 +539,7 @@ export default function ProfileEditPage() {
           </div>
           
 
-          <Button type="submit" className="w-full text-white p-3 rounded-xl" style={{ backgroundColor: '#9DC93C' }}>
+          <Button type="submit" className="w-full text-white p-3 rounded-xl bg-paseo">
             บันทึก
           </Button>
         </form>
@@ -526,8 +553,7 @@ export default function ProfileEditPage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleModalClose}
-                className="text-white p-2 rounded-xl"
-                style={{ backgroundColor: '#9DC93C' }}
+                className="text-white p-2 rounded-xl bg-paseo"
               >
                 ตกลง
               </Button>

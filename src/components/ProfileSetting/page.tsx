@@ -12,6 +12,8 @@ import Loading from '@/components/loading';
 interface ProfileSettingData {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   phone?: string;
   email?: string;
   dateOfBirth?: string;
@@ -73,7 +75,7 @@ export default function ProfileSetting() {
             
                 <div className="profile-setting-item flex flex-row mb-2">
                     <h3 className="w-1/4 text-xs font-bold">ชื่อ</h3>
-                    <span className="w-3/4 text-xs">{user.name!}</span>
+                    <span className="w-3/4 text-xs">{user.firstName! || user.name} {user.lastName!}</span>
                 </div>
 
                 <div className="profile-setting-item flex flex-row mb-2">

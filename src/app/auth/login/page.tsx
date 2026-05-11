@@ -5,6 +5,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import Image from 'next/image';
 import { FaLine } from "react-icons/fa6";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import Link from 'next/link';
 import OTPInputSimple from "@/components/ui/input-otp"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,12 @@ import BannerLogin from "@/components/BannerLogin/page"
 import Loading from '@/components/loading';
 
 import { ArrowLeft } from "lucide-react"
+
+type BrowserPlugin = {
+  open(options: { url: string }): Promise<void>;
+};
+
+const Browser = registerPlugin<BrowserPlugin>("Browser");
 
 function formatThaiPhone(phone: string) {
   const cleaned = phone.replace(/\D/g, "").slice(0, 10)
@@ -36,8 +43,17 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0)
   const [token, setToken] = useState<string | null>(null)
 
-  const handleLineLogin = () => {
-    window.location.href = `${API_URL}/auth/line/start`
+  const handleLineLogin = async () => {
+    const lineStartUrl = `${API_URL}/auth/line/start`;
+
+    // Android/iOS Capacitor WebView cannot open intent:// URLs directly.
+    // Use native Browser plugin to run OAuth outside the WebView.
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({ url: lineStartUrl });
+      return;
+    }
+
+    window.location.href = lineStartUrl;
   }
 
 useEffect(() => {

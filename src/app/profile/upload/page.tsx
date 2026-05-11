@@ -142,7 +142,7 @@ export default function HistoryScorePage() {
                 <FaReceipt size={24} className="text-paseo" />
               </div>
 
-                  <div className="flex flex-col w-90% gap-2">
+                  <div className="flex flex-col w-90% gap-1">
                     <div className="w-full flex flex-row justify-between">
 
                       <div className="flex flex-row gap-2 w-80%">
@@ -156,7 +156,7 @@ export default function HistoryScorePage() {
                           alt="Thepaseo"
                           width={24}
                           height={24}
-                          className="w-5 h-5 object-contain"
+                          className="w-4 h-4 object-contain"
                           unoptimized
                         />
                         <span className="text-sm font-bold text-paseo">
@@ -166,21 +166,21 @@ export default function HistoryScorePage() {
 
                     </div>
 
-                    <div className="text-sm mb-1 text-gray-700">
+                    <div className="text-xs mb-1 text-gray-700">
                       <span>ยอดซื้อ: </span>
                       <strong>{r.amount.toLocaleString()} บาท</strong>
                     </div>
 
                     {r.shopName && (
-                      <div className="w-full flex flex-row justify-between">
-                        <span className="text-sm text-medium text-black">ร้านค้า: {r.shopName}</span>
-                        <span className="text-sm text-medium text-black">สาขา: {r.branchName}</span>
+                      <div className="w-full flex flex-col justify-between">
+                        <span className="text-xs text-medium text-black">ร้านค้า: {r.shopName}</span>
+                        <span className="text-xs text-medium text-black">สาขา: {r.branchName}</span>
                       </div>
                     )}
 
                     {/* ✅ แสดงสถานะ */}
                     <span
-                      className={`text-sm font-semibold ${
+                      className={`text-xs font-semibold ${
                         r.status === "APPROVED"
                           ? "text-paseo"
                           : r.status === "REJECTED"
@@ -197,7 +197,7 @@ export default function HistoryScorePage() {
 
                   {/* ✅ ถ้ามีเหตุผลการปฏิเสธ */}
                   {r.status === "REJECTED" && r.rejectReason && (
-                    <p className="text-xs text-red-500 mt-1">
+                    <p className="text-xs text-red-500">
                       เหตุผล: {r.rejectReason}
                     </p>
                   )}
