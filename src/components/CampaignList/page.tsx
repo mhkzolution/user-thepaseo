@@ -95,17 +95,17 @@ export default function CampaignList() {
                             />
                           )}
                       </div>
-                      <div className="flex flex-col flex-grow w-60% p-4 gap-2">
-                        <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">
+                      <div className="flex flex-col flex-grow w-60% md:p-4 p-2 gap-2">
+                        <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">
                           {r.name}
                         </h3>
                         <div className="flex-grow">
                         <div
-                            className="prose prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6 text-xs md:text-sm text-gray-600 line-clamp-2 mb-2"
+                            className="prose prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6 text-xs md:text-sm text-gray-600 line-clamp-2"
                             dangerouslySetInnerHTML={{
                             __html: r.description
-                                ? r.description.length > 120
-                                ? `${r.description.substring(0, 120)}...`
+                                ? r.description.length > 100
+                                ? `${r.description.substring(0, 100)}...`
                                 : r.description
                                 : "<p>ยังไม่มีเงื่อนไข...</p>",
                             }}

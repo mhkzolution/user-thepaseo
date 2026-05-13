@@ -134,10 +134,10 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
                     />
                   </div>
 
-                <div className="flex flex-col w-60% p-4 gap-2 justify-between">
+                <div className="flex flex-col w-60% md:p-4 p-2 gap-2 justify-between">
 
-                  <div className="pt-1 flex flex-col flex-grow gap-2">
-                    <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">
+                  <div className="pt-0 flex flex-col flex-grow gap-2">
+                    <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">
                       {r.name.length > 40 ? r.name.substring(0, 40) + "..." : r.name}
                     </h3>
                     <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">

@@ -239,17 +239,17 @@ export default function PrivilegeCampaignList() {
                             />
                           )}
                       </div>
-                      <div className="flex flex-col flex-grow w-60% p-4 gap-2">
-                        <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">
+                      <div className="flex flex-col flex-grow w-60% md:p-4 p-2 gap-2">
+                        <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">
                           {item.name}
                         </h3>
                         <div className="flex-grow">
                         <div
-                            className="prose prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6 text-xs md:text-sm text-gray-600 line-clamp-2 mb-2"
+                            className="prose prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6 text-xs md:text-sm text-gray-600 line-clamp-2"
                             dangerouslySetInnerHTML={{
                             __html: item.description
-                                ? item.description.length > 120
-                                ? `${item.description.substring(0, 120)}...`
+                                ? item.description.length > 100
+                                ? `${item.description.substring(0, 100)}...`
                                 : item.description
                                 : "<p>ยังไม่มีเงื่อนไข...</p>",
                             }}
@@ -356,10 +356,10 @@ export default function PrivilegeCampaignList() {
                         />
                       </div>
 
-                    <div className="flex flex-col w-60% p-4 gap-2 justify-between">
+                    <div className="flex flex-col w-60% md:p-4 p-2 gap-2 justify-between">
 
-                      <div className="pt-1 flex flex-col flex-grow gap-2">
-                        <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">
+                      <div className="pt-0 flex flex-col flex-grow gap-2">
+                        <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">
                           {r.name.length > 50 ? r.name.substring(0, 50) + "..." : r.name}
                         </h3>
                         <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">

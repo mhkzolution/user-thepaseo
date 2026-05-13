@@ -171,7 +171,7 @@ export default function EventList() {
                   </div>
 
                     <div className="pt-1 flex flex-col flex-grow">
-                      <h3 className="text-black text-base md:text-xl font-bold line-clamp-1">{r.name}</h3>
+                      <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">{r.name}</h3>
                       <div className="flex-grow">
                         <div
                           className="prose prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6 text-base text-gray-600 line-clamp-2 mb-2"

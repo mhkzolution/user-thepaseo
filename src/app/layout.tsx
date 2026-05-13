@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 // ✅ viewport: สำหรับ themeColor, viewport settings
 export const viewport: Viewport = {
   themeColor: "#9DC93C",
+  // จำเป็นสำหรับ iOS/Android WebView ให้ env(safe-area-inset-*) มีค่าจริง (ไม่เป็น 0)
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

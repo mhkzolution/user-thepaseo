@@ -3,6 +3,14 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.thepaseo.user',
   appName: 'Paseo',
+  plugins: {
+    StatusBar: {
+      /** ไม่ให้เนื้อหา HTML ไปอยู่ใต้ Status Bar / notch */
+      overlaysWebView: false,
+      backgroundColor: '#9DC93C',
+      style: 'DARK',
+    },
+  },
   server: {
     url: "https://user.thepaseo.co.th",
     cleartext: false,

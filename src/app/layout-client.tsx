@@ -5,6 +5,7 @@ import Navbar from '../components/navbar/page'
 import { Providers } from './providers'
 import { usePathname, useRouter } from 'next/navigation'
 import DeepLinkHandler from "@/components/DeepLinkHandler"
+import CapacitorNativeChrome from "@/components/CapacitorNativeChrome"
 import { useContext, useEffect } from 'react'
 import { AuthContext } from '@/contexts/AuthContext'
 
@@ -35,6 +36,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   return (
     <Providers>
+      <CapacitorNativeChrome />
       <RequirePhoneGuard pathname={pathname} />
       <DeepLinkHandler />
       <Navbar />
