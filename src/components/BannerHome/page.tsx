@@ -70,7 +70,7 @@ export default function BannerHomePage() {
                 <Link
                   href={banner.linkUrl}
                   rel="noopener noreferrer"
-                  className="w-full flex aspect-square items-center justify-center"
+                  className="w-full flex items-center justify-center"
                 >
                   <Image
                     src={banner.imageUrl}
@@ -79,6 +79,9 @@ export default function BannerHomePage() {
                     height={600}
                     className="object-contain w-full h-full shadow"
                     unoptimized
+                    priority
+                    placeholder="blur"
+                    blurDataURL="/blur-placeholder.jpg"
                   />
                 </Link>
               </div>
@@ -96,7 +99,7 @@ export default function BannerHomePage() {
                 key={i}
                 className="embla__slide flex items-center justify-center"
               >
-                <Skeleton className="w-full aspect-square rounded-xl" />
+                <Skeleton className="w-full rounded-xl" />
               </div>
             ))}
           </div>

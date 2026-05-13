@@ -96,6 +96,7 @@ export default function PrivilegeCampaignList() {
                   height={32}
                   className="mr-2"
                   unoptimized
+                  priority
                 />
               )
             )}
@@ -125,16 +126,22 @@ export default function PrivilegeCampaignList() {
                           alt={r.name}
                           className="w-full h-48 md:h-64 object-cover rounded-l-2xl"
                           unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
                         />
                       ) : (
-                          <Image
-                            width={600}
-                            height={600}
-                            src='/main/no-image.png'
-                            alt={r.name}
-                            className="w-full h-48 md:h-64 object-cover rounded-l-2xl border bg-white p-6"
-                            unoptimized
-                          />
+                        <Image
+                          width={600}
+                          height={600}
+                          src='/main/no-image.png'
+                          alt={r.name}
+                          className="w-full h-48 md:h-64 object-cover rounded-l-2xl border bg-white p-6"
+                          unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
+                        />
                       )}
                       </div>
                       <div className="w-50% p-4">

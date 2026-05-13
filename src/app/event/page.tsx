@@ -68,19 +68,18 @@ export default function EventList() {
         </div>
       </div>
 
-      <div className="w-full bg-white p-4 pt-16 md:p-10 pb-10 md:mt-20 mt-6 md:pt-10 rounded-3xl">
+      <div className="w-full bg-white p-4 pt-16 md:p-10 pb-10 md:mt-20 mt-6 pb-10 md:pt-10 rounded-3xl">
         <h1 className="text-xl font-semibold mb-4">กิจกรรม</h1>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 md:grid-cols-2 auto-rows-fr">
-            {events.map((r, index) => {
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 md:grid-cols-1 auto-rows-fr">
+            {events.map((r) => {
               const startDate = dateFromBangkokWallClock(r.startDate);
               const endDate = dateFromBangkokWallClock(r.endDate);
               const now = new Date();
 
-              // ตรวจสอบสถานะของกิจกรรม
               let status = "";
               if (now < startDate) {
-                status = "กำลังจะจัด";
+                status = "เร็วๆนี้";
               } else if (now >= startDate && now <= endDate) {
                 status = "กำลังจัด";
               } else if (now > endDate) {
@@ -108,41 +107,6 @@ export default function EventList() {
                 disabled = true;
               }
 
-              const dateOptions: Intl.DateTimeFormatOptions = {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              };
-              const timeOptions: Intl.DateTimeFormatOptions = {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              };
-
-              const start_day = startDate.getDate();
-              const start_month_index = startDate.getMonth();
-              const start_year = startDate.getFullYear() + 543;
-
-              const end_day = endDate.getDate();
-              const end_month_index = endDate.getMonth();
-              const end_year = endDate.getFullYear() + 543;
-
-              const monthNames = [
-                "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
-                "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
-              ];
-
-              const start_month_text = monthNames[start_month_index];
-              const end_month_text = monthNames[end_month_index];
-
-              const monthOptions: Intl.DateTimeFormatOptions = { month: "long" };
-
-              const start_month_long = startDate.toLocaleDateString("th-TH", monthOptions);
-              const end_month_long = endDate.toLocaleDateString("th-TH", monthOptions);
-
-              const startDate_time = startDate.toLocaleTimeString("th-TH", timeOptions);
-              const endDate_time = endDate.toLocaleTimeString("th-TH", timeOptions);
-
               const formatThai = (date: Date) => {
                 return new Intl.DateTimeFormat("th-TH", {
                   timeZone: "Asia/Bangkok",
@@ -153,56 +117,54 @@ export default function EventList() {
               };
 
               return (
-                <div className="embla__slide_campaign relative w-full flex flex-col" key={r.id}>
+                <div className=" relative w-full flex flex-col" key={r.id}>
 
                   <Link
                     href={`/event/${r.id}`}
-                    className={`w-full flex flex-col gap-4 p-4 border border-gray-200 rounded-xl shadow overflow-hidden transition bg-white h-full`}
-                  >
-                  <div className="relative w-full rounded-xl overflow-hidden bg-white">
-                    <Image
-                      src={r.imageUrl || "/main/no-image.png"}
-                      alt={r.name}
-                      width={300}
-                      height={300}
-                      className="object-cover w-full h-auto"
-                      unoptimized
-                    />
-                  </div>
-
-                    <div className="pt-1 flex flex-col flex-grow">
-                      <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">{r.name}</h3>
-                      <div className="flex-grow">
-                        <div
-                          className="prose prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6 text-base text-gray-600 line-clamp-2 mb-2"
-                          dangerouslySetInnerHTML={{
-                            __html: r.description
-                              ? r.description.length > 120
-                                ? `${r.description.substring(0, 120)}...`
-                                : r.description
-                              : "<p>ยังไม่มีเงื่อนไข...</p>",
-                          }}
+                    >
+                    <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl transition flex items-stretch">
+                      <div className="w-40%">
+                        <Image
+                          src={r.imageUrl || "/main/no-image.png"}
+                          alt={r.name}
+                          width={300}
+                          height={300}
+                          className="w-full h-full rounded-l-xl"
+                          unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
                         />
                       </div>
 
-                      <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">
-                        {formatThai(startDate)} - {formatThai(endDate)}
-                      </p>
-                      <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">
-                        เวลา {startDate_time} - {endDate_time} น.
-                      </p>
-                      <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">
-                        ผู้เข้าร่วม: {r.registrations} คน
-                      </p>
+                    <div className="flex flex-col w-60% md:p-4 p-2 gap-2 justify-between">
+
+                      <div className="pt-0 flex flex-col flex-grow gap-2">
+                        <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">
+                          {r.name.length > 40 ? r.name.substring(0, 40) + "..." : r.name}
+                        </h3>
+                        <p className="text-xs md:text-sm text-gray-600 line-clamp-2 mb-2">
+                          {formatThai(startDate)} - {formatThai(endDate)}
+                        </p>
+                      </div>
+
+                      <div className="px-4 md:px-8">
+
+                      <button
+                        className={`py-2 w-full rounded-full text-sm md:text-base font-bold flex items-center justify-center gap-2 transition ${buttonClass}`}
+                        disabled={disabled}
+                      >
+                        <BsClipboardCheck size={18} />
+                        <span className="text-xs md:text-sm">{buttonText}</span>
+                      </button>
+
+                      </div>
+
                     </div>
 
-                    <button
-                      className={`py-2 w-full rounded-full text-sm md:text-base font-bold flex items-center justify-center gap-2 transition ${buttonClass}`}
-                      disabled={disabled}
-                    >
-                      <BsClipboardCheck size={18} />
-                      <span className="text-xs md:text-sm">{buttonText}</span>
-                     </button>
+                  </div>
+
+                    
                   </Link>
                 </div>
               );

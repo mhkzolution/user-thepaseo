@@ -158,6 +158,7 @@ export default function HistoryScorePage() {
                           height={24}
                           className="w-4 h-4 object-contain"
                           unoptimized
+                          priority
                         />
                         <span className="text-sm font-bold text-paseo">
                           +{r.approvedPoints ?? 0}

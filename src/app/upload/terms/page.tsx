@@ -58,12 +58,12 @@ export default function UploadTermPage() {
       </div>
 
       <div className="min-h-dvh pt-0 m-0 rounded-3xl bg-white shadow relative">
-        <div className="space-y-4 md:p-10 py-8 px-4">
+        <div className="space-y-4 md:p-10 py-8 px-4 overflow-hidden">
           <h3 className="text-black text-base font-bold">เงื่อนไขการสะสมพอยท์</h3>
 
           {term.description ? (
             <div
-              className="prose text-sm mb-2 prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6"
+              className="prose text-wrap text-sm mb-2 prose-ol:list-decimal prose-ol:pl-6 prose-ul:list-disc prose-ul:pl-6"
               dangerouslySetInnerHTML={{ __html: term.description }}
             />
           ) : (

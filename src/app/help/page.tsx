@@ -103,7 +103,7 @@ export default function HelpPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
       <HeaderMobile />
 
       <div className="md:mt-16 mt-0 mb-0 md:pt-4 pt-16">

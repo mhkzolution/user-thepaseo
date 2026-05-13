@@ -86,6 +86,9 @@ export default function RewardCard() {
                     height={ 500 }
                     className="object-cover"
                     unoptimized
+                    priority
+                    placeholder="blur"
+                    blurDataURL="/blur-placeholder.jpg"
                   />
                 </div>
 

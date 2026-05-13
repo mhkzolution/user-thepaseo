@@ -186,9 +186,9 @@ const Navbar = () => {
     <>
       {/* Desktop Navbar */}
       <nav
-        className="w-full hidden md:flex overflow-hidden mt-0 mb-5 p-0 text-black z-50 rounded-xl top-5 mx-auto shadow-sm"
+        className="w-full hidden md:flex overflow-hidden md:m-0 mt-0 mb-5 p-0 text-black z-50 rounded-xl top-5 mx-auto shadow-sm"
       >
-        <div className="fixed relarive w-full overflow-hidden flex flex-row flex-1 z-50 justify-between items-center blur py-2 px-4">
+        <div className="fixed top-0 left-0 w-full flex flex-row flex-1 z-50 justify-between items-center bg-white/40 backdrop-blur-md py-2 px-4 border-b border-white/20">
             <div className="flex flex-row justify-center gap-2 h-min w-25%">
               <img
                 src={`${BASE_URL}/logo.png`}
@@ -233,6 +233,7 @@ const Navbar = () => {
                         height={24}
                         className="w-3 h-3 object-contain"
                         unoptimized
+                        priority
                       />
 
                       <div className="flex flex-col justify-center items-start w-full gap-1">
@@ -274,9 +275,9 @@ const Navbar = () => {
                         alt={`${user.firstName} ${user.lastName}'s avatar`}
                         width={36}
                         height={36}
+                        className="rounded-full object-cover shadow-sm w-12 h-12"
+                        unoptimized
                         priority
-                          className="rounded-full object-cover shadow-sm w-12 h-12"
-                          unoptimized
                       />
                       ) : (
                         <img className="text-white" src="/uploads/admin/navbar/icon_profile.svg" alt="Thepaseo" width={36} height={36} />

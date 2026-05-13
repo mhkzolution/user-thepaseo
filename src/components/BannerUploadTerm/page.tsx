@@ -68,7 +68,7 @@ export default function BannerUploadTermPage() {
                 key={i}
                 className="embla__slide flex items-center justify-center rounded-2xl"
               >
-                <Skeleton className="w-full aspect-square rounded-xl" />
+                <Skeleton className="w-full rounded-xl" />
               </div>
             ))
           :
@@ -80,7 +80,7 @@ export default function BannerUploadTermPage() {
                 <Link
                   href={banner.linkUrl}
                   rel="noopener noreferrer"
-                  className="w-full flex aspect-square items-center justify-center"
+                  className="w-full flex items-center justify-center"
                 >
                   <Image
                     src={banner.imageUrl}
@@ -89,6 +89,9 @@ export default function BannerUploadTermPage() {
                     height={600}
                     className="object-contain w-full h-full rounded-xl"
                     unoptimized
+                    priority
+                    placeholder="blur"
+                    blurDataURL="/blur-placeholder.jpg"
                   />
                 </Link>
               </div>

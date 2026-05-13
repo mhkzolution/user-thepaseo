@@ -1,10 +1,18 @@
 /** @type {import('next').NextConfig} */
+const path = require("path");
+
 const nextConfig = {
   distDir: ".next",
 
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+
   images: {
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy:
+      "default-src 'self'; script-src 'none'; sandbox;",
+
     remotePatterns: [
       {
         protocol: "https",
@@ -13,19 +21,16 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "member.thepaseo.co.th",
-        port: "",
         pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "admin.thepaseo.co.th",
-        port: "",
         pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "user.thepaseo.co.th",
-        port: "",
         pathname: "/**",
       },
     ],
@@ -35,4 +40,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

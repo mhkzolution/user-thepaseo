@@ -61,7 +61,7 @@ export default function NewHomePage({ user }: NewHomePageProps) {
 
 
   return (
-    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
       <HeaderMobile showBack={false} />
 
       <div className="md:hidden p-0 md:mt-20 mt-9 rounded-xl">
@@ -74,7 +74,7 @@ export default function NewHomePage({ user }: NewHomePageProps) {
         <BannerHome />
       </div>
 
-      <div className="w-full pt-4 p-4 md:p-10 rounded-xl rounded-t-3xl bg-white relative shadow-sm">
+      <div className="w-full pt-4 p-4 md:p-10 rounded-3xl bg-white relative shadow-sm">
 
         <div className="w-full mb-4 rounded-xl bg-white relative flex flex-col items-center">
           <button
@@ -105,7 +105,7 @@ export default function NewHomePage({ user }: NewHomePageProps) {
           <CouponList />
         </div>
 
-        <div className="p-0 max-w-5xl mx-auto mb-6">
+        <div className="p-0 max-w-5xl mx-auto mb-0">
           <EventList />
         </div>
         

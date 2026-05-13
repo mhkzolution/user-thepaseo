@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Link from "next/link";
 import Image from "next/image";
 import { BsClipboardCheck } from "react-icons/bs";
@@ -31,9 +32,7 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
           ? `${API_URL}/event?shopId=${shopId}`
           : `${API_URL}/event`;
 
-        const res = await fetch(url, {
-          credentials: "include",
-        });
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error("Failed to fetch events");
         const data = await res.json();
         setEvents(data);
@@ -64,7 +63,7 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
     <div className="w-full p-0 max-w-5xl mx-auto mb-0">
       <div className="flex flex-row items-end justify-between mb-3">
         <span className="text-base font-bold">กิจกรรม</span>
-        {!shopId && ( // ✅ ซ่อนปุ่ม “ดูทั้งหมด” เมื่ออยู่ในร้าน
+        {!shopId && (
           <Link href="/event" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
             ดูทั้งหมด
           </Link>
@@ -131,6 +130,9 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
                       height={300}
                       className="w-full h-full rounded-l-xl"
                       unoptimized
+                      priority
+                      placeholder="blur"
+                      blurDataURL="/blur-placeholder.jpg"
                     />
                   </div>
 

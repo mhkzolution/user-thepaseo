@@ -183,7 +183,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl relative">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl relative">
       <HeaderMobile showBack={true} />
       
       <div className="md:mt-16 mt-0 mb-0 md:pt-4 pt-16 pb-3 px-3 md:px-4">
@@ -194,10 +194,10 @@ export default function UploadPage() {
         {/* ปุ่ม Test */}
         <div className="w-full flex justify-center mb-4 -top-20 absolute flex-col items-center">
           <Button
-            className="rounded-full h-40 w-40 text-xl text-center bg-paseo-hover text-paseo flex flex-col border-4 border-paseo mb-3"
+            className="rounded-full h-40 w-40 text-xl text-center bg-paseo-hover hover:bg-paseo hover:text-paseo-dark hover:border-paseo-dark text-paseo flex flex-col border-4 border-paseo mb-3"
             onClick={() => setShowOptions(!showOptions)}
           >
-            <IoReceipt size={64} />
+            <IoReceipt className="size-[40px]" />
             <span className="text-gray-500 text-center text-sm">อัพโหลดใบเสร็จ</span>
           </Button>
 
@@ -209,7 +209,7 @@ export default function UploadPage() {
             </Link>
 
           {showOptions && (
-            <div ref={optionsRef} className="flex flex-col justify-start items-start -mt-8 py-0 px-0 blur2 rounded-xl shadow-2xl z-50 relative border">
+            <div ref={optionsRef} className="flex flex-col justify-start items-start -mt-8 py-0 px-0 bg-white/60 backdrop-blur-lg rounded-xl shadow-2xl z-50 relative border">
               <button
                 className="absolute top-1 right-1 w-6 h-6 flex items-center justify-center border rounded-full text-xs"
                 onClick={() => setShowOptions(false)}
@@ -218,7 +218,7 @@ export default function UploadPage() {
               </button>
 
               <Button
-                className="bg-transparent w-full py-0 flex justify-start gap-2 hover:bg-paseo-hover "
+                className="bg-transparent w-full py-0 flex justify-start gap-2 hover:bg-paseo-hover"
                 variant="outline"
                 onClick={() => {
                   setShowOptions(false);

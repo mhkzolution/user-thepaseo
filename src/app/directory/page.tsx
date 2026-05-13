@@ -327,7 +327,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
       <HeaderMobile />
     
       <div className="md:mt-16 mt-0 mb-0 md:pt-4 pt-16">
@@ -368,7 +368,7 @@ useEffect(() => {
             <div className="flex flex-col px-4 pt-0 md:px-4 md:pt-0 gap-3">
               <span className="text-base font-bold">สาขา</span>
 
-              <div className="flex justify-center md:gap-10 gap-4 overflow-x-auto pb-2">
+              <div className="flex justify-center md:gap-10 gap-2 overflow-x-auto pb-2">
                 {branches.map((branch) => (
                   <button
                     key={branch.id}
@@ -403,6 +403,7 @@ useEffect(() => {
                         height={80}
                         className="w-full h-full object-contain"
                         unoptimized
+                        priority
                       />
                     </div>
 
@@ -431,7 +432,7 @@ useEffect(() => {
                         onClick={() =>
                           setFilters({ ...filters, categoryId: category.id })
                         }
-                        className="flex flex-col items-center gap-2 transition w-[90px]"
+                        className="flex flex-col items-center gap-2 transition w-[80px]"
                       >
 
                         <div
@@ -448,10 +449,11 @@ useEffect(() => {
                             height={80}
                             className="w-full h-full object-contain"
                             unoptimized
+                            priority
                           />
                         </div>
 
-                        <span className="text-xs font-medium text-center leading-tight line-clamp-1 break-words w-16 min-h-[2.5rem]">
+                        <span className="text-xs font-medium text-center leading-tight line-clamp-1 break-words w-16 min-h-[2rem]">
                           {category.name}
                         </span>
 
@@ -461,7 +463,7 @@ useEffect(() => {
                     {/* ALL */}
                     <button
                       onClick={() => setFilters({ ...filters, categoryId: "" })}
-                      className="flex flex-col items-center gap-2 transition min-w-[90px]"
+                      className="flex flex-col items-center gap-2 transition min-w-[80px]"
                     >
                       <div
                         className={`md:w-14 md:h-14 w-16 h-16 p-2 rounded-xl flex items-center justify-center border transition ${
@@ -477,10 +479,12 @@ useEffect(() => {
                           height={40}
                           className="w-full h-full object-contain"
                           unoptimized
+                          priority
+                          blurDataURL="/blur-placeholder.jpg"
                         />
                       </div>
 
-                      <span className="text-xs font-medium text-center leading-tight line-clamp-1 break-words w-16 min-h-[2.5rem]">
+                      <span className="text-xs font-medium text-center leading-tight line-clamp-1 break-words w-16 min-h-[2rem]">
                         ทั้งหมด
                       </span>
                     </button>
@@ -527,12 +531,15 @@ useEffect(() => {
                           alt={shop.name}
                           width={60}
                           height={60}
-                          className="object-contain w-5rem h-5rem rounded-lg"
+                          className="object-contain w-22 h-22 rounded-lg"
                           unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
                         />
                       ) : (
-                        <div className="w-24 h-24 bg-gray-100 flex items-center justify-center">
-                          <span className="text-gray-500">No Image</span>
+                        <div className="w-22 h-22 bg-paseo-hover flex items-center justify-center rounded-lg p-2">
+                          <span className="text-gray-500 text-xs">Image</span>
                         </div>
                       )}
 

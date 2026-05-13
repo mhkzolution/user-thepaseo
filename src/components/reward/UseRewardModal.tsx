@@ -120,8 +120,7 @@ export default function UseRewardModal({ show, onClose, userRewardId }: UseRewar
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-      style={{ backdropFilter: "blur(2px)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs overlay p-4"
     >
          <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center overflow-y-auto pt-0 md:pb-0 pb-0">
           <div className="bg-white max-w-2xl w-full shadow-lg animate-fade-in rounded-b-3xl">
@@ -157,6 +156,9 @@ export default function UseRewardModal({ show, onClose, userRewardId }: UseRewar
                         alt={reward.reward.name}
                         className="w-full h-full object-cover rounded-xl"
                         unoptimized
+                        priority
+                        placeholder="blur"
+                        blurDataURL="/blur-placeholder.jpg"
                       />
                   )}
                   </div>

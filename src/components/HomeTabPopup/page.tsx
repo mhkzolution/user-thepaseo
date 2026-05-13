@@ -58,9 +58,8 @@ export default function HomeTabPopup({ isOpen, onClose }: FullScreenDialogProps)
 
   return (
     <div
-        className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-        style={{ backdropFilter: "blur(2px)" }}
-      >
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs overlay p-4"
+    >
       <div className="max-w-2xl mx-auto fixed inset-0 z-50 bg-white flex flex-col">
         {/* Header */}
         <div className="shrink-0  z-50">
@@ -74,7 +73,7 @@ export default function HomeTabPopup({ isOpen, onClose }: FullScreenDialogProps)
             <div className="flex rounded-lg gap-4">
               <button
                 onClick={() => setActiveTab("terms")}
-                className={`flex-1 py-2 text-sm rounded-xl transition bg-white ${
+                className={`flex-1 py-2 text-sm rounded-xl transition ${
                   activeTab === "terms"
                     ? "bg-paseo text-white"
                     : "bg-gray-100 text-gray-500"
@@ -84,7 +83,7 @@ export default function HomeTabPopup({ isOpen, onClose }: FullScreenDialogProps)
               </button>
               <button
                 onClick={() => setActiveTab("business")}
-                className={`flex-1 py-2 text-sm rounded-xl transition bg-white ${
+                className={`flex-1 py-2 text-sm rounded-xl transition ${
                   activeTab === "business"
                     ? "bg-paseo text-white"
                     : "bg-gray-100 text-gray-500"

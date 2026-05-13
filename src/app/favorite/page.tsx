@@ -155,7 +155,7 @@ export default function FavoritePage() {
 
 
   return (
-      <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+      <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
       
             <HeaderMobile />
       
@@ -218,6 +218,9 @@ export default function FavoritePage() {
                                   height={ 600 }
                                   className="object-cover"
                                   unoptimized
+                                  priority
+                                  placeholder="blur"
+                                  blurDataURL="/blur-placeholder.jpg"
                                 />
                               </div>
                               <div className="w-60% flex flex-col justify-between">
@@ -243,7 +246,7 @@ export default function FavoritePage() {
                                       e.stopPropagation();
                                       handleUnfavorite(fav.targetId, fav.targetType);
                                       }}
-                                      className="blur2 p-2 shadow border border-gray-200 text-red-500 rounded-full absolute bottom-0 right-1"
+                                      className="bg-white/60 backdrop-blur-lg p-2 shadow border border-gray-200 text-red-500 rounded-full absolute bottom-0 right-1"
                                   >
                                       <IoHeartSharp size={24} />
                                   </button>

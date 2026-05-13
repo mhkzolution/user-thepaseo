@@ -82,6 +82,7 @@ const MenuProfile = () => {
                   height={60}
                   className={`object-contain ${isActive ? "opacity-100" : "opacity-80"}`}
                   unoptimized
+                  priority
                 />
               </div>
 

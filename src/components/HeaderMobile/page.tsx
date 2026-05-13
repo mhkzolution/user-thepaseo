@@ -14,7 +14,7 @@ interface Props {
 
 export default function HeaderMobile({ showBack = true, showFavorite = true }: Props) {
   return (
-    <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+    <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 bg-white/60 backdrop-blur-lg rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
       <div className="relative flex flex-row justify-center">
         {showBack && (
           <div className="absolute top-0 left-4">

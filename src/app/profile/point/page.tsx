@@ -227,6 +227,7 @@ export default function HistoryScorePage() {
                           height={24}
                           className="w-5 h-5 object-contain"
                           unoptimized
+                          priority
                         />
                         <span
                           className={`font-bold text-sm ${

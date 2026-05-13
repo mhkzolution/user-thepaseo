@@ -14,7 +14,7 @@ export default function NotFound() {
       <div className="mt-6 flex flex-col gap-4">
         <Link
           href="/"
-          className="flex items-center justify-start gap-2 px-10 py-3 rounded-lg blur text-white hover:bg-paseo-hover transition border border-gray-300 shadow-xs"
+          className="flex items-center justify-start gap-2 px-10 py-3 rounded-lg bg-white/60 backdrop-blur-lg text-white hover:bg-paseo-hover transition border border-gray-300 shadow-xs"
         >
             <GoHomeFill size={32} className="text-black bg-gray-200 rounded-full p-2 justify-center" />
             <span className="text-black text-sm">กลับหน้าแรก</span>
@@ -22,7 +22,7 @@ export default function NotFound() {
 
         <Link
           href="/directory"
-          className="flex items-center justify-start gap-2 px-10 py-3 rounded-lg blur text-white hover:bg-paseo-hover transition border border-gray-300 shadow-xs"
+          className="flex items-center justify-start gap-2 px-10 py-3 rounded-lg bg-white/60 backdrop-blur-lg text-white hover:bg-paseo-hover transition border border-gray-300 shadow-xs"
         >
             <FaShop size={32} className="text-black bg-gray-200 rounded-full p-2 justify-center" />
             <span className="text-black text-sm">ดูร้านทั้งหมด</span>

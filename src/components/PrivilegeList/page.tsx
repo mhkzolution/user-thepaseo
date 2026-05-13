@@ -149,7 +149,7 @@ export default function PrivilegeCampaignList() {
         >
           {/* LOGO */}
           <div
-            className={`w-20 h-20 p-2 aspect-square rounded-xl overflow-hidden flex items-center justify-center border transition
+            className={`md:w-20 md:h-20 w-18 h-18 p-2 aspect-square rounded-xl overflow-hidden flex items-center justify-center border transition
               ${
                 selectedBranch === branch.id ||
                 (!selectedBranch && branch.id === "all")
@@ -164,6 +164,7 @@ export default function PrivilegeCampaignList() {
                 width={40}
                 height={40}
                 className="w-full h-full object-contain"
+                priority
                 unoptimized
               />
             ) : branch.imageUrl ? (
@@ -180,6 +181,7 @@ export default function PrivilegeCampaignList() {
                 height={80}
                 className="w-full h-full object-cover"
                 unoptimized
+                priority
               />
             ) : (
               <Image
@@ -189,6 +191,7 @@ export default function PrivilegeCampaignList() {
                 height={80}
                 className="w-full h-full object-cover"
                 unoptimized
+                priority
               />
             )}
           </div>
@@ -227,6 +230,9 @@ export default function PrivilegeCampaignList() {
                             alt={item.name}
                             className="w-full object-cover rounded-l-2xl"
                             unoptimized
+                            priority
+                            placeholder="blur"
+                            blurDataURL="/blur-placeholder.jpg"
                           />
                           ) : (
                             <Image
@@ -236,6 +242,9 @@ export default function PrivilegeCampaignList() {
                               alt={item.name}
                               className="object-cover rounded-xl border bg-white p-6"
                               unoptimized
+                              priority
+                              placeholder="blur"
+                              blurDataURL="/blur-placeholder.jpg"
                             />
                           )}
                       </div>
@@ -353,6 +362,9 @@ export default function PrivilegeCampaignList() {
                           height={300}
                           className="w-full h-full rounded-l-xl"
                           unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
                         />
                       </div>
 
@@ -447,6 +459,7 @@ export default function PrivilegeCampaignList() {
               height={300}
               className="w-full h-full rounded-l-xl"
               unoptimized
+              priority
             />
           </div>
 
@@ -477,6 +490,7 @@ export default function PrivilegeCampaignList() {
               height={300}
               className="w-full h-full rounded-l-xl"
               unoptimized
+              priority
             />
           </div>
 
@@ -506,6 +520,7 @@ export default function PrivilegeCampaignList() {
               height={40}
               className="w-full h-full object-contain"
               unoptimized
+              priority
             />
           </div>
 
@@ -564,7 +579,7 @@ export default function PrivilegeCampaignList() {
                   >
                     <div className="relative w-full h-full flex flex-col shadow-lg">
                       <div className="relative w-full h-full flex flex-col">
-                        <div className="w-full aspect-square rounded-xl overflow-hidden bg-white p-3 bg-gray-100">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden p-3 bg-gray-100">
                           <Image
                             src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
@@ -572,13 +587,16 @@ export default function PrivilegeCampaignList() {
                             height={300}
                             className="w-full h-full rounded-xl"
                             unoptimized
+                            priority
+                            placeholder="blur"
+                            blurDataURL="/blur-placeholder.jpg"
                           />
                         </div>
 
-                        <div className="w-full rounded-xl flex flex-col gap-2 bg-white p-2 bg-gray-100">
+                        <div className="w-full rounded-xl flex flex-col gap-2 p-2 bg-gray-100">
 
                           <div className="w-full px-1" style={{ minHeight: "2rem" }}>
-                            <h3 className="text-xs font-semibold line-clamp-3 leading-4 text-center">
+                            <h3 className="text-xs font-semibold line-clamp-2 leading-4 text-center">
                               {r.name.length > 40 ? r.name.substring(0, 40) + "..." : r.name}
                             </h3>
                           </div>

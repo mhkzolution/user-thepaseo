@@ -100,7 +100,10 @@ export default function CouponDetailPage() {
                 alt={coupon.coupon.name}
                 className="w-full h-full object-cover rounded-xl shadow-md"
                 unoptimized
-                />
+                priority
+                placeholder="blur"
+                blurDataURL="/blur-placeholder.jpg"
+              />
             )}
           </div>
 
@@ -161,10 +164,10 @@ export default function CouponDetailPage() {
       {/* Modal ยืนยัน */}
       {showModal && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-          style={{ backdropFilter: "blur(2px)" }}
-        >
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              style={{ backdropFilter: "blur(2px)" }}
+            >
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2">
             <div className="bg-white rounded-xl shadow-lg p-6 w-80 space-y-4 text-center">
                 <h2 className="text-xl font-bold">ยืนยันการใช้คูปอง</h2>
                 <p className="text-sm text-gray-600">
@@ -194,10 +197,10 @@ export default function CouponDetailPage() {
       {/* ข้อความหลังใช้สำเร็จ */}
       {showModal && successMessage && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-          style={{ backdropFilter: "blur(2px)" }}
-        >
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              style={{ backdropFilter: "blur(2px)" }}
+            >
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2">
             <div className="bg-white p-6 rounded-xl shadow-md max-w-sm w-full text-center">
               <h2 className="text-lg font-semibold mb-2">{successMessage}</h2>
               <p className="text-gray-600 mb-4">คุณสามารถกลับไปยังหน้าคูปองของคุณได้</p>

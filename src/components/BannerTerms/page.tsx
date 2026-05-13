@@ -67,7 +67,7 @@ export default function BannerTermsPage() {
               key={i}
               className="embla__slide flex items-center justify-center rounded-2xl"
             >
-              <Skeleton className="w-full aspect-square h-full rounded-xl" />
+              <Skeleton className="w-full h-full rounded-xl" />
             </div>
           ))
         ) : (
@@ -79,7 +79,7 @@ export default function BannerTermsPage() {
               <Link
                 href={banner.linkUrl}
                 rel="noopener noreferrer"
-                className="w-full flex aspect-square items-center justify-center"
+                className="w-full flex items-center justify-center"
               >
                 <Image
                   src={banner.imageUrl}
@@ -89,6 +89,9 @@ export default function BannerTermsPage() {
                   className="object-contain w-full h-full rounded-xl"
                   loading="lazy"
                   unoptimized
+                  priority
+                  placeholder="blur"
+                  blurDataURL="/blur-placeholder.jpg"
                 />
               </Link>
             </div>

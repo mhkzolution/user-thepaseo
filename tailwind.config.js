@@ -77,8 +77,6 @@ module.exports = {
         '4xl': '2.5rem',
         '3xl': '2rem',
       },
-      after: ['after'],
-      before: ['before'],
     },
   },
   plugins: [],

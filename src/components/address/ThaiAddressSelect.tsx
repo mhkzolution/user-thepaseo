@@ -220,7 +220,7 @@ function SearchSelect({
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
-        className="w-full rounded-xl bg-white border px-4 py-2 focus:outline-none focus:ring focus:ring-paseo text-xs"
+        className="w-full rounded-lg bg-white border px-4 py-2 text-xs focus-visible:border-ring focus-visible:ring-paseo focus-visible:ring-[2px]"
       />
 
       {open && !disabled && items.length > 0 && (

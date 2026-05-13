@@ -15,7 +15,7 @@ export default function ProfileLayout({
 
   if (isEditPage) {
     return (
-      <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+      <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
         <HeaderMobile />
         <div className="w-full bg-white p-4 pt-4 md:p-6 rounded-t-2xl rounded-3xl">
           {children}
@@ -25,7 +25,7 @@ export default function ProfileLayout({
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-20 mb-4 rounded-xl">
+    <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
 
       <HeaderMobile />
 

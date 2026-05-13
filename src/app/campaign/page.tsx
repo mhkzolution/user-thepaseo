@@ -60,6 +60,9 @@ export default function CampaignPage() {
                     height={300}
                     className="w-full h-full rounded-l-xl"
                     unoptimized
+                    priority
+                    placeholder="blur"
+                    blurDataURL="/blur-placeholder.jpg"
                   />
                 </div>
                 <div className="flex flex-col w-60% md:p-4 p-2 gap-2 justify-between">

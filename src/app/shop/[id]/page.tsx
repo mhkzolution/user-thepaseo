@@ -123,11 +123,14 @@ export default function ShopPage() {
                   height={200}
                   className="w-full object-cover rounded-t-3xl"
                   unoptimized
+                  priority
+                  placeholder="blur"
+                  blurDataURL="/blur-placeholder.jpg"
                 />
               )}
           </div>
 
-          <div className="max-w-2xl mx-auto -mt-10 pt-6 px-6 pb-20 bg-white rounded-t-3xl rounded-b-xl shadow-xl relative z-49">
+          <div className="max-w-2xl mx-auto -mt-10 pt-6 px-6 pb-20 bg-white rounded-t-3xl rounded-b-xl shadow-xl relative z-48">
               <div className="flex flex-col justify-between align-start gap-2">
                 <h1 className="text-2xl font-bold">{shop.name}</h1>
 
@@ -269,6 +272,10 @@ export default function ShopPage() {
                       width={800}
                       height={400}
                       className="w-full rounded-lg object-cover border"
+                      unoptimized
+                      priority
+                      placeholder="blur"
+                      blurDataURL="/blur-placeholder.jpg"
                     />
 
                     <p className="text-xs text-gray-500 mt-1">

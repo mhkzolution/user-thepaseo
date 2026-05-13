@@ -67,7 +67,7 @@ export default function BannerPointPage() {
               key={i}
               className="embla__slide flex items-center justify-center"
             >
-              <Skeleton className="w-full aspect-square h-full" />
+              <Skeleton className="w-full h-full" />
             </div>
           ))
         ) : (
@@ -79,7 +79,7 @@ export default function BannerPointPage() {
               <Link
                 href={banner.linkUrl}
                 rel="noopener noreferrer"
-                className="w-full flex aspect-square items-center justify-center"
+                className="w-full flex items-center justify-center"
               >
                 <Image
                   src={banner.imageUrl}
@@ -89,6 +89,9 @@ export default function BannerPointPage() {
                   className="object-contain w-full h-full shadow"
                   loading="lazy"
                   unoptimized
+                  priority
+                  placeholder="blur"
+                  blurDataURL="/blur-placeholder.jpg"
                 />
               </Link>
             </div>

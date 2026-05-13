@@ -575,9 +575,9 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <div className="max-w-lg mx-auto md:py-0 py-6 pb-0 rounded-xl relative">
+    <div className="max-w-lg mx-auto md:py-10 md:py-0 py-6 pb-0 rounded-xl relative">
 
-        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 bg-white/60 backdrop-blur-lg rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
           <div className="relative flex flex-row justify-center">
 
             <div className="flex flex-row justify-center gap-2 h-min">
@@ -587,6 +587,7 @@ export default function CompleteProfilePage() {
                 width={40}
                 height={40}
                 unoptimized
+                priority
               />
             </div>
     
@@ -599,7 +600,14 @@ export default function CompleteProfilePage() {
 
         <div className="md:p-10 p-4 m-0 md:mb-20 rounded-xl bg-white shadow z-50 relative">
           <div className="flex justify-center items-center gap-4 mb-2">
-            <Image src="/logo-paseo-register.png" width={46} height={46} unoptimized alt="ThePaseo" />
+            <Image
+              src="/logo-paseo-register.png"
+              width={46}
+              height={46}
+              unoptimized
+              priority
+              alt="ThePaseo"
+            />
             <h2 className="text-xl font-semibold text-center">ข้อมูลเพิ่มเติม</h2>
           </div>
 
@@ -645,7 +653,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       placeholder="ชื่อของคุณ *"
                       name="firstName"
-                      className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                      className="w-full py-1 px-2 border rounded-lg bg-white text-xs"
                       value={form.firstName}
                       onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                       required
@@ -657,7 +665,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       placeholder="นามสกุลของคุณ *"
                       name="lastName"
-                      className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                      className="w-full py-1 px-2 border rounded-lg bg-white text-xs"
                       value={form.lastName}
                       onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                       required
@@ -671,7 +679,7 @@ export default function CompleteProfilePage() {
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className={`w-full justify-between rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo font-normal py-4 border ${
+                          className={`w-full justify-between rounded-lg bg-white font-normal py-4 border ${
                             !date ? 'text-gray-400' : ''
                           }`}
                         >
@@ -683,7 +691,7 @@ export default function CompleteProfilePage() {
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0 bg-white" align="start">
                         <Calendar
-                          className="w-80"
+                          className="w-99"
                           mode="single"
                           captionLayout="dropdown"
                           selected={date}
@@ -739,7 +747,7 @@ export default function CompleteProfilePage() {
                         setCheckingPhone(false)
                       }
                     }}
-                    className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm"
+                    className="w-full py-4 px-4 border rounded-lg bg-white text-sm"
                     value={form.phone}
                     required
                   />
@@ -764,7 +772,7 @@ export default function CompleteProfilePage() {
                     type="email"
                     placeholder="อีเมล *"
                     name="email"
-                    className="w-full py-4 px-4 border bg-gray-100 rounded-xl focus:outline-none focus:ring focus:ring-paseo text-sm"
+                    className="w-full py-4 px-4 border bg-gray-100 rounded-lg text-sm"
                     value={form.email}
                     required
                   />
@@ -822,7 +830,7 @@ export default function CompleteProfilePage() {
                     type="text"
                     placeholder="ที่อยู่ *"
                     name="address"
-                    className="w-full py-4 px-4 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-sm mb-2"
+                    className="w-full py-4 px-4 border rounded-lg bg-white text-sm mb-2"
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                     value={form.address}
                   />
@@ -857,7 +865,7 @@ export default function CompleteProfilePage() {
                         key={i.id}
                         onClick={() => toggleInterest(i.id)}
                         className={cn(
-                          "cursor-pointer rounded-full px-3 py-1 text-xs transition",
+                          "cursor-pointer rounded-lg px-3 py-1 text-xs transition",
                           selected
                             ? "bg-paseo text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -872,7 +880,7 @@ export default function CompleteProfilePage() {
               </div>
             )}
 
-            <div className="md:relative fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center blur rounded-t-xl shadow-lg md:shadow-none border md:border-none md:mt-4">
+            <div className="md:relative fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center bg-white/60 backdrop-blur-lg rounded-t-xl shadow-lg md:shadow-none border md:border-none md:mt-4">
               {step > 1 ? (
                 <button
                   type="button"
@@ -906,9 +914,9 @@ export default function CompleteProfilePage() {
           </form>
 
           {showOtpModal && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-                      style={{ backdropFilter: "blur(2px)" }}
-                    >
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs overlay p-4"
+            >
               <div className="bg-white rounded-xl p-6 w-[90%] max-w-sm">
                 <h3 className="text-lg font-semibold mb-2 text-center">
                   ยืนยันเบอร์โทรศัพท์

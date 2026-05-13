@@ -316,6 +316,9 @@ export default function ProfileEditPage() {
                       fill
                       className="rounded-full object-cover border"
                       unoptimized
+                      priority
+                      placeholder="blur"
+                      blurDataURL="/blur-placeholder.jpg"
                     />
                   ) : (
                     <div className="w-full h-full rounded-full bg-gray-200 flex items-center justify-center text-gray-400">
@@ -350,7 +353,7 @@ export default function ProfileEditPage() {
                   type="text"
                   placeholder="ชื่อของคุณ *"
                   name="firstName"
-                  className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                  className="w-full py-1 px-2 border rounded-lg bg-white text-xs"
                   value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                   required
@@ -362,7 +365,7 @@ export default function ProfileEditPage() {
                   type="text"
                   placeholder="นามสกุลของคุณ *"
                   name="lastName"
-                  className="w-full py-1 px-2 border rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs"
+                  className="w-full py-1 px-2 border rounded-lg bg-white text-xs"
                   value={form.lastName}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                   required
@@ -388,7 +391,7 @@ export default function ProfileEditPage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0 bg-white" align="start">
                     <Calendar
-                      className="w-80"
+                      className="w-99"
                       mode="single"
                       captionLayout="dropdown"
                       selected={date}

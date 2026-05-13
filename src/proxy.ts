@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server"
  * JWT อยู่ใน localStorage — ห้ามบังคับ redirect ไป login ที่เลเยอร์นี้
  * (ชื่อไฟล์ middleware.ts ให้ build / deploy รุ่นเก่ารู้จัก; เนื้อหาเหมือน proxy เดิม)
  */
-export function middleware(_request: NextRequest) {
+export function proxy(_request: NextRequest) {
   const res = NextResponse.next()
   res.headers.set("x-paseo-edge", "pass-through")
   return res

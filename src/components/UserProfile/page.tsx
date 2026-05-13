@@ -151,9 +151,9 @@ export default function UserProfile({ showOn = "mobile" }: Props) {
                         alt={`${user.name}'s avatar`}
                         width={72}
                         height={72}
-                        priority
                         className="rounded-full object-cover shadow-sm w-20 h-20 md:w-20 md:h-20"
                         unoptimized
+                        priority
                       />
                     ) : (
                         <HiUserCircle size={72} className="bg-white text-paseo rounded-full" />
@@ -193,6 +193,7 @@ export default function UserProfile({ showOn = "mobile" }: Props) {
                         height={24}
                         className="w-5 h-5 object-contain"
                         unoptimized
+                        priority
                       />
 
                       <div className="flex flex-col justify-center items-start w-full gap-1">

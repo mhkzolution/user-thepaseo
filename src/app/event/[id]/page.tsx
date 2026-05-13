@@ -269,17 +269,17 @@ export default function EventSinglePage() {
     }
 
     return (
-      <div className="flex flex-row justify-between items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-2">
         
         {/* INFO */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0">
 
-          <p className="text-sm text-black">
+          <p className="md:text-sm text-xs text-black">
             พอยท์ของคุณ : <b>{pointBalance}</b> พอยท์
           </p>
 
           {message && (
-            <span className="text-xs text-red-500">{message}</span>
+            <span className="md:text-sm text-xs text-red-500">{message}</span>
           )}
         </div>
 
@@ -289,11 +289,11 @@ export default function EventSinglePage() {
           onClick={() => {
             if (!disabled) setShowConfirmModal(true);
           }}
-          className={`py-2 px-8 rounded-full ${
-            disabled ? "bg-gray-300" : "bg-paseo"
-          }`}
-        >
-          <span className="text-sm font-bold text-white">
+          className={`md:py-2 py-1 md:px-6 px-5 rounded-full ${
+              disabled ? "bg-gray-300" : "bg-paseo"
+            }`}
+          >
+            <span className="md:text-sm text-xs font-bold text-white">
             {joining ? "กำลังเข้าร่วม..." : "เข้าร่วมกิจกรรม"}
           </span>
         </button>
@@ -319,6 +319,9 @@ export default function EventSinglePage() {
                 alt={event.name}
                 className="w-full h-full object-cover rounded-xl"
                 unoptimized
+                priority
+                placeholder="blur"
+                blurDataURL="/blur-placeholder.jpg"
               />
             )}
 
@@ -350,17 +353,17 @@ export default function EventSinglePage() {
         </div>
 
         <div className="px-8 md:px-10">
-          <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-6 rounded-xl">
+          <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-4 rounded-xl">
             <div className="flex flex-col gap-2">
-              <div className="flex flex-row item-center align-center gap-4">
-                <CiCalendar size={24} />
+              <div className="flex flex-row item-center align-center gap-2">
+                <CiCalendar size={32} />
                 <p className="text-sm text-black">
                   วันที่ {formatThai(startDate)} - {formatThai(endDate)} นี้
                 </p>
               </div>
 
               {event.pointCost > 0 && 
-              <div className="flex flex-row item-center align-center gap-4">
+              <div className="flex flex-row item-center align-center gap-2">
                 <Image
                     src="/icon/icon-point.png"
                     alt="Thepaseo"
@@ -368,13 +371,14 @@ export default function EventSinglePage() {
                     height={100}
                     className="w-6 h-6 object-contain"
                     unoptimized
+                    priority
                   />
                 <p className="text-sm text-black">จำนวนพอยท์ : {event.pointCost} พอยท์</p>
               </div>
               }
 
               {event.pointEarn > 0 && 
-              <div className="flex flex-row item-center align-center gap-4">
+              <div className="flex flex-row item-center align-center gap-2">
                   <Image
                     src="/icon/icon-point.png"
                     alt="Thepaseo"
@@ -382,12 +386,13 @@ export default function EventSinglePage() {
                     height={100}
                     className="w-6 h-6 object-contain"
                     unoptimized
+                    priority
                   />
                 <p className="text-sm text-black">ผู้เข้าร่วมจะได้รับ: {event.pointEarn} พอยท์</p>
               </div>
               }
 
-              <div className="flex flex-row item-center align-center gap-4">
+              <div className="flex flex-row item-center align-center gap-2">
                   <Image
                     src="/icon/icon-point.png"
                     alt="Thepaseo"
@@ -395,6 +400,7 @@ export default function EventSinglePage() {
                     height={100}
                     className="w-6 h-6 object-contain"
                     unoptimized
+                    priority
                   />
                 <p className="text-sm text-black">
                   พอยท์ของคุณ : {pointBalance} พอยท์
@@ -434,7 +440,7 @@ export default function EventSinglePage() {
         </div>
 
         {/* ✅ ปุ่มเข้าร่วม */}
-        <div className="md:relative md:bottom-0 md:border-0 md:rounded-xl fixed bottom-12 max-w-2xl mx-auto bg-white w-full p-4 pb-6 md:p-8 border">
+        <div className="md:relative md:bottom-0 md:border-0 md:rounded-xl fixed bottom-12 max-w-2xl mx-auto bg-white w-full p-2 pb-6 md:p-8 border">
           {renderJoinButton()}
         </div>
 

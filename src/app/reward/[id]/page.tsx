@@ -266,7 +266,7 @@ const handleJoin = async () => {
     }
 
     return (
-      <div className="flex flex-row justify-between items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-2">
         
         {/* INFO */}
         <div className="flex flex-col gap-1">
@@ -290,11 +290,11 @@ const handleJoin = async () => {
           <button
             onClick={() => setShowConfirmModal(true)}
             disabled={disabled || joining}
-            className={`py-2 px-8 rounded-full ${
+            className={`md:py-2 py-1 md:px-6 px-5 rounded-full ${
               disabled ? "bg-gray-300" : "bg-paseo"
             }`}
           >
-            <span className="text-sm font-bold text-white">
+            <span className="md:text-sm text-xs font-bold text-white">
               {joining ? "กำลังแลกรางวัล..." : "แลกของรางวัล"}
             </span>
           </button>
@@ -321,6 +321,9 @@ const handleJoin = async () => {
                 alt={reward.name}
                 className="w-full h-full object-cover rounded-xl"
                 unoptimized
+                priority
+                placeholder="blur"
+                blurDataURL="/blur-placeholder.jpg"
               />
             )}
 
@@ -352,17 +355,17 @@ const handleJoin = async () => {
           </div>
 
           <div className="px-8 md:px-10">
-            <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-6 rounded-xl">
+            <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-4 rounded-xl">
               <div className="flex flex-col gap-2">
-                <div className="flex flex-row item-center align-center gap-4">
-                  <CiCalendar size={24} />
+                <div className="flex flex-row item-center align-center gap-2">
+                  <CiCalendar size={32} />
                   <p className="text-sm text-black">
                     วันที่ {formatThai(startDate)} - {formatThai(endDate)} นี้
                   </p>
                 </div>
   
                 {reward.pointCost > 0 && 
-                <div className="flex flex-row item-center align-center gap-4">
+                <div className="flex flex-row item-center align-center gap-2">
                   <Image
                     src="/icon/icon-point.png"
                     alt="Thepaseo"
@@ -370,13 +373,14 @@ const handleJoin = async () => {
                     height={100}
                     className="w-6 h-6 object-contain"
                     unoptimized
+                    priority
                   />
                   <p className="text-sm text-black">จำนวนพอยท์ : {reward.pointCost} พอยท์</p>
                 </div>
                 }
   
                 {reward.pointEarn > 0 && 
-                <div className="flex flex-row item-center align-center gap-4">
+                <div className="flex flex-row item-center align-center gap-2">
                   <Image
                     src="/icon/icon-point.png"
                     alt="Thepaseo"
@@ -384,12 +388,13 @@ const handleJoin = async () => {
                     height={100}
                     className="w-6 h-6 object-contain"
                     unoptimized
+                    priority
                   />
                   <p className="text-sm text-black">ผู้เข้าร่วมจะได้รับ: {reward.pointEarn} พอยท์</p>
                 </div>
                 }
   
-                <div className="flex flex-row item-center align-center gap-4">
+                <div className="flex flex-row item-center align-center gap-2">
                   <Image
                     src="/icon/icon-point.png"
                     alt="Thepaseo"
@@ -397,6 +402,7 @@ const handleJoin = async () => {
                     height={100}
                     className="w-6 h-6 object-contain"
                     unoptimized
+                    priority
                   />
                   <p className="text-sm text-black">
                     พอยท์ของคุณ : {pointBalance} พอยท์
@@ -442,17 +448,17 @@ const handleJoin = async () => {
         </div>
 
         {/* ✅ ปุ่มรับคูปอง */}
-        <div className="md:relative md:bottom-0 md:border-0 md:rounded-xl fixed bottom-12 max-w-2xl mx-auto bg-white w-full p-4 pb-6 md:p-8 border">
+        <div className="md:relative md:bottom-0 md:border-0 md:rounded-xl fixed bottom-12 max-w-2xl mx-auto bg-white w-full p-2 pb-6 md:p-8 border">
           {renderButton()}
         </div>
 
         {/* ✅ Modal ยืนยันการแลก */}
         {showConfirmModal && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-          style={{ backdropFilter: "blur(2px)" }}
-        >
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              style={{ backdropFilter: "blur(2px)" }}
+            >
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2">
             <div className="bg-white p-6 rounded-xl shadow-md max-w-sm w-full text-center">
               <h2 className="text-sm font-semibold mb-2">ยืนยันการแลก</h2>
               <p className="text-gray-700 mb-4">

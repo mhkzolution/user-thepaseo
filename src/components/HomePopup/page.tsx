@@ -99,7 +99,7 @@ export default function HomePopup() {
                   key={i}
                   className="embla__slide flex-[0_0_100%] min-w-0 flex items-center justify-center rounded-2xl"
                 >
-                  <Skeleton className="w-full aspect-square rounded-xl" />
+                  <Skeleton className="w-full rounded-xl" />
                 </div>
               ))
             ) : (
@@ -111,13 +111,13 @@ export default function HomePopup() {
                   <Link
                     href={popup.linkUrl}
                     rel="noopener noreferrer"
-                    className="w-full flex aspect-square items-center justify-center"
+                    className="w-full flex items-center justify-center"
                   >
                     <Image
                       src={popup.imageUrl}
                       alt={popup.title}
-                      width={600}
-                      height={600}
+                      width={400}
+                      height={400}
                       className="object-contain w-full h-full rounded-xl"
                       priority={index === 0}
                       loading={index === 0 ? undefined : "lazy"}

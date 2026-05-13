@@ -196,6 +196,9 @@ export default function CouponRewardList() {
                         height={300}
                         className="w-full h-full object-cover"
                         unoptimized
+                        priority
+                        placeholder="blur"
+                        blurDataURL="/blur-placeholder.jpg"
                       />
                     </div>
 

@@ -358,7 +358,7 @@ export default function RegisterPage() {
   return (
     <div className="max-w-lg mx-auto md:py-0 py-6 pb-0 rounded-xl relative">
 
-        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 bg-white/60 backdrop-blur-lg rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
           <div className="relative flex flex-row justify-center">
 
             <div className="flex flex-row justify-center gap-2 h-min">
@@ -368,6 +368,7 @@ export default function RegisterPage() {
                 width={40}
                 height={40}
                 unoptimized
+                priority
               />
             </div>
     
@@ -380,7 +381,14 @@ export default function RegisterPage() {
 
         <div className="w-full h-full py-8 md:px-10 px-4 pb-10 m-0 rounded-t-3xl bg-white shadow z-50 md:relative">
           <div className="flex justify-center items-center gap-4 mb-5">
-            <Image src="/logo-paseo-register.png" width={54} height={54} unoptimized alt="ThePaseo" />
+            <Image
+              src="/logo-paseo-register.png"
+              width={54}
+              height={54}
+              unoptimized
+              priority
+              alt="ThePaseo"
+            />
             <h2 className="text-xl font-semibold text-center">สมัครสมาชิก</h2>
           </div>
 
@@ -457,7 +465,7 @@ export default function RegisterPage() {
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0 bg-white" align="start">
                         <Calendar
-                          className='w-80'
+                          className='w-99'
                           mode="single"
                           captionLayout="dropdown"
                           selected={date}
@@ -626,7 +634,7 @@ export default function RegisterPage() {
               </>
             )}
 
-            <div className="md:relative fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center blur rounded-t-xl shadow-lg md:shadow-none border md:border-none md:mt-4">
+            <div className="md:relative fixed bottom-0 left-0 px-4 py-2 w-full flex justify-between items-center bg-white/60 backdrop-blur-lg rounded-t-xl shadow-lg md:shadow-none border md:border-none md:mt-4">
               {step > 1 ? (
                 <button
                   type="button"
@@ -660,8 +668,8 @@ export default function RegisterPage() {
           </form>
 
           {showOtpModal && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50"
-            style={{ backdropFilter: "blur(2px)" }}
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs overlay p-4"
           >
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
               <h3 className="text-lg font-semibold text-center mb-2">

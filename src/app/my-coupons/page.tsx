@@ -57,6 +57,9 @@ export default function MyCouponsPage() {
               alt={uc.coupon.name}
               className="w-full rounded-lg mb-2 object-cover"
               unoptimized
+              priority
+              placeholder="blur"
+              blurDataURL="/blur-placeholder.jpg"
             />
           )}
 

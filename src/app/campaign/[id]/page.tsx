@@ -141,13 +141,16 @@ export default function CampaignSinglePage() {
   
           <div className="px-8 md:px-10">
             {campaign.imageUrl &&
-            <Image
-              width={600}
-              height={600}
-              src={campaign.imageUrl} alt={campaign.name}
-              className="w-full h-full object-cover rounded-xl"
+              <Image
+                width={600}
+                height={600}
+                src={campaign.imageUrl} alt={campaign.name}
+                className="w-full h-full object-cover rounded-xl"
                 unoptimized
-            />}
+                priority
+                placeholder="blur"
+                blurDataURL="/blur-placeholder.jpg"
+              />}
 
             <div className="w-full flex flex-row justify-end px-4 py-2 items-center gap-4">
               {user?.id && (
@@ -178,10 +181,10 @@ export default function CampaignSinglePage() {
           </div>
 
           <div className="px-8 md:px-10">
-            <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-6 rounded-xl">
+            <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-4 rounded-xl">
               <div className="flex flex-col gap-2">
-                <div className="flex flex-row item-center align-center gap-4">
-                  <CiCalendar size={24} />
+                <div className="flex flex-row item-center align-center gap-2">
+                  <CiCalendar size={32} />
                   <p className="text-sm text-black">
                     วันที่ {formatThai(startDate)} - {formatThai(endDate)} นี้
                   </p>
@@ -246,7 +249,7 @@ export default function CampaignSinglePage() {
                   >
                     <div className="relative w-full h-full flex flex-col">
                       <div className="relative w-full h-full flex flex-col">
-                        <div className="w-full aspect-square rounded-xl overflow-hidden bg-white p-3 bg-gray-100">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden p-3 bg-gray-100">
                           <Image
                             src={coupon.imageUrl || "/main/no-image.png"}
                             alt={coupon.name}
@@ -254,10 +257,13 @@ export default function CampaignSinglePage() {
                             height={300}
                             className="w-full h-full rounded-xl"
                             unoptimized
+                            priority
+                            placeholder="blur"
+                            blurDataURL="/blur-placeholder.jpg"
                           />
                         </div>
                     
-                        <div className="w-full rounded-xl flex flex-col gap-2 bg-white p-2 bg-gray-100">
+                        <div className="w-full rounded-xl flex flex-col gap-2 p-2 bg-gray-100">
 
                           <div className="w-full px-1" style={{ minHeight: "2rem" }}>
                             <h3 className="text-xs font-semibold line-clamp-3 leading-4 text-center">

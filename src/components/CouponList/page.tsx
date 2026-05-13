@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Loading from "@/components/loading";
 import useEmblaCarousel from "embla-carousel-react";
+import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 type Coupon = {
   id: string;
@@ -30,9 +31,7 @@ export default function CouponList({ shopId }: { shopId?: string }) {
           ? `${API_URL}/coupon?shopId=${shopId}`
           : `${API_URL}/coupon`;
 
-        const res = await fetch(url, {
-          credentials: "include",
-        });
+        const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error("Failed to fetch coupons");
         const data = await res.json();
         setCoupons(data);
@@ -97,7 +96,7 @@ export default function CouponList({ shopId }: { shopId?: string }) {
                   >
                     <div className="relative w-full h-full flex flex-col">
                       <div className="relative w-full h-full flex flex-col">
-                        <div className="w-full aspect-square rounded-xl overflow-hidden bg-white p-3 bg-gray-100">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden p-3 bg-gray-100">
                           <Image
                             src={r.imageUrl || "/main/no-image.png"}
                             alt={r.name}
@@ -105,13 +104,16 @@ export default function CouponList({ shopId }: { shopId?: string }) {
                             height={300}
                             className="w-full h-full rounded-xl"
                             unoptimized
+                            priority
+                            placeholder="blur"
+                            blurDataURL="/blur-placeholder.jpg"
                           />
                         </div>
                     
-                        <div className="w-full rounded-xl flex flex-col gap-2 bg-white p-2 bg-gray-100">
+                        <div className="w-full rounded-xl flex flex-col gap-2 p-2 bg-gray-100">
 
                           <div className="w-full px-1" style={{ minHeight: "2rem" }}>
-                            <h3 className="text-xs font-semibold line-clamp-3 leading-4 text-center">
+                            <h3 className="text-xs font-semibold line-clamp-2 leading-4 text-center">
                               {r.name.length > 40 ? r.name.substring(0, 40) + "..." : r.name}
                             </h3>
                           </div>

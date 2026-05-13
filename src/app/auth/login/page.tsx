@@ -185,7 +185,7 @@ useEffect(() => {
   return (
     <div className="max-w-lg mx-auto h-screen p-0 mb-0 md:mb-0 mb-0 rounded-t-xl relative overflow-hidden">
 
-        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 blur2 rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
+        <div className="fixed inset-x-0 top-0 overflow-hidden pt-2 pb-2 md:hidden z-50 bg-white/60 backdrop-blur-lg rounded-b-xl shadow-sm border border-gray-200 flex flex-col">
           <div className="relative flex flex-row justify-center">
 
             <div className="flex flex-row justify-center gap-2 h-min">
@@ -195,6 +195,7 @@ useEffect(() => {
                 width={40}
                 height={40}
                 unoptimized
+                priority
               />
             </div>
     

@@ -25,8 +25,8 @@ export default function SimpleSelect({
       disabled={disabled}
       value={value || ''}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full pt-2 pb-2 pl-2 pr-4 border rounded-xl bg-white
-                 focus:outline-none focus:ring focus:ring-paseo
+      className="w-full pt-2 pb-2 pl-2 pr-4 border rounded-lg bg-white
+                 focus-visible:border-ring focus-visible:ring-paseo focus-visible:ring-[2px]
                  disabled:bg-gray-200 disabled:text-gray-400 text-xs"
     >
       <option value="" disabled>

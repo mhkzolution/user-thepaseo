@@ -1,8 +1,7 @@
 // app/layout.tsx (Server Component)
 import type { Metadata, Viewport } from "next";
 import { Prompt } from "next/font/google";
-import "../styles/globals.css";
-import "../styles/profile.css";
+import "./globals.css";
 import LayoutClient from "./layout-client";
 
 const prompt = Prompt({
@@ -31,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className="scroll-smooth"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <body
