@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
+import { AuthContext } from "@/contexts/AuthContext";
 
 import { IoTicketOutline } from "react-icons/io5";
 import { IoHeartSharp } from "react-icons/io5";
@@ -64,6 +65,7 @@ const Navbar = () => {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [user, setUser] = useState<UserProfileData | null>(null);
   const pathname = usePathname();
+  const { user: authUser, loading: authLoading } = useContext(AuthContext);
 
   const menuItems = [
     {
@@ -165,20 +167,55 @@ const Navbar = () => {
   };
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!authUser) {
+      setUser(null);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchUser = async () => {
       try {
         const res = await fetchWithAuth(`${API_URL}/profile`);
         const data = await res.json();
-        if (data.user) setUser(data.user);
+        if (cancelled) return;
+        if (res.ok && data.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
       } catch (err) {
-        console.error("Failed to fetch user profile:", err);
+        if (!cancelled) {
+          console.error("Failed to fetch user profile:", err);
+          setUser(null);
+        }
       }
     };
-    fetchUser();
-  }, []);
 
-  if (!user) return 
-  ;
+    void fetchUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_URL, authLoading, authUser]);
+
+  if (pathname.startsWith("/auth")) {
+    return null;
+  }
+
+  if (authLoading) {
+    return null;
+  }
+
+  if (!authUser) {
+    return null;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   const avatarUrl = getAvatarUrl(user.avatar);
 

@@ -1,14 +1,18 @@
 'use client'
 
+import { useContext } from "react"
 import { useRouter } from "next/navigation"
 import { MdLogout } from "react-icons/md";
+import { AuthContext } from "@/contexts/AuthContext"
 
 export default function LogoutButton() {
   const router = useRouter()
+  const { refreshUser } = useContext(AuthContext)
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
+    await refreshUser()
     router.push("/auth/login")
   }
 
