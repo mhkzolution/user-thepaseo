@@ -390,7 +390,7 @@ export default function UploadPage() {
       </div>
 
       {isModalOpen && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-lg">
                   <h2 className="text-lg font-bold mb-2">อัพโหลดสำเร็จ</h2>
                   <p className="text-gray-600 mb-4">เจ้าหน้าที่กำลังตรวจสอบข้อมูลให้คุณ พอยท์จะถูกมอบเข้าบัญชีภายใน 24 ชั่วโมง</p>
