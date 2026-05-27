@@ -6,18 +6,14 @@ import { useRouter } from 'next/navigation';
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Image from "next/image";
 import BackButton from '@/components/BackButton/page';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
 import Loading from '@/components/loading';
-import { CalendarIcon } from "lucide-react";
 
 import SimpleSelect from '@/components/form/SimpleSelect'
+import BirthdaySelect from '@/components/form/BirthdaySelect'
 import FormField from '@/components/form/FormField'
 import ThaiAddressSelect from '@/components/address/ThaiAddressSelect'
 import { Camera } from "lucide-react";
@@ -63,13 +59,6 @@ function formatDateOnlyLocal(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-function parseDateOnlyToLocalDate(value: string): Date | undefined {
-  if (!value) return undefined;
-  const [y, m, d] = value.split("-").map(Number);
-  if (!y || !m || !d) return undefined;
-  return new Date(y, m - 1, d);
 }
 
 export default function ProfileEditPage() {
@@ -147,30 +136,19 @@ export default function ProfileEditPage() {
   }
 
   const toggleInterest = (id: string) => {
-    if (form.interests.includes(id)) {
-      setForm({
-        ...form,
-        interests: form.interests.filter((x) => x !== id),
-      });
-    } else {
-      setForm({
-        ...form,
-        interests: [...form.interests, id],
-      });
-    }
-  };
-
-  const [open, setOpen] = React.useState(false);
-  const date = parseDateOnlyToLocalDate(form.dateOfBirth);
-
-  const handleDateChange = (newDate: Date | undefined) => {
-    setForm({
-      ...form,
-      // เก็บเป็น YYYY-MM-DD แบบ local date เพื่อกันวันถอยจาก timezone
-      dateOfBirth: newDate ? formatDateOnlyLocal(newDate) : '',
-    });
-    setOpen(false);
-  };
+    setForm((prev) => {
+      if (prev.interests.includes(id)) {
+        return {
+          ...prev,
+          interests: prev.interests.filter((x) => x !== id),
+        }
+      }
+      return {
+        ...prev,
+        interests: [...prev.interests, id],
+      }
+    })
+  }
 
   const getAvatarSrc = (avatar?: string) => {
     if (!avatar) return "";
@@ -373,37 +351,16 @@ export default function ProfileEditPage() {
               </FormField>
             </div>
 
-            <div className='flex flex-row gap-2'>
-              <FormField label="วันเกิด" required>
-                <Popover open={open} onOpenChange={setOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={`w-full justify-between rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo text-xs font-normal py-1 px-2 border ${
-                        !date ? 'text-gray-400' : ''
-                      }`}
-                    >
-                      {date
-                        ? format(date, 'dd MMMM yyyy', { locale: th })
-                        : 'เลือกวันเกิด'}
-                      <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-white" align="start">
-                    <Calendar
-                      className="w-99"
-                      mode="single"
-                      captionLayout="dropdown"
-                      selected={date}
-                      onSelect={handleDateChange}
-                      fromYear={1950}
-                      toYear={new Date().getFullYear()}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </FormField>
+            <FormField label="วันเกิด" required>
+              <BirthdaySelect
+                value={form.dateOfBirth}
+                onChange={(dateOfBirth) =>
+                  setForm((prev) => ({ ...prev, dateOfBirth }))
+                }
+              />
+            </FormField>
 
-              <FormField label="เพศ" required>
+            <FormField label="เพศ" required>
                 <SimpleSelect
                   value={form.gender}
                   placeholder="เลือกเพศ"
@@ -415,7 +372,6 @@ export default function ProfileEditPage() {
                   ]}
                 />
               </FormField>
-            </div>
 
             <FormField label="เบอร์โทรศัพท์" required>
               <Input

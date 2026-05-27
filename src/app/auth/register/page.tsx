@@ -10,17 +10,13 @@ import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { th } from "date-fns/locale"
 import BannerRegister from "@/components/BannerRegister/page"
 import HeaderMobile from '@/components/HeaderMobile/page';
 import { AuthContext } from "@/contexts/AuthContext";
 
 import SimpleSelect from '@/components/form/SimpleSelect'
+import BirthdaySelect from '@/components/form/BirthdaySelect'
 import FormField from '@/components/form/FormField'
 import ThaiAddressSelect from '@/components/address/ThaiAddressSelect'
 
@@ -118,8 +114,6 @@ export default function RegisterPage() {
   const [step, setStep] = useState(1)
   const [interests, setInterests] = useState<Interest[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [date, setDate] = useState<Date | undefined>(undefined)
-  const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState("")
@@ -127,6 +121,7 @@ export default function RegisterPage() {
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
   const [checkingPhone, setCheckingPhone] = useState(false)
+  const [addressErrors, setAddressErrors] = useState<{ province?: string; district?: string; subDistrict?: string }>({})
 
   const [form, setForm] = useState<FormState>({
     firstName: '',
@@ -232,25 +227,18 @@ export default function RegisterPage() {
     }
   }
 
-  const handleDateChange = (selectedDate: Date | undefined) => {
-    setDate(selectedDate)
-    setForm({
-      ...form,
-      dateOfBirth: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-    })
-  }
-
   const toggleInterest = (id: string) => {
-    setForm({
-      ...form,
-      interests: form.interests.includes(id)
-        ? form.interests.filter((x) => x !== id)
-        : [...form.interests, id],
-    });
-  };
+    setForm((prev) => ({
+      ...prev,
+      interests: prev.interests.includes(id)
+        ? prev.interests.filter((x) => x !== id)
+        : [...prev.interests, id],
+    }))
+  }
 
   const handlePrevStep = () => {
     setError('');
+    setAddressErrors({});
     setStep(step - 1);
   };
 
@@ -276,6 +264,15 @@ export default function RegisterPage() {
 
       setShowOtpModal(true)
       return
+    }
+
+    if (step === 2) {
+      const addrErr: { province?: string; district?: string; subDistrict?: string } = {}
+      if (!form.province.trim()) addrErr.province = "กรุณาเลือกจังหวัด"
+      if (!form.district.trim()) addrErr.district = "กรุณาเลือกเขต / อำเภอ"
+      if (!form.subDistrict.trim()) addrErr.subDistrict = "กรุณาเลือกแขวง / ตำบล"
+      setAddressErrors(addrErr)
+      if (Object.keys(addrErr).length > 0) return
     }
 
     setStep(step + 1)
@@ -312,6 +309,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     setSuccess(false);
+
+    if (!form.province.trim() || !form.district.trim() || !form.subDistrict.trim()) {
+      setError("จังหวัด/เขต/แขวง ไม่ครบ — กรุณาย้อนกลับไปขั้นที่ 2 กรอกให้ครบ")
+      return
+    }
 
     if (!form.interests.length) {
       setError('กรุณาเลือกความสนใจอย่างน้อยหนึ่งอย่าง');
@@ -454,42 +456,27 @@ export default function RegisterPage() {
                   </FormField>
                 </div>
 
-                <div className='flex flex-row gap-2'>
-                  <FormField label="วันเกิด" required>
-                    <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={`w-full justify-between rounded-xl bg-white focus:outline-none focus:ring focus:ring-paseo font-normal py-4 border ${!date ? "text-gray-400" : ""}`}>
-                          {date ? format(date, "dd MMMM yyyy", { locale: th }) : "เลือกวันเกิด"}
-                          <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0 bg-white" align="start">
-                        <Calendar
-                          className='w-99'
-                          mode="single"
-                          captionLayout="dropdown"
-                          selected={date}
-                          onSelect={handleDateChange}
-                          fromYear={1950}
-                          toYear={new Date().getFullYear()}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </FormField>
+                <FormField label="วันเกิด" required>
+                  <BirthdaySelect
+                    value={form.dateOfBirth}
+                    onChange={(dateOfBirth) =>
+                      setForm((prev) => ({ ...prev, dateOfBirth }))
+                    }
+                  />
+                </FormField>
 
-                  <FormField label="เพศ" required>
-                    <SimpleSelect
-                      value={form.gender}
-                      placeholder="เลือกเพศ"
-                      onChange={(v) => setForm({ ...form, gender: v })}
-                      options={[
-                        { value: 'MALE', label: 'ชาย' },
-                        { value: 'FEMALE', label: 'หญิง' },
-                        { value: 'OTHER', label: 'อื่นๆ' },
-                      ]}
-                    />
-                  </FormField>
-                </div>
+                <FormField label="เพศ" required>
+                  <SimpleSelect
+                    value={form.gender}
+                    placeholder="เลือกเพศ"
+                    onChange={(v) => setForm({ ...form, gender: v })}
+                    options={[
+                      { value: 'MALE', label: 'ชาย' },
+                      { value: 'FEMALE', label: 'หญิง' },
+                      { value: 'OTHER', label: 'อื่นๆ' },
+                    ]}
+                  />
+                </FormField>
 
                 <FormField label="เบอร์โทรศัพท์" required>
                   <Input
@@ -576,7 +563,7 @@ export default function RegisterPage() {
                   />
                 </FormField>
                 
-                <FormField label="ที่อยู่" required>
+                <FormField label="ที่อยู่">
                   <Input
                     name="address"
                     placeholder="ที่อยู่"
@@ -586,18 +573,24 @@ export default function RegisterPage() {
                   />
                 </FormField>
                   <ThaiAddressSelect
+                    required
+                    errors={addressErrors}
                     value={{
                       province: form.province,
                       district: form.district,
                       subDistrict: form.subDistrict,
                       postalCode: form.postalCode,
                     }}
-                    onChange={(addr) =>
-                      setForm((f) => ({
-                        ...f,
-                        ...addr,
-                      }))
-                    }
+                    onChange={(addr) => {
+                      setForm((f) => ({ ...f, ...addr }))
+                      setAddressErrors(prev => {
+                        const next = { ...prev }
+                        if (addr.province !== undefined) delete next.province
+                        if (addr.district !== undefined) delete next.district
+                        if (addr.subDistrict !== undefined) delete next.subDistrict
+                        return next
+                      })
+                    }}
                   />
               </div>
             )}

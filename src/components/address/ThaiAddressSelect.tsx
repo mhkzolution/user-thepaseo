@@ -11,15 +11,23 @@ type AddressValue = {
   postalCode?: string
 }
 
+type AddressErrors = {
+  province?: string
+  district?: string
+  subDistrict?: string
+}
+
 type Props = {
   value: AddressValue
   onChange: (val: AddressValue) => void
   label?: string
+  required?: boolean
+  errors?: AddressErrors
 }
 
 const provinces = provincesData as Province[]
 
-export default function ThaiAddressSelect({ value, onChange, label }: Props) {
+export default function ThaiAddressSelect({ value, onChange, label, required, errors }: Props) {
   const [province, setProvince] = useState<Province | null>(null)
   const [district, setDistrict] = useState<District | null>(null)
   const [subDistrict, setSubDistrict] = useState<SubDistrict | null>(null)
@@ -79,6 +87,8 @@ export default function ThaiAddressSelect({ value, onChange, label }: Props) {
       {/* จังหวัด */}
       <SearchSelect
         label="จังหวัด"
+        required={required}
+        error={errors?.province}
         query={provinceQuery}
         setQuery={setProvinceQuery}
         value={province?.name_th}
@@ -111,6 +121,8 @@ export default function ThaiAddressSelect({ value, onChange, label }: Props) {
       {/* เขต / อำเภอ */}
       <SearchSelect
         label="เขต / อำเภอ"
+        required={required}
+        error={errors?.district}
         disabled={!province}
         query={districtQuery}
         setQuery={setDistrictQuery}
@@ -136,6 +148,8 @@ export default function ThaiAddressSelect({ value, onChange, label }: Props) {
       {/* แขวง / ตำบล */}
       <SearchSelect
         label="แขวง / ตำบล"
+        required={required}
+        error={errors?.subDistrict}
         disabled={!district}
         query={subDistrictQuery}
         setQuery={setSubDistrictQuery}
@@ -156,6 +170,9 @@ export default function ThaiAddressSelect({ value, onChange, label }: Props) {
       />
 
       {/* รหัสไปรษณีย์ */}
+      <label className="text-sm font-medium text-gray-700 pl-2">
+        รหัสไปรษณีย์
+      </label>
       <input
         type="text"
         value={value.postalCode || ''}
@@ -176,6 +193,8 @@ type SearchSelectProps = {
   setQuery: (v: string) => void
   value?: string
   disabled?: boolean
+  required?: boolean
+  error?: string
   onSelect: (value: string) => void
 }
 
@@ -186,12 +205,13 @@ function SearchSelect({
   setQuery,
   value,
   disabled,
+  required,
+  error,
   onSelect,
 }: SearchSelectProps) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  /* ✅ click outside → close */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -210,6 +230,10 @@ function SearchSelect({
 
   return (
     <div ref={wrapperRef} className="relative w-full">
+      <label className="text-sm block font-medium pl-2">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
       <input
         type="text"
         disabled={disabled}
@@ -220,8 +244,9 @@ function SearchSelect({
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
-        className="w-full rounded-lg bg-white border px-4 py-2 text-xs focus-visible:border-ring focus-visible:ring-paseo focus-visible:ring-[2px]"
+        className={`w-full rounded-lg bg-white border px-4 py-2 text-xs focus-visible:border-ring focus-visible:ring-paseo focus-visible:ring-[2px] ${error ? 'border-red-500' : ''}`}
       />
+      {error && <p className="text-red-500 text-xs mt-0.5 pl-2">{error}</p>}
 
       {open && !disabled && items.length > 0 && (
         <div className="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-xl border bg-white shadow text-xs">

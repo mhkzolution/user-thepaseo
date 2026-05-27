@@ -4,8 +4,7 @@ import { useEffect } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { StatusBar, Style } from '@capacitor/status-bar'
 
-/** สีธีมหลัก — ใช้ตั้งพื้นหลังแถบสถานะเมื่อไม่ให้ทับ WebView */
-const STATUS_BAR_BG = '#9DC93C'
+const STATUS_BAR_BG = '#000000'
 
 /**
  * ปิดการให้ Status Bar ทับเนื้อหา WebView (ค่าเริ่มต้นของ Capacitor มักเป็น overlay)
@@ -20,7 +19,7 @@ export default function CapacitorNativeChrome() {
       try {
         await StatusBar.setOverlaysWebView({ overlay: false })
         await StatusBar.setBackgroundColor({ color: STATUS_BAR_BG })
-        await StatusBar.setStyle({ style: Style.Dark })
+        await StatusBar.setStyle({ style: Style.Dark })  // Dark = ไอคอนสีขาว (สำหรับพื้นหลังเข้ม)
       } catch (e) {
         console.warn('[CapacitorNativeChrome]', e)
       }

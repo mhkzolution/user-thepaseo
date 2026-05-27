@@ -8,18 +8,14 @@ import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Image from 'next/image';
 import React from 'react';
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { th } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import BannerRegister from "@/components/BannerRegister/page"
 import HeaderMobile from '@/components/HeaderMobile/page';
 
 import SimpleSelect from '@/components/form/SimpleSelect'
+import BirthdaySelect, { normalizeDateOfBirth } from '@/components/form/BirthdaySelect'
 import FormField from '@/components/form/FormField'
 import ThaiAddressSelect from '@/components/address/ThaiAddressSelect'
 import Loading from "@/components/loading"
@@ -245,9 +241,8 @@ export default function CompleteProfilePage() {
     referralCode: "",
     interests: [],
   })
-  const [open, setOpen] = useState(false)
-  const [date, setDate] = useState<Date | undefined>(undefined)
   const [error, setError] = useState('')
+  const [addressErrors, setAddressErrors] = useState<{ province?: string; district?: string; subDistrict?: string }>({})
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
@@ -299,7 +294,7 @@ export default function CompleteProfilePage() {
             ...prev,
             firstName: data.user.firstName || prev.firstName,
             lastName: data.user.lastName || prev.lastName,
-            dateOfBirth: data.user.dateOfBirth || prev.dateOfBirth,
+            dateOfBirth: normalizeDateOfBirth(data.user.dateOfBirth) || prev.dateOfBirth,
             gender: data.user.gender || prev.gender,
             phone: data.user.phone || prev.phone,
             email: data.user.email || prev.email,
@@ -315,8 +310,6 @@ export default function CompleteProfilePage() {
               ? data.user.interests.map((i: any) => i.id)
               : [],
           }))
-
-          if (data.user.dateOfBirth) setDate(new Date(data.user.dateOfBirth))
 
           const savedPhone =
             typeof data.user.phone === "string" ? data.user.phone.trim() : ""
@@ -359,21 +352,13 @@ export default function CompleteProfilePage() {
   }, [interests]);
 
   const toggleInterest = (id: string) => {
-    setForm({
-      ...form,
-      interests: form.interests.includes(id)
-        ? form.interests.filter((x) => x !== id)
-        : [...form.interests, id],
-    });
-  };
-
-  const handleDateChange = (selectedDate: Date | undefined) => {
-    setDate(selectedDate);
-    setForm({
-      ...form,
-      dateOfBirth: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-    });
-  };
+    setForm((prev) => ({
+      ...prev,
+      interests: prev.interests.includes(id)
+        ? prev.interests.filter((x) => x !== id)
+        : [...prev.interests, id],
+    }))
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -453,10 +438,22 @@ export default function CompleteProfilePage() {
       }
     }
 
+    if (step === 2) {
+      const addrErr: { province?: string; district?: string; subDistrict?: string } = {}
+      if (!form.province.trim()) addrErr.province = "กรุณาเลือกจังหวัด"
+      if (!form.district.trim()) addrErr.district = "กรุณาเลือกเขต / อำเภอ"
+      if (!form.subDistrict.trim()) addrErr.subDistrict = "กรุณาเลือกแขวง / ตำบล"
+      setAddressErrors(addrErr)
+      if (Object.keys(addrErr).length > 0) return
+    }
+
     setStep(step + 1)
   }
 
-  const handlePrevStep = () => setStep(step - 1);
+  const handlePrevStep = () => {
+    setAddressErrors({})
+    setStep(step - 1)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -514,11 +511,13 @@ export default function CompleteProfilePage() {
       return
     }
 
-    if (
-      !RESIDENCE_VALUES.has(form.residenceType) ||
-      !form.address.trim()
-    ) {
-      setError("ที่อยู่ไม่ครบ — กรุณาย้อนกลับไปกรอกให้ครบ")
+    if (!RESIDENCE_VALUES.has(form.residenceType)) {
+      setError("ที่อยู่ไม่ครบ — กรุณาย้อนกลับไปเลือกประเภทที่อยู่")
+      return
+    }
+
+    if (!form.province.trim() || !form.district.trim() || !form.subDistrict.trim()) {
+      setError("จังหวัด/เขต/แขวง ไม่ครบ — กรุณาย้อนกลับไปขั้นที่ 2 กรอกให้ครบ")
       return
     }
 
@@ -673,49 +672,27 @@ export default function CompleteProfilePage() {
                   </FormField>
                 </div>
 
-                <div className='flex flex-row gap-2'>
-                  <FormField label="วันเกิด" required>
-                    <Popover open={open} onOpenChange={setOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={`w-full justify-between rounded-lg bg-white font-normal py-4 border ${
-                            !date ? 'text-gray-400' : ''
-                          }`}
-                        >
-                          {date
-                            ? format(date, 'dd MMMM yyyy', { locale: th })
-                            : 'เลือกวันเกิด'}
-                          <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0 bg-white" align="start">
-                        <Calendar
-                          className="w-99"
-                          mode="single"
-                          captionLayout="dropdown"
-                          selected={date}
-                          onSelect={handleDateChange}
-                          fromYear={1950}
-                          toYear={new Date().getFullYear()}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </FormField>
+                <FormField label="วันเกิด" required>
+                  <BirthdaySelect
+                    value={form.dateOfBirth}
+                    onChange={(dateOfBirth) =>
+                      setForm((prev) => ({ ...prev, dateOfBirth }))
+                    }
+                  />
+                </FormField>
 
-                  <FormField label="เพศ" required>
-                    <SimpleSelect
-                      value={form.gender}
-                      placeholder="เลือกเพศ"
-                      onChange={(value) => setForm({ ...form, gender: value })}
-                      options={[
-                        { value: 'MALE', label: 'ชาย' },
-                        { value: 'FEMALE', label: 'หญิง' },
-                        { value: 'OTHER', label: 'อื่นๆ' },
-                      ]}
-                    />
-                  </FormField>
-                </div>
+                <FormField label="เพศ" required>
+                  <SimpleSelect
+                    value={form.gender}
+                    placeholder="เลือกเพศ"
+                    onChange={(value) => setForm({ ...form, gender: value })}
+                    options={[
+                      { value: 'MALE', label: 'ชาย' },
+                      { value: 'FEMALE', label: 'หญิง' },
+                      { value: 'OTHER', label: 'อื่นๆ' },
+                    ]}
+                  />
+                </FormField>
 
                 <FormField label="เบอร์โทรศัพท์" required>
                   <Input
@@ -825,10 +802,10 @@ export default function CompleteProfilePage() {
                   />
                 </FormField>
 
-                <FormField label="ที่อยู่" required>
+                <FormField label="ที่อยู่">
                   <Input
                     type="text"
-                    placeholder="ที่อยู่ *"
+                    placeholder="ที่อยู่"
                     name="address"
                     className="w-full py-4 px-4 border rounded-lg bg-white text-sm mb-2"
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -837,18 +814,24 @@ export default function CompleteProfilePage() {
                 </FormField>
     
                 <ThaiAddressSelect
+                  required
+                  errors={addressErrors}
                   value={{
                     province: form.province,
                     district: form.district,
                     subDistrict: form.subDistrict,
                     postalCode: form.postalCode,
                   }}
-                  onChange={(addr) =>
-                    setForm(f => ({
-                      ...f,
-                      ...addr,
-                    }))
-                  }
+                  onChange={(addr) => {
+                    setForm(f => ({ ...f, ...addr }))
+                    setAddressErrors(prev => {
+                      const next = { ...prev }
+                      if (addr.province !== undefined) delete next.province
+                      if (addr.district !== undefined) delete next.district
+                      if (addr.subDistrict !== undefined) delete next.subDistrict
+                      return next
+                    })
+                  }}
                 />
               </div>
             )}
@@ -939,17 +922,17 @@ export default function CompleteProfilePage() {
                   <p className="text-red-500 text-sm mt-2 text-center">{otpError}</p>
                 )}
 
-                <div className="flex gap-2 mt-4">
+                <div className="relative w-full flex justify-center gap-4 mt-4">
                   <Button
                     variant="outline"
-                    className="w-full bg-gray-100"
+                    className="bg-gray-200"
                     onClick={() => setShowOtpModal(false)}
                   >
                     ยกเลิก
                   </Button>
 
                   <Button
-                    className="w-full bg-paseo"
+                    className="bg-paseo"
                     onClick={async () => {
                       const res = await fetch(
                         `${API_URL}/auth/register/verify-otp`,
