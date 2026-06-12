@@ -128,7 +128,6 @@ export default function ProfileEditPage() {
       district: trimmed(input.district) || undefined,
       province: trimmed(input.province) || undefined,
       postalCode: trimmed(input.postalCode) || undefined,
-      branchId: trimmed(input.branchId) || undefined,
       interests: Array.isArray(input.interests)
         ? input.interests.filter(Boolean)
         : [],
@@ -465,7 +464,8 @@ export default function ProfileEditPage() {
               <SimpleSelect
                 value={form.branchId}
                 placeholder="เลือกสาขาที่ทำการสมัคร *"
-                onChange={(value) => setForm({ ...form, branchId: value })}
+                disabled
+                onChange={() => {}}
                 options={branches.map((b) => ({
                   value: b.id,
                   label: b.name,

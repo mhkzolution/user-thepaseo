@@ -22,7 +22,19 @@ type Event = {
 };
 
 
-export default function EventList({ shopId }: { shopId?: string }) { // ✅ เพิ่ม prop
+function isEventExpired(endDate: string): boolean {
+  return new Date() > dateFromBangkokWallClock(endDate);
+}
+
+export default function EventList({
+  shopId,
+  hideExpired = false,
+  showViewAllLink,
+}: {
+  shopId?: string;
+  hideExpired?: boolean;
+  showViewAllLink?: boolean;
+}) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +48,11 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
 
         const res = await fetchWithAuth(url);
         if (!res.ok) throw new Error("Failed to fetch events");
-        const data = await res.json();
-        setEvents(data);
+        const data: Event[] = await res.json();
+        const visible = hideExpired
+          ? data.filter((event) => !isEventExpired(event.endDate))
+          : data;
+        setEvents(visible);
       } catch (error) {
         console.error(error);
       } finally {
@@ -45,7 +60,9 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
       }
     };
     fetchEvents();
-  }, [shopId]); // ✅ refetch เมื่อ shopId เปลี่ยน
+  }, [shopId, hideExpired]);
+
+  const viewAllLinkVisible = showViewAllLink ?? !shopId;
 
   if (loading) {
     return (
@@ -78,7 +95,7 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
     <div className="w-full p-0 max-w-5xl mx-auto mb-0">
       <div className="flex flex-row items-end justify-between mb-3">
         <span className="text-base font-bold">กิจกรรม</span>
-        {!shopId && (
+        {!shopId && viewAllLinkVisible && (
           <Link href="/event" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
             ดูทั้งหมด
           </Link>
