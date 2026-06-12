@@ -9,6 +9,7 @@ import Loading from "@/components/loading";
 import { BsClipboardCheck } from "react-icons/bs";
 import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
 import { RiCoupon2Fill, RiGiftLine, RiMegaphoneLine } from "react-icons/ri";
+import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi";
 
 function PrivilegeEmptyState({
   icon,
@@ -51,6 +52,19 @@ type Branch = {
   imageUrl?: string;
 };
 
+type MiniGameItem = {
+  id: string;
+  type: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  canSpin?: boolean;
+  canClaim?: boolean;
+  hasSpun: boolean;
+  spinPointCost?: number;
+  progress?: { checkInCount: number; checkInTarget: number };
+};
+
 export default function PrivilegeCampaignList() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [campaigns, setCampaigns] = useState<PrivilegeItem[]>([]);
@@ -65,6 +79,7 @@ export default function PrivilegeCampaignList() {
   const [error, setError] = useState<string | null>(null);
   const [privilegesError, setPrivilegesError] = useState<string | null>(null);
   const [privilegesRetryKey, setPrivilegesRetryKey] = useState(0);
+  const [miniGames, setMiniGames] = useState<MiniGameItem[]>([]);
   const firstPrivilegesDone = useRef(false);
 
   // ✅ Fetch Branches from API
@@ -146,7 +161,30 @@ export default function PrivilegeCampaignList() {
     return () => ac.abort();
   }, [selectedBranch, privilegesRetryKey]);
 
+  useEffect(() => {
+    const ac = new AbortController();
+    const fetchMiniGames = async () => {
+      try {
+        const params = new URLSearchParams({
+          excludePlayed: "true",
+        });
+        if (selectedBranch) params.set("branchId", selectedBranch);
+        const res = await fetchWithAuth(`${API_URL}/mini-games?${params}`, {
+          signal: ac.signal,
+        });
+        if (!res.ok) return;
+        setMiniGames(await res.json());
+      } catch (e: unknown) {
+        if (ac.signal.aborted || (e as Error)?.name === "AbortError") return;
+        setMiniGames([]);
+      }
+    };
+    fetchMiniGames();
+    return () => ac.abort();
+  }, [API_URL, selectedBranch]);
+
   const [campaignEmblaRef] = useEmblaCarousel();
+  const [miniGameEmblaRef] = useEmblaCarousel();
 
   if (loading) {
     return <Loading />;
@@ -224,6 +262,61 @@ export default function PrivilegeCampaignList() {
           </span>
         </button>
       ))}
+    </div>
+  );
+
+  const renderMiniGameSection = () => (
+    <div className="mb-8">
+      <h2 className="text-lg font-bold mb-4">มินิเกม</h2>
+      {miniGames.length === 0 ? (
+        <PrivilegeEmptyState
+          icon={<GiPerspectiveDiceSixFacesRandom className="text-paseo-dark" size={24} aria-hidden />}
+          title="ยังไม่มีมินิเกมในสาขานี้"
+        />
+      ) : (
+        <section className="embla_post">
+          <div className="embla__viewport_post rounded-lg" ref={miniGameEmblaRef}>
+            <div className="embla__container_post">
+              {miniGames.map((game) => (
+                <div className="embla__slide_campaign relative w-full" key={game.id}>
+                  <Link href={game.type === "CHECK_IN" ? `/games/check-in/${game.id}` : `/games/lucky-spin/${game.id}`}>
+                    <div className="embla__slide__number_campaign bg-gradient-to-r from-[#6B7B3C] to-[#8a9a52] border rounded-2xl transition text-white flex items-stretch min-h-[120px]">
+                      <div className="w-40% flex items-center justify-center p-4">
+                        {game.imageUrl ? (
+                          <Image
+                            src={game.imageUrl}
+                            alt={game.name}
+                            width={120}
+                            height={120}
+                            className="rounded-xl object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <GiPerspectiveDiceSixFacesRandom size={48} className="text-yellow-300" />
+                        )}
+                      </div>
+                      <div className="flex flex-col flex-grow w-60% p-4 gap-2 justify-center">
+                        <h3 className="text-sm md:text-xl font-bold line-clamp-1">{game.name}</h3>
+                        <p className="text-xs md:text-sm opacity-90">
+                          {game.type === "CHECK_IN"
+                            ? game.canClaim
+                              ? "พร้อมรับรางวัล"
+                              : game.progress
+                                ? `Check in ${game.progress.checkInCount}/${game.progress.checkInTarget}`
+                                : "ดูความคืบหน้า"
+                            : game.canSpin
+                              ? `พร้อมหมุน · ใช้ ${game.spinPointCost} พอยท์`
+                              : "ดูเงื่อนไขการเล่น"}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 
@@ -684,6 +777,8 @@ export default function PrivilegeCampaignList() {
       )}
 
       {renderBranchTabs()}
+
+      {renderMiniGameSection()}
 
       {/* Campaign Section */}
       {renderCampaignCarousel()}

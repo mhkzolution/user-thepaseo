@@ -27,15 +27,16 @@ model User_Lost {
 }
 
 model ShopCategory {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
-  slug      String   @unique
+  slug      String     @unique
   imageUrl  String?
   color     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sortOrder Int      @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  sortOrder Int        @default(0)
   shops     Shop[]
+  miniGames MiniGame[]
 }
 
 model Shop {
@@ -110,6 +111,7 @@ model Branch {
   coupon    Coupon[]   @relation("CouponBranches")
   event     Event[]    @relation("EventBranches")
   rewards   Reward[]   @relation("RewardBranches")
+  miniGames MiniGame[] @relation("MiniGameBranches")
 }
 
 model Tag {
@@ -373,6 +375,9 @@ model User {
   permissions            Permission[]            @relation("PermissionToUser")
   interests              Interest[]              @relation("UserInterests")
   broadcastLogs BroadcastLog[]
+  miniGameParticipations MiniGameParticipation[]
+  miniGamePlayLogs       MiniGamePlayLog[]
+  miniGameCheckIns       MiniGameCheckIn[]
 
   @@index([branchId], map: "User_branchId_fkey")
 }
@@ -437,7 +442,9 @@ model Reward {
   updatedAt       DateTime              @updatedAt
   linkShare       String?
   isRedemption    Boolean               @default(false)
+  forMiniGame     Boolean               @default(false)
   redeemHistories RedeemHistory[]
+  miniGamePrizes  MiniGamePrize[]
   redemptions     Redemption[]
   participations  RewardParticipation[]
   branches        Branch[]              @relation("RewardBranches")
@@ -463,6 +470,7 @@ model Campaign {
   participations CampaignParticipation[]
   coupons        Coupon[]                @relation("CampaignCoupons")
   referralLogs   ReferralLog[]
+  miniGames      MiniGame[]
   branches       Branch[]                @relation("CampaignBranches")
   shops          Shop[]                  @relation("CampaignShops")
 }
@@ -558,9 +566,16 @@ model Coupon {
   terms        String?      @db.Text
   endDate      DateTime?
   startDate    DateTime?
-  isRedemption Boolean      @default(false)
-  campaign     Campaign?    @relation("CampaignCoupons", fields: [campaignId], references: [id])
+  isRedemption       Boolean  @default(false)
+  forMiniGame        Boolean  @default(false)
+  restrictByBranch   Boolean  @default(false)
+  restrictByNewMember Boolean @default(false)
+  newMemberDays      Int?
+  codeSource         CouponCodeSource @default(SYSTEM)
+  campaign           Campaign? @relation("CampaignCoupons", fields: [campaignId], references: [id])
   users        UserCoupon[]
+  merchantCodes MerchantCouponCode[]
+  miniGamePrizes MiniGamePrize[]
   branches     Branch[]     @relation("CouponBranches")
   shops        Shop[]       @relation("CouponShops")
 
@@ -580,10 +595,28 @@ model UserCoupon {
   verifiedBy String?
   coupon     Coupon    @relation(fields: [couponId], references: [id])
   user       User      @relation(fields: [userId], references: [id])
+  merchantCode MerchantCouponCode?
 
   @@index([used, usedAt])
   @@index([couponId])
   @@index([userId])
+}
+
+model MerchantCouponCode {
+  id           String             @id @default(uuid())
+  couponId     String
+  code         String
+  status       MerchantCodeStatus @default(AVAILABLE)
+  source       MerchantCodeInput    @default(MANUAL)
+  userCouponId String?            @unique
+  assignedAt   DateTime?
+  createdAt    DateTime           @default(now())
+
+  coupon     Coupon      @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userCoupon UserCoupon? @relation(fields: [userCouponId], references: [id])
+
+  @@unique([couponId, code])
+  @@index([couponId, status])
 }
 
 model Mission {
@@ -879,6 +912,22 @@ model BroadcastLog {
   @@index([userId])
 }
 
+enum CouponCodeSource {
+  SYSTEM
+  MERCHANT
+}
+
+enum MerchantCodeStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+enum MerchantCodeInput {
+  CSV
+  MANUAL
+  BULK_PASTE
+}
+
 enum BroadcastStatus {
   PENDING
   PROCESSING
@@ -889,4 +938,119 @@ enum BroadcastStatus {
 enum BroadcastLogStatus {
   SENT
   FAILED
+}
+
+enum MiniGameType {
+  LUCKY_SPIN
+  CHECK_IN
+}
+
+enum MiniGamePrizeType {
+  COUPON
+  POINTS
+  REWARD
+}
+
+model MiniGame {
+  id               String       @id @default(uuid())
+  type             MiniGameType @default(LUCKY_SPIN)
+  name             String
+  description      String?      @db.Text
+  terms            String?      @db.Text
+  imageUrl         String?
+  campaignId       String?
+  startDate        DateTime
+  endDate          DateTime
+  isActive         Boolean      @default(true)
+  requireNewMember Boolean      @default(false)
+  newMemberDays    Int?
+  minReceiptAmount Int          @default(300)
+  spinPointCost          Int          @default(10)
+  wheelSlots             Int          @default(8)
+  checkInTarget          Int?
+  targetSpendingAmount   Int?
+  shopCategoryId         String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  campaign               Campaign?    @relation(fields: [campaignId], references: [id])
+  shopCategory           ShopCategory? @relation(fields: [shopCategoryId], references: [id])
+  branches               Branch[]     @relation("MiniGameBranches")
+  prizes                 MiniGamePrize[]
+  participations         MiniGameParticipation[]
+  playLogs               MiniGamePlayLog[]
+  checkIns               MiniGameCheckIn[]
+
+  @@index([type, isActive, startDate, endDate])
+  @@index([campaignId], map: "MiniGame_campaignId_fkey")
+  @@index([shopCategoryId], map: "MiniGame_shopCategoryId_fkey")
+}
+
+model MiniGameCheckIn {
+  id                 String   @id @default(uuid())
+  userId             String
+  miniGameId         String
+  pointTransactionId String   @unique
+  receiptId          String?
+  checkedInAt        DateTime @default(now())
+  miniGame           MiniGame @relation(fields: [miniGameId], references: [id], onDelete: Cascade)
+  user               User     @relation(fields: [userId], references: [id])
+
+  @@index([miniGameId, userId])
+  @@index([userId], map: "MiniGameCheckIn_userId_fkey")
+}
+
+model MiniGamePrize {
+  id           String            @id @default(uuid())
+  miniGameId   String
+  label        String
+  prizeType    MiniGamePrizeType
+  couponId     String?
+  rewardId     String?
+  pointAmount  Int?
+  weight       Int               @default(1)
+  quantity     Int?
+  remainingQty Int?
+  sortOrder    Int               @default(0)
+  color        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  miniGame     MiniGame          @relation(fields: [miniGameId], references: [id], onDelete: Cascade)
+  coupon       Coupon?           @relation(fields: [couponId], references: [id])
+  reward       Reward?           @relation(fields: [rewardId], references: [id])
+
+  @@index([miniGameId, sortOrder])
+  @@index([couponId], map: "MiniGamePrize_couponId_fkey")
+  @@index([rewardId], map: "MiniGamePrize_rewardId_fkey")
+}
+
+model MiniGameParticipation {
+  id           String    @id @default(uuid())
+  userId       String
+  miniGameId   String
+  hasSpun      Boolean   @default(false)
+  spunAt       DateTime?
+  prizeId                String?
+  userCouponId           String?
+  rewardParticipationId  String?
+  createdAt              DateTime  @default(now())
+  miniGame               MiniGame  @relation(fields: [miniGameId], references: [id], onDelete: Cascade)
+  user                   User      @relation(fields: [userId], references: [id])
+
+  @@unique([miniGameId, userId])
+  @@index([userId], map: "MiniGameParticipation_userId_fkey")
+}
+
+model MiniGamePlayLog {
+  id         String   @id @default(uuid())
+  userId     String
+  miniGameId String
+  prizeId    String?
+  action     String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  miniGame   MiniGame @relation(fields: [miniGameId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([miniGameId, createdAt])
+  @@index([userId], map: "MiniGamePlayLog_userId_fkey")
 }

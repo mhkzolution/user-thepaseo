@@ -9,6 +9,7 @@ import HomePopup from '@/components/HomePopup/page';
 import RewardList from '@/components/RewardList/page';
 import EventList from '@/components/EventList/page';
 import CampaignList from '@/components/CampaignList/page';
+import MiniGameList from '@/components/mini-game/MiniGameList';
 import CouponList from '@/components/CouponList/page';
 import BannerHome from "@/components/BannerHome/page"
 import HeaderMobile from '@/components/HeaderMobile/page';
@@ -93,6 +94,10 @@ export default function NewHomePage({ user }: NewHomePageProps) {
         </div>
 
         
+        <div className="p-0 max-w-5xl mx-auto mb-6">
+          <MiniGameList />
+        </div>
+
         <div className="p-0 max-w-5xl mx-auto mb-6">
           <CampaignList />
         </div>

@@ -19,6 +19,7 @@ import UserProfile from '@/components/UserProfile/page';
 import HeaderMobile from '@/components/HeaderMobile/page';
 import { IoMdMore } from "react-icons/io";
 import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
+import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi";
 
 type Coupon = {
   id: string;
@@ -50,6 +51,19 @@ type Campaign = {
   coupons: Coupon[];
 };
 
+type MiniGameItem = {
+  id: string;
+  type: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  canSpin?: boolean;
+  canClaim?: boolean;
+  hasSpun: boolean;
+  spinPointCost?: number;
+  progress?: { checkInCount: number; checkInTarget: number };
+};
+
 export default function CampaignSinglePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const { user } = useContext(AuthContext);
@@ -57,6 +71,7 @@ export default function CampaignSinglePage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [miniGames, setMiniGames] = useState<MiniGameItem[]>([]);
   const captureRef = useRef<HTMLDivElement>(null);
 
   // ✅ ดึงข้อมูล campaign + coupon
@@ -76,6 +91,22 @@ export default function CampaignSinglePage() {
     };
     if (id) fetchCampaign();
   }, [id]);
+
+  useEffect(() => {
+    const fetchMiniGames = async () => {
+      if (!id) return;
+      try {
+        const res = await fetchWithAuth(
+          `${API_URL}/mini-games?campaignId=${id}&excludePlayed=true`
+        );
+        if (!res.ok) return;
+        setMiniGames(await res.json());
+      } catch {
+        setMiniGames([]);
+      }
+    };
+    fetchMiniGames();
+  }, [API_URL, id]);
 
   // ✅ ฟังก์ชันแคปภาพ
   const handleCapture = async () => {
@@ -220,6 +251,51 @@ export default function CampaignSinglePage() {
             </div>
 
           </div>
+
+            {miniGames.length > 0 && (
+              <div className="flex flex-col gap-4 bg-white md:p-6 p-4">
+                <h3 className="text-sm font-semibold">มินิเกม</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  {miniGames.map((game) => (
+                    <Link
+                      key={game.id}
+                      href={game.type === "CHECK_IN" ? `/games/check-in/${game.id}` : `/games/lucky-spin/${game.id}`}
+                      className="flex items-stretch rounded-2xl overflow-hidden bg-gradient-to-r from-[#6B7B3C] to-[#8a9a52] text-white min-h-[100px]"
+                    >
+                      <div className="w-1/3 flex items-center justify-center p-4">
+                        {game.imageUrl ? (
+                          <Image
+                            src={game.imageUrl}
+                            alt={game.name}
+                            width={100}
+                            height={100}
+                            className="rounded-xl object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <GiPerspectiveDiceSixFacesRandom size={40} className="text-yellow-300" />
+                        )}
+                      </div>
+                      <div className="flex flex-col justify-center p-4 gap-1 flex-1">
+                        <h4 className="font-bold">{game.name}</h4>
+                        <p className="text-sm opacity-90">
+                          {game.type === "CHECK_IN" ? "Check-in" : "Lucky Spin"} ·{" "}
+                          {game.type === "CHECK_IN"
+                            ? game.canClaim
+                              ? "พร้อมรับรางวัล"
+                              : game.progress
+                                ? `${game.progress.checkInCount}/${game.progress.checkInTarget} ครั้ง`
+                                : "ดูความคืบหน้า"
+                            : game.canSpin
+                              ? `พร้อมหมุน (${game.spinPointCost} พอยท์)`
+                              : "ดูเงื่อนไข"}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ✅ แสดงคูปองของแคมเปญ */}
             {campaign.coupons?.length > 0 && (

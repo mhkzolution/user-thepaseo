@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { fetchWithAuth } from "@/lib/fetchWithAuth"
 import Image from "next/image";
 import Loading from "@/components/loading";
+import RedeemCodeTabs from "@/components/coupon/RedeemCodeTabs";
 
 export default function CouponDetailPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -83,12 +84,7 @@ export default function CouponDetailPage() {
         <div className="relative max-w-2xl mx-auto p-0 pt-10 bg-gray-100 rounded-3xl shadow-md">
 
           <div className="px-4 pt-0 md:px-10 md:pt-0">
-            <div className="bg-gray-50 border rounded-xl p-4 text-center">
-                <p className="text-gray-500 text-sm mb-1">รหัสสำหรับใช้คูปอง</p>
-                <p className="text-3xl font-bold tracking-widest">
-                {coupon.redeemCode || "ไม่มีรหัส"}
-                </p>
-            </div>
+            <RedeemCodeTabs redeemCode={coupon.redeemCode} />
           </div>
 
           <div className="p-4 md:p-10">

@@ -36,6 +36,9 @@ type Coupon = {
   isExpired: boolean;
   isReceived: boolean;
   canReceive: boolean;
+  eligibility?: string;
+  eligibilityLabel?: string | null;
+  eligibilityReason?: string | null;
   startDate: string;
   endDate: string;
   locationLabel: string;
@@ -287,6 +290,9 @@ const handleClaim = async () => {
     } else if (coupon.maxPerUser && coupon.receivedCount >= coupon.maxPerUser) {
       disabled = true;
       message = `คุณรับครบแล้ว (${coupon.receivedCount}/${coupon.maxPerUser})`;
+    } else if (coupon.eligibilityReason) {
+      disabled = true;
+      message = coupon.eligibilityReason;
     }
 
     return (
@@ -467,6 +473,13 @@ const handleClaim = async () => {
                   <p className="text-sm text-gray-700">{coupon.locationLabel}</p>
                 </div>
               }
+
+              {coupon.eligibilityLabel && (
+                <div className="mb-4">
+                  <span className="text-base font-bold">เงื่อนไขผู้มีสิทธิ์</span>
+                  <p className="text-sm text-gray-700">{coupon.eligibilityLabel}</p>
+                </div>
+              )}
             </div>
 
           </div>

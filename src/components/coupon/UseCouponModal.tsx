@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
+import RedeemCodeTabs from "@/components/coupon/RedeemCodeTabs";
 
 interface UseCouponModalProps {
   show: boolean;
@@ -127,14 +128,9 @@ export default function UseCouponModal({ show, onClose, userCouponId }: UseCoupo
                 X
             </button>
             
-            {/* ✅ Redeem Code */}
+            {/* ✅ Redeem Code — Code / Barcode / QR tabs */}
             <div className="px-4 pt-4 md:pt-8 md:px-8">
-                    <div className="bg-paseo-hover rounded-xl py-4 text-center">
-                <p className="text-black text-sm mb-1">รหัสสำหรับใช้คูปอง</p>
-                <p className="text-2xl font-bold tracking-widest">
-                  {coupon.redeemCode || "ไม่มีรหัส"}
-                </p>
-              </div>
+              <RedeemCodeTabs redeemCode={coupon.redeemCode} />
             </div>
 
             

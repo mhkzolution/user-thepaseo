@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import QRCode from "react-qr-code";
 import { useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import Image from "next/image";
 import Loading from "@/components/loading";
+import RedeemCodeTabs from "@/components/coupon/RedeemCodeTabs";
 
 export default function MyCouponsPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -63,25 +63,9 @@ export default function MyCouponsPage() {
             />
           )}
 
-          {!uc.used && (
-            <div className="text-center mt-4">
-              <h3 className="font-semibold mb-2">สแกน QR Code เพื่อใช้คูปอง</h3>
-              <div className="flex flex-col items-center">
-                <QRCode
-                  value={`${process.env.NEXT_PUBLIC_APP_URL}/admin/coupons/verify/${uc.coupon.code}`}
-                  size={140}
-                />
-                <button
-                  onClick={() =>
-                    navigator.clipboard.writeText(
-                      `${process.env.NEXT_PUBLIC_APP_URL}/admin/coupons/verify/${uc.coupon.code}`
-                    )
-                  }
-                  className="mt-3 px-3 py-1 bg-gray-100 border rounded text-sm text-gray-700 hover:bg-gray-200"
-                >
-                  📋 คัดลอกลิงก์ยืนยัน
-                </button>
-              </div>
+          {!uc.used && uc.redeemCode && (
+            <div className="mt-4">
+              <RedeemCodeTabs redeemCode={uc.redeemCode} />
             </div>
           )}
 
