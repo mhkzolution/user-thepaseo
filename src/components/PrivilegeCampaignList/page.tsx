@@ -6,7 +6,8 @@ import useEmblaCarousel from "embla-carousel-react";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 import Loading from "@/components/loading";
 import Image from "next/image";
-import { TbBorderAll } from "react-icons/tb"; // Import FaBorderAll icon
+import { TbBorderAll } from "react-icons/tb";
+import { RiMegaphoneLine } from "react-icons/ri";
 
 type Campaign = {
   id: string;
@@ -106,8 +107,21 @@ export default function PrivilegeCampaignList() {
       </div>
 
       {campaigns.length === 0 ? (
-        <div className="p-6 text-center">
-          <p>ยังไม่มีกิจกรรมหรือของรางวัล</p>
+        <div className="p-0 max-w-5xl mx-auto mb-6">
+          <div className="flex flex-row items-end justify-between mb-3">
+            <span className="text-base font-bold">แคมเปญ</span>
+          </div>
+  
+          <div
+            className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-paseo-hover">
+              <RiMegaphoneLine className="text-paseo-dark" size={24} aria-hidden />
+            </div>
+            <p className="text-sm font-semibold text-gray-800">ยังไม่มีแคมเปญ</p>
+          </div>
         </div>
       ) : (
         <section className="embla_post">

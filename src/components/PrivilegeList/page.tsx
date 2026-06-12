@@ -8,6 +8,28 @@ import Image from "next/image";
 import Loading from "@/components/loading";
 import { BsClipboardCheck } from "react-icons/bs";
 import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
+import { RiCoupon2Fill, RiGiftLine, RiMegaphoneLine } from "react-icons/ri";
+
+function PrivilegeEmptyState({
+  icon,
+  title,
+}: {
+  icon: React.ReactNode;
+  title: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-paseo-hover">
+        {icon}
+      </div>
+      <p className="text-sm font-semibold text-gray-800">{title}</p>
+    </div>
+  );
+}
 
 type PrivilegeItem = {
   id: string;
@@ -210,9 +232,10 @@ export default function PrivilegeCampaignList() {
     <div className="mb-8">
       <h2 className="text-lg font-bold mb-4">แคมเปญ</h2>
       {campaigns.length === 0 ? (
-        <div className="p-6 text-center">
-          <p>ยังไม่มีแคมเปญ</p>
-        </div>
+        <PrivilegeEmptyState
+          icon={<RiMegaphoneLine className="text-paseo-dark" size={24} aria-hidden />}
+          title="ยังไม่มีแคมเปญ"
+        />
       ) : (
         <section className="embla_post">
           <div className="embla__viewport_post rounded-lg" ref={campaignEmblaRef}>
@@ -531,15 +554,22 @@ export default function PrivilegeCampaignList() {
 
       </div>
         {displayedItems.length === 0 ? (
-          <div className="p-6 text-center">
-            <p>
-              {selectedType === "ALL"
-                ? "ยังไม่มีคูปองหรือรางวัล"
-                : selectedType === "COUPON"
-                ? "ยังไม่มีคูปอง"
-                : "ยังไม่มีของรางวัล"}
-            </p>
-          </div>
+          selectedType === "COUPON" ? (
+            <PrivilegeEmptyState
+              icon={<RiCoupon2Fill className="text-paseo-dark" size={24} aria-hidden />}
+              title="ยังไม่มีคูปอง"
+            />
+          ) : selectedType === "REWARD" ? (
+            <PrivilegeEmptyState
+              icon={<RiGiftLine className="text-paseo-dark" size={24} aria-hidden />}
+              title="ยังไม่มีของรางวัล"
+            />
+          ) : (
+            <PrivilegeEmptyState
+              icon={<RiCoupon2Fill className="text-paseo-dark" size={24} aria-hidden />}
+              title="ยังไม่มีคูปองหรือรางวัล"
+            />
+          )
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {displayedItems.map((r) => {

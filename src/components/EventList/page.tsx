@@ -7,6 +7,8 @@ import Image from "next/image";
 import { BsClipboardCheck } from "react-icons/bs";
 import Loading from "@/components/loading";
 import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
+import { RiMegaphoneLine } from "react-icons/ri";
+import React from "react";
 
 type Event = {
   id: string;
@@ -53,8 +55,21 @@ export default function EventList({ shopId }: { shopId?: string }) { // ✅ เ�
 
   if (!events.length) {
     return (
-      <div className="p-6 max-w-5xl mx-auto text-center">
-        <p>ยังไม่มีกิจกรรมหรือของรางวัล</p>
+      <div className="p-0 max-w-5xl mx-auto mb-6">
+        <div className="flex flex-row items-end justify-between mb-3">
+          <span className="text-base font-bold">กิจกรรม</span>
+        </div>
+
+        <div
+          className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-paseo-hover">
+            <RiMegaphoneLine className="text-paseo-dark" size={24} aria-hidden />
+          </div>
+          <p className="text-sm font-semibold text-gray-800">ยังไม่มีกิจกรรม</p>
+        </div>
       </div>
     );
   }

@@ -13,6 +13,14 @@ import Loading from '@/components/loading';
 import HeaderMobile from '@/components/HeaderMobile/page';
 import { CiSearch, CiCircleRemove } from 'react-icons/ci';
 import { HiMiniSquares2X2 } from "react-icons/hi2";
+import { getShopStatus } from "@/lib/shopHours";
+
+interface ShopHour {
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
+  isClosed: boolean;
+}
 
 interface Shop {
   id: string;
@@ -25,6 +33,7 @@ interface Shop {
   categoryId?: string;
   branchId?: string;
   isVisible?: boolean;
+  hours?: ShopHour[];
 
   category?: {
     id: string;
@@ -326,6 +335,11 @@ useEffect(() => {
     return <Loading />;
   }
 
+  const visibleShops = shops.filter((shop) => shop.isVisible !== false);
+  const showHoursLegend = visibleShops.some(
+    (shop) => getShopStatus(shop.hours ?? []) !== null
+  );
+
   return (
     <div className="max-w-2xl mx-auto p-0 mb-20 md:mt-10 md:mb-4 mb-4 rounded-xl">
       <HeaderMobile />
@@ -507,10 +521,13 @@ useEffect(() => {
             {shops.length === 0 ? (
               <p className="text-gray-500">ไม่พบร้านค้า</p>
             ) : (
+              <>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 gap-6">
-                {shops
-                  .filter((shop) => shop.isVisible !== false)
-                  .map((shop) => (
+                {visibleShops.map((shop) => {
+                  const status = getShopStatus(shop.hours ?? []);
+
+                  return (
                   <Link
                     key={shop.id}
                     href={`/shop/${shop.id}?from=directory&${new URLSearchParams(
@@ -518,6 +535,16 @@ useEffect(() => {
                     ).toString()}`}
                     className="overflow-hidden transition relative bg-white p-2 rounded-xl shadow-sm"
                   >
+                    {status && (
+                      <span
+                        className={`absolute top-2 right-2 z-10 h-3 w-3 rounded-full ring-2 ring-white ${
+                          status.open ? "bg-paseo" : "bg-gray-200"
+                        }`}
+                        title={status.open ? "เปิดอยู่" : "ปิดอยู่"}
+                        aria-label={status.open ? "ร้านเปิดอยู่" : "ร้านปิดอยู่"}
+                      />
+                    )}
+
                     <div className="relative flex justify-center h-24">
                       {shop.logoUrl ? (
                         <Image
@@ -557,8 +584,10 @@ useEffect(() => {
                       <p className="text-xs text-gray-600">{shop.branch?.name || '-'}</p>
                     </div>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
+              </>
             )}
           </div>
         </div>

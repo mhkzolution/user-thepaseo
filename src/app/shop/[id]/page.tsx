@@ -83,7 +83,7 @@ export default function ShopPage() {
       try {
         const response = await fetchWithAuth(`${API_URL}/shop/${id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch shop');
+          throw new Error("โหลดข้อมูลร้านไม่สำเร็จ");
         }
         const data = await response.json();
         setShop(data);
@@ -91,7 +91,7 @@ export default function ShopPage() {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Something went wrong");
+          setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
         }
       } finally {
         setLoading(false);
@@ -101,8 +101,24 @@ export default function ShopPage() {
   }, [id]);
 
   if (loading) return <Loading />;
-  if (error) return <div>Error: {error}</div>;
-  if (!shop) return <div>Shop not found</div>;
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 pt-24 text-center text-gray-600">
+        <p className="font-semibold text-gray-800">ไม่สามารถแสดงร้านค้าได้</p>
+        <p className="mt-2 text-sm">{error}</p>
+      </div>
+    );
+  }
+  if (!shop) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 pt-24 text-center text-gray-600">
+        <p className="font-semibold text-gray-800">ไม่พบร้านค้า</p>
+        <p className="mt-2 text-sm">ร้านนี้อาจถูกลบหรือย้ายไปแล้ว</p>
+      </div>
+    );
+  }
+
+  const hasShopImage = Boolean(shop.imageUrl?.trim());
   const status = getShopStatus(shop.hours)
   const today = new Date().getDay()
 
@@ -115,19 +131,33 @@ export default function ShopPage() {
         <div className="relative">
 
           <div className="max-w-2xl mx-auto p-0 px-0 mb-0 md:mt-20 md:mb-0 rounded-xl">
-            {shop.imageUrl && (
+            <div className="relative w-full aspect-[2/1] min-h-[180px] overflow-hidden rounded-t-3xl bg-gradient-to-br from-gray-50 via-paseo-hover/30 to-gray-100">
+              {hasShopImage ? (
                 <Image
-                  src={shop.imageUrl}
-                  alt={shop.name}
-                  width={200}
-                  height={200}
-                  className="w-full object-cover rounded-t-3xl"
+                  src={shop.imageUrl!}
+                  alt={`รูปร้าน ${shop.name}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 672px"
+                  className="object-cover"
                   unoptimized
                   priority
                   placeholder="blur"
                   blurDataURL="/blur-placeholder.jpg"
                 />
+              ) : (
+                <div
+                  className="flex h-full w-full flex-col items-center justify-center px-6 text-center"
+                  aria-label="ยังไม่มีรูปร้าน"
+                >
+                  <p className="text-sm font-semibold text-gray-700">
+                    ยังไม่มีรูปร้าน
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    ดูรายละเอียดร้านได้ด้านล่าง
+                  </p>
+                </div>
               )}
+            </div>
           </div>
 
           <div className="max-w-2xl mx-auto -mt-10 pt-6 px-6 pb-20 bg-white rounded-t-3xl rounded-b-xl shadow-xl relative z-48">
@@ -149,8 +179,8 @@ export default function ShopPage() {
 
                     <span className="text-sm text-gray-600">
                       {status.open
-                        ? `ปิด ${status.closeTime}`
-                        : `เปิด ${status.openTime}`}
+                        ? `ปิดเวลา ${status.closeTime} น.`
+                        : `เปิดเวลา ${status.openTime} น.`}
                     </span>
                   </div>
                 )}
