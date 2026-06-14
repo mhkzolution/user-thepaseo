@@ -96,7 +96,7 @@ export async function sendLinePointCard(
               action: {
                 type: "uri",
                 label: "ดูประวัติพอยท์",
-                uri: "https://offline-supervisor-dive-poker.trycloudflare.com/point-history",
+                uri: "https://offline-supervisor-dive-poker.trycloudflare.com/profile/point",
               },
             },
           ],

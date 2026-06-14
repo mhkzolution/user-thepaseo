@@ -172,7 +172,7 @@ function buildWeeklyFlex({
             action: {
               type: "uri",
               label: "ดูประวัติพอยท์",
-              uri: profileUri || process.env.NEXT_PUBLIC_APP_URL || "https://your-app/point-history",
+              uri: profileUri || process.env.NEXT_PUBLIC_APP_URL || "https://your-app/profile/point",
             },
           },
         ],
@@ -214,7 +214,7 @@ export async function sendLineWeeklySummaryToUser({
     periodLabel,
     updatedAtBkkIso: isoBkk,
     heroImage: undefined,
-    profileUri: `${process.env.NEXT_PUBLIC_APP_URL || "https://your-app"}/point-history`,
+    profileUri: `${process.env.NEXT_PUBLIC_APP_URL || "https://your-app"}/profile/point`,
   });
 
   const res = await fetch(LINE_API, {
