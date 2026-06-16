@@ -90,31 +90,17 @@ export default function CampaignList() {
                 <Link href={`/campaign/${r.id}`}>
                   <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl transition">
                       <div className="w-40%">
-                        {r.imageUrl ? (
-                          <Image
-                            width={600}
-                            height={600}
-                            src={r.imageUrl}
-                            alt={r.name}
-                            className="w-full object-cover rounded-l-2xl"
-                            unoptimized
-                            priority
-                            placeholder="blur"
-                            blurDataURL="/blur-placeholder.jpg"
-                          />
-                        ) : (
-                          <Image
-                            width={600}
-                            height={600}
-                            src='/main/no-image.png'
-                            alt={r.name}
-                            className="object-cover rounded-xl border bg-white p-6"
-                            unoptimized
-                            priority
-                            placeholder="blur"
-                            blurDataURL="/blur-placeholder.jpg"
-                          />
-                        )}
+                        <Image
+                          width={600}
+                          height={600}
+                          src={r.imageUrl || "/main/no-image.png"}
+                          alt={r.name}
+                          className="w-full object-cover rounded-l-2xl"
+                          unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
+                        />
                       </div>
                       <div className="flex flex-col flex-grow w-60% md:p-4 p-2 gap-2">
                         <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">

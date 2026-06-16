@@ -965,7 +965,9 @@ model MiniGame {
   requireNewMember Boolean      @default(false)
   newMemberDays    Int?
   minReceiptAmount Int          @default(300)
+  requireReceipt         Boolean      @default(true)
   spinPointCost          Int          @default(10)
+  maxSpinsPerUser        Int          @default(1) // 0 = ไม่จำกัดจำนวนครั้ง
   wheelSlots             Int          @default(8)
   checkInTarget          Int?
   targetSpendingAmount   Int?
@@ -1028,6 +1030,7 @@ model MiniGameParticipation {
   userId       String
   miniGameId   String
   hasSpun      Boolean   @default(false)
+  spinCount    Int       @default(0)
   spunAt       DateTime?
   prizeId                String?
   userCouponId           String?

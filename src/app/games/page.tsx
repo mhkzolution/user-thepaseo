@@ -19,7 +19,9 @@ type MiniGameItem = {
   canSpin?: boolean;
   canClaim?: boolean;
   hasSpun: boolean;
+  unlimitedSpins?: boolean;
   spinPointCost?: number;
+  requireReceipt?: boolean;
   minReceiptAmount?: number;
   progress?: {
     checkInCount: number;
@@ -39,14 +41,24 @@ function gameHref(game: MiniGameItem) {
 }
 
 function gameSubtitle(game: MiniGameItem) {
-  if (game.hasSpun) return "เสร็จสิ้นแล้ว";
+  if (game.hasSpun && !game.unlimitedSpins) return "เสร็จสิ้นแล้ว";
   if (game.type === "CHECK_IN" && game.progress) {
     const p = game.progress;
     if (game.canClaim) return "พร้อมรับรางวัล!";
     return `Check in ${p.checkInCount}/${p.checkInTarget} · ยอด ${p.spendingTotal.toLocaleString("th-TH")}/${p.spendingTarget.toLocaleString("th-TH")} บาท`;
   }
-  if (game.canSpin) return `พร้อมหมุน · ใช้ ${game.spinPointCost} พอยท์`;
-  return game.reasons[0] || `ใบเสร็จ ≥ ${game.minReceiptAmount} บาท`;
+  if (game.canSpin) {
+    const receiptHint =
+      game.requireReceipt === false
+        ? ""
+        : game.minReceiptAmount != null
+          ? ` · ใบเสร็จ ≥ ${game.minReceiptAmount} บาท`
+          : "";
+    return `พร้อมหมุน · ใช้ ${game.spinPointCost} พอยท์${receiptHint}`;
+  }
+  if (game.reasons[0]) return game.reasons[0];
+  if (game.requireReceipt === false) return "ยังหมุนไม่ได้";
+  return `ใบเสร็จ ≥ ${game.minReceiptAmount} บาท`;
 }
 
 export default function GamesPage() {

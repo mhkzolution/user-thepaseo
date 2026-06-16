@@ -132,11 +132,10 @@ export default function PrivilegeCampaignList() {
                   <Link href={`/campaign/${r.id}`}>
                     <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl hover:shadow-lg transition shadow">
                       <div className="w-50%">
-                      {r.imageUrl ? (
                         <Image
                           width={600}
                           height={600}
-                          src={r.imageUrl}
+                          src={r.imageUrl || "/main/no-image.png"}
                           alt={r.name}
                           className="w-full h-48 md:h-64 object-cover rounded-l-2xl"
                           unoptimized
@@ -144,19 +143,6 @@ export default function PrivilegeCampaignList() {
                           placeholder="blur"
                           blurDataURL="/blur-placeholder.jpg"
                         />
-                      ) : (
-                        <Image
-                          width={600}
-                          height={600}
-                          src='/main/no-image.png'
-                          alt={r.name}
-                          className="w-full h-48 md:h-64 object-cover rounded-l-2xl border bg-white p-6"
-                          unoptimized
-                          priority
-                          placeholder="blur"
-                          blurDataURL="/blur-placeholder.jpg"
-                        />
-                      )}
                       </div>
                       <div className="w-50% p-4">
                         <h3 className="text-black text-xl font-bold line-clamp-1">

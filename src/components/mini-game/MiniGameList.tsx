@@ -25,6 +25,35 @@ type MiniGameItem = {
   };
 };
 
+function getGameStatus(game: MiniGameItem): { label: string; disabled: boolean } {
+  if (game.type === "CHECK_IN") {
+    if (game.canClaim) return { label: "รับรางวัล", disabled: false };
+    if (game.progress) {
+      return {
+        label: `${game.progress.checkInCount}/${game.progress.checkInTarget} ครั้ง`,
+        disabled: true,
+      };
+    }
+    return { label: "ดูความคืบหน้า", disabled: false };
+  }
+
+  if (game.canSpin) {
+    const cost = game.spinPointCost ?? 0;
+    return {
+      label: cost === 0 ? "หมุนเลย" : `${cost} พอยท์`,
+      disabled: false,
+    };
+  }
+
+  return { label: "ดูเงื่อนไข", disabled: true };
+}
+
+function getGameHref(game: MiniGameItem) {
+  return game.type === "CHECK_IN"
+    ? `/games/check-in/${game.id}`
+    : `/games/lucky-spin/${game.id}`;
+}
+
 export default function MiniGameList() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
   const [games, setGames] = useState<MiniGameItem[]>([]);
@@ -50,10 +79,30 @@ export default function MiniGameList() {
   }, [API_URL]);
 
   if (loading) return <Loading />;
-  if (!games.length) return null;
+
+  if (!games.length) {
+    return (
+      <div className="p-0 max-w-5xl mx-auto mb-6">
+        <div className="flex flex-row items-end justify-between mb-3">
+          <span className="text-base font-bold">มินิเกม</span>
+        </div>
+
+        <div
+          className="rounded-2xl border border-gray-100 bg-gray-50 p-4 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-paseo-hover">
+            <GiPerspectiveDiceSixFacesRandom className="text-paseo-dark" size={24} aria-hidden />
+          </div>
+          <p className="text-sm font-semibold text-gray-800">ยังไม่มีมินิเกม</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-0 max-w-5xl mx-auto mb-6">
+    <div className="p-0 max-w-5xl mx-auto mb-0">
       <div className="flex flex-row items-end justify-between mb-3">
         <span className="text-base font-bold">มินิเกม</span>
         <Link href="/games" className="bg-gray-100 px-2 py-1 rounded-full border border-gray-20 text-xs">
@@ -64,44 +113,68 @@ export default function MiniGameList() {
       <section className="embla_post">
         <div className="embla__viewport_post rounded-lg" ref={emblaRef}>
           <div className="embla__container_post">
-            {games.map((game) => (
-              <div className="embla__slide_campaign relative w-full" key={game.id}>
-                <Link href={game.type === "CHECK_IN" ? `/games/check-in/${game.id}` : `/games/lucky-spin/${game.id}`}>
-                  <div className="embla__slide__number_campaign bg-gradient-to-r from-[#6B7B3C] to-[#8a9a52] border rounded-2xl transition text-white flex items-stretch min-h-[120px]">
-                    <div className="w-40% flex items-center justify-center p-4">
-                      {game.imageUrl ? (
-                        <Image
-                          src={game.imageUrl}
-                          alt={game.name}
-                          width={120}
-                          height={120}
-                          className="rounded-xl object-cover"
-                          unoptimized
-                        />
-                      ) : game.type === "CHECK_IN" ? (
-                        <FaListCheck size={40} className="text-yellow-300" />
-                      ) : (
-                        <GiPerspectiveDiceSixFacesRandom size={48} className="text-yellow-300" />
-                      )}
+            {games.map((game) => {
+              const { label, disabled } = getGameStatus(game);
+
+              return (
+                <div className="embla__slide_coupon relative w-full" key={game.id}>
+                  <Link
+                    href={getGameHref(game)}
+                    className="w-full h-full flex flex-row p-0 rounded-xl overflow-hidden transition"
+                  >
+                    <div className="relative w-full h-full flex flex-col">
+                      <div className="relative w-full h-full flex flex-col">
+                        <div className="w-full aspect-square rounded-xl overflow-hidden p-3 bg-gray-100">
+                          {game.imageUrl ? (
+                            <Image
+                              src={game.imageUrl}
+                              alt={game.name}
+                              width={300}
+                              height={300}
+                              className="w-full h-full rounded-xl object-cover"
+                              unoptimized
+                              priority
+                              placeholder="blur"
+                              blurDataURL="/blur-placeholder.jpg"
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded-xl flex items-center justify-center bg-gradient-to-br from-[#6B7B3C] to-[#8a9a52]">
+                              {game.type === "CHECK_IN" ? (
+                                <FaListCheck size={48} className="text-yellow-300" />
+                              ) : (
+                                <GiPerspectiveDiceSixFacesRandom size={52} className="text-yellow-300" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="w-full rounded-xl flex flex-col gap-2 p-2 bg-gray-100">
+                          <div className="w-full px-1" style={{ minHeight: "2rem" }}>
+                            <h3 className="text-xs font-semibold line-clamp-2 leading-4 text-center">
+                              {game.name.length > 40
+                                ? game.name.substring(0, 40) + "..."
+                                : game.name}
+                            </h3>
+                          </div>
+
+                          <button
+                            type="button"
+                            className={`py-1 w-full rounded-full text-xs md:text-sm font-bold flex flex-row items-center justify-center gap-2 hover:text-black ${
+                              disabled
+                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : "bg-paseo text-white"
+                            }`}
+                            disabled={disabled}
+                          >
+                            {label}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-col flex-grow w-60% p-4 gap-2 justify-center">
-                      <h3 className="text-sm md:text-lg font-bold line-clamp-1">{game.name}</h3>
-                      <p className="text-xs opacity-90">
-                        {game.type === "CHECK_IN"
-                          ? game.canClaim
-                            ? "พร้อมรับรางวัล"
-                            : game.progress
-                              ? `Check in ${game.progress.checkInCount}/${game.progress.checkInTarget}`
-                              : "ดูความคืบหน้า"
-                          : game.canSpin
-                            ? `พร้อมหมุน · ใช้ ${game.spinPointCost} พอยท์`
-                            : "ดูเงื่อนไขการเล่น"}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            ))}
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

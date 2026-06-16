@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import HeaderMobile from "@/components/HeaderMobile/page";
 import Loading from "@/components/loading";
 import SpinResultModal from "@/components/mini-game/SpinResultModal";
+import CheckInGameUI, { type CheckInSlot } from "@/components/mini-game/CheckInGameUI";
 
 type Stamp = { id: string; checkedInAt: string; receiptId: string | null };
 
@@ -37,6 +36,9 @@ type GameDetail = {
       checkInComplete: boolean;
       isComplete: boolean;
       stamps: Stamp[];
+      todayDailySpending: number;
+      todayDailyThreshold: number;
+      todayStampEarned: boolean;
     };
   };
   wonPrize: {
@@ -55,15 +57,41 @@ function formatStampDate(iso: string) {
   });
 }
 
+function buildSlots(
+  stamps: Stamp[],
+  checkInTarget: number,
+  checkInComplete: boolean,
+  todayStampEarned: boolean
+): { slots: CheckInSlot[]; checkedInToday: boolean } {
+  const checkedInToday = todayStampEarned;
+
+  const slots: CheckInSlot[] = Array.from({ length: checkInTarget }, (_, i) => {
+    const stamp = stamps[i];
+    if (stamp) {
+      return {
+        filled: true,
+        date: formatStampDate(stamp.checkedInAt),
+      };
+    }
+    return { filled: false, date: null };
+  });
+
+  if (!checkInComplete && !checkedInToday && stamps.length < checkInTarget) {
+    slots[stamps.length] = { filled: false, date: null, isToday: true };
+  }
+
+  return { slots, checkedInToday };
+}
+
 export default function CheckInGamePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL;
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [game, setGame] = useState<GameDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadGame = useCallback(async () => {
@@ -105,12 +133,27 @@ export default function CheckInGamePage() {
     }
   };
 
+  const slotData = useMemo(() => {
+    if (!game) return { slots: [], checkedInToday: false };
+    const { progress } = game.status;
+    return buildSlots(
+      progress.stamps,
+      progress.checkInTarget,
+      progress.checkInComplete,
+      progress.todayStampEarned
+    );
+  }, [game]);
+
   if (loading) return <Loading />;
   if (!game) {
     return (
       <div className="p-8 text-center">
         <p>{error || "ไม่พบกิจกรรม"}</p>
-        <button type="button" className="mt-4 text-paseo underline" onClick={() => router.push("/games")}>
+        <button
+          type="button"
+          className="mt-4 text-paseo underline"
+          onClick={() => router.push("/games")}
+        >
           กลับ
         </button>
       </div>
@@ -118,172 +161,73 @@ export default function CheckInGamePage() {
   }
 
   const { progress } = game.status;
-  const spendingPct =
-    progress.spendingTarget > 0
-      ? Math.min(100, (progress.spendingTotal / progress.spendingTarget) * 100)
-      : 100;
-  const categoryHint = game.shopCategory?.name
-    ? `เฉพาะหมวด ${game.shopCategory.name}`
-    : "";
-
-  const goalText = [
-    progress.spendingTarget > 0
-      ? `สะสมยอดครบ ${progress.spendingTarget.toLocaleString("th-TH")} บาท`
-      : null,
-    `Check in ครบ ${progress.checkInTarget} ครั้ง`,
-  ]
-    .filter(Boolean)
-    .join(" และ ");
-
-  const slots = Array.from({ length: progress.checkInTarget }, (_, i) => {
-    const stamp = progress.stamps[i];
-    return stamp
-      ? { filled: true, date: formatStampDate(stamp.checkedInAt) }
-      : { filled: false, date: null };
-  });
-
   const won = game.wonPrize;
 
   return (
-    <div className="min-h-screen bg-[#5a6832] pb-24">
-      <HeaderMobile />
+    <>
+      <CheckInGameUI
+        name={game.name}
+        imageUrl={game.imageUrl}
+        checkInTarget={progress.checkInTarget}
+        targetSpendingAmount={progress.spendingTarget}
+        checkInCount={progress.checkInCount}
+        spendingTotal={progress.spendingTotal}
+        spendingComplete={progress.spendingComplete}
+        checkInComplete={progress.checkInComplete}
+        canClaim={game.status.canClaim}
+        hasClaimed={game.status.hasClaimed}
+        claiming={claiming}
+        slots={slotData.slots}
+        checkedInToday={slotData.checkedInToday}
+        todayDailySpending={progress.todayDailySpending}
+        todayDailyThreshold={progress.todayDailyThreshold}
+        prizeLabel={game.completionPrize?.label}
+        shopCategoryName={game.shopCategory?.name}
+        onClaim={handleClaim}
+        onViewBenefits={() => router.push("/privilege")}
+        onShowTerms={game.terms ? () => setShowTerms(true) : undefined}
+      />
 
-      <div className="mx-auto max-w-md px-4 pt-14">
-        <div className="mb-4 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#6B7B3C] shadow-md">
-            <Image
-              src={`${BASE_URL}/logo.png`}
-              alt="Paseo Life"
-              width={56}
-              height={56}
-              className="object-contain p-2"
-              unoptimized
-            />
-          </div>
-          <p className="text-sm font-medium text-white/90">Paseo Life</p>
-          <h1 className="mt-1 text-xl font-bold text-white">Check in</h1>
+      {error && (
+        <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-md rounded-xl bg-red-50 p-3 text-center text-sm text-red-700 shadow-lg">
+          {error}
         </div>
+      )}
 
-        <div className="rounded-3xl bg-white p-5 shadow-lg space-y-5">
-          {game.imageUrl && (
-            <div className="rounded-2xl overflow-hidden">
-              <Image
-                src={game.imageUrl}
-                alt={game.name}
-                width={400}
-                height={200}
-                className="w-full h-40 object-cover"
-                unoptimized
-              />
+      {!game.status.hasClaimed &&
+        !game.status.canClaim &&
+        game.status.reasons.length > 0 && (
+          <div className="mx-auto max-w-md px-4 pb-4">
+            <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+              <ul className="list-disc space-y-1 pl-5">
+                {game.status.reasons.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
             </div>
-          )}
-
-          <div>
-            <h2 className="font-bold text-lg text-gray-900">{game.name}</h2>
-            <p className="text-sm text-gray-600 mt-2">{goalText}</p>
-            {categoryHint && (
-              <p className="text-xs text-[#6B7B3C] mt-1">{categoryHint}</p>
-            )}
           </div>
+        )}
 
-          {progress.spendingTarget > 0 && (
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium">ยอดใช้จ่ายสะสม</span>
-                <span className="text-gray-600">
-                  {progress.spendingTotal.toLocaleString("th-TH")} /{" "}
-                  {progress.spendingTarget.toLocaleString("th-TH")} บาท
-                </span>
-              </div>
-              <div className="h-8 rounded-full bg-gray-100 overflow-hidden relative">
-                <div
-                  className="h-full bg-[#6B7B3C] rounded-full transition-all duration-500 flex items-center justify-end pr-3"
-                  style={{ width: `${Math.max(spendingPct, 8)}%` }}
-                >
-                  {spendingPct > 15 && (
-                    <span className="text-xs font-semibold text-white">
-                      {progress.spendingTotal.toLocaleString("th-TH")}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div>
-            <p className="font-medium text-sm mb-3">Check in</p>
-            <div className="grid grid-cols-5 gap-2">
-              {slots.map((slot, i) => (
-                <div
-                  key={i}
-                  className={`aspect-square rounded-xl flex flex-col items-center justify-center text-center border-2 ${
-                    slot.filled
-                      ? "border-[#6B7B3C] bg-[#6B7B3C]/10"
-                      : "border-gray-200 bg-[#e8f0d4]"
-                  }`}
-                >
-                  {slot.filled ? (
-                    <>
-                      <span className="text-[10px] font-bold text-[#6B7B3C] uppercase">Date</span>
-                      <span className="text-[9px] text-gray-700 leading-tight px-1">{slot.date}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-400">{i + 1}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              สะสม stamp อัตโนมัติเมื่อส่งใบเสร็จและได้รับพอยท์สำเร็จ
-            </p>
-          </div>
-
-          {game.completionPrize && !game.status.hasClaimed && (
-            <div className="rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm">
-              รางวัล: <strong>{game.completionPrize.label}</strong>
-            </div>
-          )}
-
-          {error && (
-            <div className="rounded-xl bg-red-50 text-red-700 text-sm p-3">{error}</div>
-          )}
-
-          {game.status.hasClaimed ? (
-            <p className="text-center text-gray-500 text-sm">คุณรับรางวัลแล้ว</p>
-          ) : (
-            <>
-              {game.status.reasons.length > 0 && !game.status.canClaim && (
-                <div className="rounded-xl bg-amber-50 text-amber-900 text-sm p-3">
-                  <ul className="list-disc pl-5 space-y-1">
-                    {game.status.reasons.map((r) => (
-                      <li key={r}>{r}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+      {showTerms && game.terms && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-paseo-dark">กติกา</h3>
               <button
                 type="button"
-                onClick={handleClaim}
-                disabled={!game.status.canClaim || claiming}
-                className="w-full py-3.5 rounded-full bg-[#6B7B3C] text-white font-semibold disabled:opacity-50"
+                onClick={() => setShowTerms(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-paseo-hover text-paseo-dark"
               >
-                {claiming
-                  ? "กำลังรับรางวัล..."
-                  : game.status.canClaim
-                    ? "รับรางวัล"
-                    : `Check in ${progress.checkInCount}/${progress.checkInTarget}`}
+                ✕
               </button>
-            </>
-          )}
+            </div>
+            <div
+              className="prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: game.terms }}
+            />
+          </div>
         </div>
-
-        {game.terms && (
-          <div
-            className="prose prose-sm prose-invert max-w-none text-white/90 mt-6 px-2"
-            dangerouslySetInnerHTML={{ __html: game.terms }}
-          />
-        )}
-      </div>
+      )}
 
       <SpinResultModal
         open={showModal}
@@ -294,6 +238,6 @@ export default function CheckInGamePage() {
         rewardParticipationId={won?.rewardParticipationId}
         onClose={() => setShowModal(false)}
       />
-    </div>
+    </>
   );
 }

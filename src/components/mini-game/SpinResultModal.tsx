@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
+import { getPrizeIconPath, getPrizeResultDisplay } from "./prizeIcons";
 
 type Props = {
   open: boolean;
@@ -10,6 +11,7 @@ type Props = {
   userCouponId?: string | null;
   rewardParticipationId?: string | null;
   onClose: () => void;
+  onClaim?: () => void;
 };
 
 export default function SpinResultModal({
@@ -17,55 +19,91 @@ export default function SpinResultModal({
   label,
   prizeType,
   pointAmount,
-  userCouponId,
-  rewardParticipationId,
   onClose,
+  onClaim,
 }: Props) {
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-xl animate-in fade-in zoom-in duration-300">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#6B7B3C]/10">
-          <span className="text-3xl">🎉</span>
-        </div>
-        <h2 className="text-xl font-bold text-[#6B7B3C]">ยินดีด้วย!</h2>
-        <p className="mt-2 text-lg font-semibold text-gray-900">{label}</p>
-        <p className="mt-1 text-sm text-gray-600">
-          {prizeType === "POINTS" && pointAmount
-            ? `ได้รับ ${pointAmount} พอยท์`
-            : prizeType === "COUPON"
-              ? "คูปองถูกเพิ่มในบัญชีของคุณแล้ว"
-              : prizeType === "REWARD"
-                ? "ของรางวัลถูกเพิ่มในบัญชีของคุณแล้ว"
-                : "รางวัลถูกเพิ่มในบัญชีของคุณแล้ว"}
-        </p>
+  const display = getPrizeResultDisplay(prizeType, label, pointAmount);
+  const iconPath = getPrizeIconPath(prizeType);
 
-        <div className="mt-6 flex flex-col gap-2">
-          {userCouponId && (
-            <Link
-              href="/my-coupons"
-              className="w-full rounded-full bg-[#6B7B3C] py-3 text-sm font-semibold text-white"
-              onClick={onClose}
-            >
-              ดูคูปองของฉัน
-            </Link>
-          )}
-          {rewardParticipationId && (
-            <Link
-              href="/profile/reward"
-              className="w-full rounded-full bg-[#6B7B3C] py-3 text-sm font-semibold text-white"
-              onClick={onClose}
-            >
-              ดูของรางวัลของฉัน
-            </Link>
-          )}
+  const handleClaim = () => {
+    onClaim?.();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
+      {/* Confetti */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <span
+            key={i}
+            className={`absolute h-2 w-2 rounded-sm ${
+              i % 3 === 0 ? "bg-paseo" : i % 3 === 1 ? "bg-[#E8C547]" : "bg-paseo-dark"
+            }`}
+            style={{
+              left: `${8 + (i * 7) % 84}%`,
+              top: `${10 + (i * 11) % 30}%`,
+              transform: `rotate(${i * 30}deg)`,
+              opacity: 0.7,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="relative w-full max-w-sm animate-in fade-in zoom-in duration-300">
+        {/* Header banner */}
+        <div className="relative z-10 mx-auto -mb-5 flex w-[85%] items-center justify-center">
+          <div className="relative flex w-full items-center justify-center rounded-full bg-paseo-dark px-6 py-2.5 shadow-lg">
+            <span className="absolute -left-2 text-paseo-hover text-lg">🍃</span>
+            <h2 className="text-lg font-bold text-white">ยินดีด้วย!</h2>
+            <span className="absolute -right-2 text-paseo-hover text-lg">🍃</span>
+          </div>
+        </div>
+
+        <div className="relative rounded-3xl bg-white px-6 pb-6 pt-10 text-center shadow-2xl">
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-full border border-gray-200 py-3 text-sm font-medium text-gray-700"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-paseo-hover text-paseo-dark"
+            aria-label="ปิด"
           >
-            ปิด
+            ✕
+          </button>
+
+          <p className="text-base font-semibold text-paseo-dark">{display.headline}</p>
+
+          <div className="relative mx-auto my-5 flex h-32 w-32 items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-paseo-hover/60 blur-md" />
+            <Image
+              src={iconPath}
+              alt={display.subtitle}
+              width={96}
+              height={96}
+              className="relative z-10 h-24 w-24 object-contain drop-shadow-lg"
+              unoptimized
+            />
+          </div>
+
+          {prizeType === "POINTS" && pointAmount ? (
+            <>
+              <p className="text-4xl font-extrabold text-paseo-dark">{display.value}</p>
+              <p className="mt-1 text-lg font-medium text-paseo-dark/80">{display.subtitle}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-xl font-extrabold leading-snug text-paseo-dark">{display.value}</p>
+              <p className="mt-1 text-base font-medium text-paseo-dark/80">{display.subtitle}</p>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={handleClaim}
+            className="mt-6 w-full rounded-full bg-gradient-to-b from-paseo to-paseo-dark py-3.5 text-base font-bold text-white shadow-lg transition-transform duration-150 ease-out hover:scale-[1.02] active:scale-95"
+          >
+            รับรางวัล
           </button>
         </div>
       </div>

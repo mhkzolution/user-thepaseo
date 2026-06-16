@@ -10,6 +10,7 @@ import { BsClipboardCheck } from "react-icons/bs";
 import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
 import { RiCoupon2Fill, RiGiftLine, RiMegaphoneLine } from "react-icons/ri";
 import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi";
+import { FaListCheck } from "react-icons/fa6";
 
 function PrivilegeEmptyState({
   icon,
@@ -64,6 +65,35 @@ type MiniGameItem = {
   spinPointCost?: number;
   progress?: { checkInCount: number; checkInTarget: number };
 };
+
+function getMiniGameStatus(game: MiniGameItem): { label: string; disabled: boolean } {
+  if (game.type === "CHECK_IN") {
+    if (game.canClaim) return { label: "รับรางวัล", disabled: false };
+    if (game.progress) {
+      return {
+        label: `${game.progress.checkInCount}/${game.progress.checkInTarget} ครั้ง`,
+        disabled: true,
+      };
+    }
+    return { label: "ดูความคืบหน้า", disabled: false };
+  }
+
+  if (game.canSpin) {
+    const cost = game.spinPointCost ?? 0;
+    return {
+      label: cost === 0 ? "หมุนเลย" : `${cost} พอยท์`,
+      disabled: false,
+    };
+  }
+
+  return { label: "ดูเงื่อนไข", disabled: true };
+}
+
+function getMiniGameHref(game: MiniGameItem) {
+  return game.type === "CHECK_IN"
+    ? `/games/check-in/${game.id}`
+    : `/games/lucky-spin/${game.id}`;
+}
 
 export default function PrivilegeCampaignList() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -184,7 +214,6 @@ export default function PrivilegeCampaignList() {
   }, [API_URL, selectedBranch]);
 
   const [campaignEmblaRef] = useEmblaCarousel();
-  const [miniGameEmblaRef] = useEmblaCarousel();
 
   if (loading) {
     return <Loading />;
@@ -234,7 +263,7 @@ export default function PrivilegeCampaignList() {
                     ? branch.imageUrl
                     : branch.imageUrl.startsWith("http")
                     ? branch.imageUrl
-                    : "/images/no-image.png"
+                    : "/main/no-image.png"
                 }
                 alt={branch.name}
                 width={80}
@@ -245,7 +274,7 @@ export default function PrivilegeCampaignList() {
               />
             ) : (
               <Image
-                src="/images/no-image.png"
+                src="/main/no-image.png"
                 alt={branch.name}
                 width={80}
                 height={80}
@@ -274,48 +303,70 @@ export default function PrivilegeCampaignList() {
           title="ยังไม่มีมินิเกมในสาขานี้"
         />
       ) : (
-        <section className="embla_post">
-          <div className="embla__viewport_post rounded-lg" ref={miniGameEmblaRef}>
-            <div className="embla__container_post">
-              {miniGames.map((game) => (
-                <div className="embla__slide_campaign relative w-full" key={game.id}>
-                  <Link href={game.type === "CHECK_IN" ? `/games/check-in/${game.id}` : `/games/lucky-spin/${game.id}`}>
-                    <div className="embla__slide__number_campaign bg-gradient-to-r from-[#6B7B3C] to-[#8a9a52] border rounded-2xl transition text-white flex items-stretch min-h-[120px]">
-                      <div className="w-40% flex items-center justify-center p-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {miniGames.map((game) => {
+            const { label, disabled } = getMiniGameStatus(game);
+
+            return (
+              <div className="embla__slide_campaign relative w-full" key={game.id}>
+                <Link
+                  href={getMiniGameHref(game)}
+                  className="w-full h-full flex flex-row p-0 rounded-xl overflow-hidden transition"
+                >
+                  <div className="relative w-full h-full flex flex-col shadow-lg">
+                    <div className="relative w-full h-full flex flex-col">
+                      <div className="w-full aspect-square rounded-xl overflow-hidden p-3 bg-gray-100">
                         {game.imageUrl ? (
                           <Image
                             src={game.imageUrl}
                             alt={game.name}
-                            width={120}
-                            height={120}
-                            className="rounded-xl object-cover"
+                            width={300}
+                            height={300}
+                            className="w-full h-full rounded-xl object-cover"
                             unoptimized
+                            priority
+                            placeholder="blur"
+                            blurDataURL="/blur-placeholder.jpg"
                           />
                         ) : (
-                          <GiPerspectiveDiceSixFacesRandom size={48} className="text-yellow-300" />
+                          <div className="w-full h-full rounded-xl flex items-center justify-center bg-gradient-to-br from-[#6B7B3C] to-[#8a9a52]">
+                            {game.type === "CHECK_IN" ? (
+                              <FaListCheck size={48} className="text-yellow-300" />
+                            ) : (
+                              <GiPerspectiveDiceSixFacesRandom size={52} className="text-yellow-300" />
+                            )}
+                          </div>
                         )}
                       </div>
-                      <div className="flex flex-col flex-grow w-60% p-4 gap-2 justify-center">
-                        <h3 className="text-sm md:text-xl font-bold line-clamp-1">{game.name}</h3>
-                        <p className="text-xs md:text-sm opacity-90">
-                          {game.type === "CHECK_IN"
-                            ? game.canClaim
-                              ? "พร้อมรับรางวัล"
-                              : game.progress
-                                ? `Check in ${game.progress.checkInCount}/${game.progress.checkInTarget}`
-                                : "ดูความคืบหน้า"
-                            : game.canSpin
-                              ? `พร้อมหมุน · ใช้ ${game.spinPointCost} พอยท์`
-                              : "ดูเงื่อนไขการเล่น"}
-                        </p>
+
+                      <div className="w-full rounded-xl flex flex-col gap-2 p-2 bg-gray-100">
+                        <div className="w-full px-1" style={{ minHeight: "2rem" }}>
+                          <h3 className="text-xs font-semibold line-clamp-2 leading-4 text-center">
+                            {game.name.length > 40
+                              ? game.name.substring(0, 40) + "..."
+                              : game.name}
+                          </h3>
+                        </div>
+
+                        <button
+                          type="button"
+                          className={`py-1 w-full rounded-full text-xs md:text-sm font-bold flex flex-row items-center justify-center gap-2 hover:text-black ${
+                            disabled
+                              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                              : "bg-paseo text-white"
+                          }`}
+                          disabled={disabled}
+                        >
+                          {label}
+                        </button>
                       </div>
                     </div>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+                  </div>
+                </Link>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -338,31 +389,17 @@ export default function PrivilegeCampaignList() {
                   <Link href={`/campaign/${item.id}`}>
                     <div className="embla__slide__number_campaign bg-gray-100 border rounded-2xl transition">
                       <div className="w-40%">
-                        {item.imageUrl ? (
-                          <Image
-                            width={600}
-                            height={600}
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="w-full object-cover rounded-l-2xl"
-                            unoptimized
-                            priority
-                            placeholder="blur"
-                            blurDataURL="/blur-placeholder.jpg"
-                          />
-                          ) : (
-                            <Image
-                              width={600}
-                              height={600}
-                              src='/main/no-image.png'
-                              alt={item.name}
-                              className="object-cover rounded-xl border bg-white p-6"
-                              unoptimized
-                              priority
-                              placeholder="blur"
-                              blurDataURL="/blur-placeholder.jpg"
-                            />
-                          )}
+                        <Image
+                          width={600}
+                          height={600}
+                          src={item.imageUrl || "/main/no-image.png"}
+                          alt={item.name}
+                          className="w-full object-cover rounded-l-2xl"
+                          unoptimized
+                          priority
+                          placeholder="blur"
+                          blurDataURL="/blur-placeholder.jpg"
+                        />
                       </div>
                       <div className="flex flex-col flex-grow w-60% md:p-4 p-2 gap-2">
                         <h3 className="text-black text-sm md:text-xl font-bold line-clamp-1">

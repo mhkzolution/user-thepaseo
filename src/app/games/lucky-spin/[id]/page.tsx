@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
-import HeaderMobile from "@/components/HeaderMobile/page";
+import BackButton from "@/components/BackButton/page";
 import Loading from "@/components/loading";
 import LuckySpinWheel, { type WheelSegment } from "@/components/mini-game/LuckySpinWheel";
 import SpinResultModal from "@/components/mini-game/SpinResultModal";
+import MiniGamePrizeList, { type PrizeListItem } from "@/components/mini-game/MiniGamePrizeList";
+import { resolveWheelSlotIndex } from "@/components/mini-game/wheelSegmentLayout";
+import Image from "next/image";
 
 type GameDetail = {
   id: string;
@@ -15,11 +17,18 @@ type GameDetail = {
   description?: string;
   terms?: string;
   spinPointCost: number;
+  maxSpinsPerUser: number;
   minReceiptAmount: number;
-  prizes: WheelSegment[];
+  requireReceipt: boolean;
+  prizes: (WheelSegment & PrizeListItem)[];
   status: {
     canSpin: boolean;
     hasSpun: boolean;
+    spinCount: number;
+    maxSpinsPerUser: number;
+    remainingSpins: number | null;
+    unlimitedSpins: boolean;
+    requireReceipt: boolean;
     reasons: string[];
     pointBalance: number;
     prizesAvailable?: boolean;
@@ -34,9 +43,36 @@ type GameDetail = {
   } | null;
 };
 
+function remainingSpins(game: GameDetail): number | null {
+  if (game.status.unlimitedSpins) {
+    if (game.spinPointCost > 0) {
+      return Math.floor(game.status.pointBalance / game.spinPointCost);
+    }
+    return null;
+  }
+
+  const limitLeft = game.status.remainingSpins ?? 0;
+  if (limitLeft === 0) return 0;
+  if (game.spinPointCost > 0) {
+    const pointSpins = Math.floor(game.status.pointBalance / game.spinPointCost);
+    return Math.min(limitLeft, pointSpins);
+  }
+  return limitLeft;
+}
+
+function formatSpinsLeftLabel(game: GameDetail): string {
+  const left = remainingSpins(game);
+  if (game.status.unlimitedSpins) {
+    if (game.spinPointCost > 0 && left != null) {
+      return `${left.toLocaleString("th-TH")} ครั้ง (ตามพอยท์)`;
+    }
+    return "ไม่จำกัด";
+  }
+  return `${(left ?? 0).toLocaleString("th-TH")} สิทธิ์`;
+}
+
 export default function LuckySpinPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL;
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [game, setGame] = useState<GameDetail | null>(null);
@@ -45,6 +81,7 @@ export default function LuckySpinPage() {
   const [targetIndex, setTargetIndex] = useState<number | null>(null);
   const [spinTrigger, setSpinTrigger] = useState(0);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [result, setResult] = useState<{
     label: string;
     prizeType: string;
@@ -86,7 +123,18 @@ export default function LuckySpinPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "หมุนไม่สำเร็จ");
 
-      setTargetIndex(data.prizeIndex);
+      const sortedPrizes = [...game.prizes].sort((a, b) => a.sortOrder - b.sortOrder);
+      const slotIndex =
+        typeof data.prizeIndex === "number" &&
+        Number.isInteger(data.prizeIndex) &&
+        data.prizeIndex >= 0 &&
+        data.prizeIndex < sortedPrizes.length
+          ? data.prizeIndex
+          : resolveWheelSlotIndex(sortedPrizes, {
+              id: data.prize?.id,
+            });
+
+      setTargetIndex(slotIndex);
       setSpinTrigger((n) => n + 1);
       setResult({
         label: data.prize.label,
@@ -122,80 +170,125 @@ export default function LuckySpinPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#5a6832] pb-24">
-      <HeaderMobile />
+  const spinsLeft = remainingSpins(game);
 
-      <div className="mx-auto max-w-md px-4 pt-14">
-        <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#6B7B3C] shadow-md">
-            <Image
-              src={`${BASE_URL}/logo.png`}
-              alt="Paseo Life"
-              width={56}
-              height={56}
-              className="object-contain p-2"
-              unoptimized
-            />
-          </div>
-          <p className="text-sm font-medium text-white/90">Paseo Life</p>
-          <h1 className="mt-1 text-xl font-bold text-white">Lucky Spin</h1>
-          <p className="mt-2 text-sm text-white/80">
-            พอยท์ {game.status.pointBalance} · ใช้ {game.spinPointCost} พอยท์/ครั้ง
+  return (
+    <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-[#f7faf0] via-paseo-hover/40 to-[#eef5dc] pb-28">
+      {/* Header */}
+      <div className="relative z-10 px-4 pt-4">
+        <div className="flex items-start justify-between">
+          <BackButton className="!mb-0 rounded-full bg-white/80 shadow-sm" />
+          {game.terms && (
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="flex flex-col items-center gap-0.5"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-sm font-bold text-paseo-dark shadow-sm">
+                i
+              </span>
+              <span className="text-[10px] font-medium text-paseo-dark">กติกา</span>
+            </button>
+          )}
+        </div>
+
+        <div className="mt-2 text-center">
+          <h1 className="text-3xl font-extrabold text-paseo-dark">Lucky Spin</h1>
+          <p className="mt-1 text-sm text-paseo-dark/70">
+            ลุ้นรับสิทธิพิเศษจาก Paseo Life
           </p>
         </div>
 
-        <div className="rounded-3xl bg-white px-4 py-8 shadow-lg">
-          <LuckySpinWheel
-            segments={game.prizes}
-            spinning={spinning}
-            targetIndex={targetIndex}
-            spinTrigger={spinTrigger}
-            onSpinEnd={handleSpinEnd}
+        {/* Remaining spins pill */}
+        <div className="mx-auto mt-4 flex w-fit items-center gap-2 rounded-full bg-white/90 px-4 py-2 shadow-sm">
+          <Image
+            src="/icon/icon-profile-coupon.png"
+            alt=""
+            width={20}
+            height={20}
+            className="h-5 w-5 object-contain"
+            unoptimized
           />
+          <span className="text-sm text-paseo-dark/80">สิทธิ์คงเหลือ</span>
+          <span className="text-sm font-bold text-paseo-dark">
+            {formatSpinsLeftLabel(game)}
+          </span>
+        </div>
+      </div>
 
-          <div className="mt-6 space-y-3">
-            {error && (
-              <div className="rounded-xl bg-red-50 text-red-700 text-sm p-3 text-center">{error}</div>
-            )}
+      {/* Wheel */}
+      <div className="relative z-10 mx-auto max-w-md px-4 pt-6">
+        <LuckySpinWheel
+          segments={game.prizes}
+          spinning={spinning}
+          targetIndex={targetIndex}
+          spinTrigger={spinTrigger}
+          onSpinEnd={handleSpinEnd}
+          onSpin={handleSpin}
+          canSpin={game.status.canSpin}
+          spinPointCost={game.spinPointCost}
+          disabled={!game.status.canSpin}
+        />
 
-            {!game.status.hasSpun && (
-              <>
-                {!game.status.canSpin && game.status.reasons.length > 0 && (
-                  <div className="rounded-xl bg-amber-50 text-amber-900 text-sm p-3">
-                    <p className="font-medium mb-1">เงื่อนไขที่ยังไม่ครบ:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {game.status.reasons.map((r) => (
-                        <li key={r}>{r}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+        <div className="mt-10 space-y-3">
+          {error && (
+            <div className="rounded-xl bg-red-50 p-3 text-center text-sm text-red-700">{error}</div>
+          )}
 
-                <button
-                  type="button"
-                  onClick={handleSpin}
-                  disabled={!game.status.canSpin || spinning}
-                  className="w-full py-3.5 rounded-full bg-[#6B7B3C] text-white font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                >
-                  {spinning ? "กำลังหมุน..." : "หมุนเลย"}
-                </button>
-              </>
-            )}
+          {!game.status.hasSpun && !game.status.canSpin && game.status.reasons.length > 0 && (
+            <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="mb-1 font-medium">เงื่อนไขที่ยังไม่ครบ:</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {game.status.reasons.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-            {game.status.hasSpun && (
-              <p className="text-center text-gray-500 text-sm">คุณเล่นเกมนี้แล้ว</p>
-            )}
-          </div>
+          {game.status.hasSpun && !game.status.unlimitedSpins && (
+            <p className="text-center text-sm text-paseo-dark/60">
+              คุณใช้สิทธิ์หมุนครบ {game.status.maxSpinsPerUser} ครั้งแล้ว
+            </p>
+          )}
+
+          {!game.status.hasSpun && game.status.spinCount > 0 && !game.status.unlimitedSpins && (
+            <p className="text-center text-sm text-paseo-dark/60">
+              หมุนแล้ว {game.status.spinCount}/{game.status.maxSpinsPerUser} ครั้ง
+            </p>
+          )}
+
+          {game.status.unlimitedSpins && game.status.spinCount > 0 && (
+            <p className="text-center text-sm text-paseo-dark/60">
+              หมุนแล้ว {game.status.spinCount.toLocaleString("th-TH")} ครั้ง
+            </p>
+          )}
         </div>
 
-        {game.terms && (
-          <div
-            className="prose prose-sm prose-invert max-w-none text-white/90 mt-6 px-2"
-            dangerouslySetInnerHTML={{ __html: game.terms }}
-          />
-        )}
+        <MiniGamePrizeList prizes={game.prizes} />
       </div>
+
+      {/* Terms modal */}
+      {showTerms && game.terms && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-paseo-dark">กติกา</h3>
+              <button
+                type="button"
+                onClick={() => setShowTerms(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-paseo-hover text-paseo-dark"
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              className="prose prose-sm max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: game.terms }}
+            />
+          </div>
+        </div>
+      )}
 
       <SpinResultModal
         open={showResultModal}
