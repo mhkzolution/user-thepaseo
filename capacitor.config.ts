@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.thepaseo.user',
-  appName: 'Paseo',
+  appId: 'com.paseolife',
+  appName: 'PaseoLife',
   plugins: {
     StatusBar: {
       /** ไม่ให้เนื้อหา HTML ไปอยู่ใต้ Status Bar / notch */

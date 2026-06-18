@@ -1,4 +1,4 @@
-package com.thepaseo.user;
+package com.paseolife;
 
 import android.graphics.Color;
 import android.os.Bundle;

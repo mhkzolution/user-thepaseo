@@ -201,7 +201,12 @@ const Navbar = () => {
     };
   }, [API_URL, authLoading, authUser]);
 
-  if (pathname.startsWith("/auth")) {
+  if (
+    pathname.startsWith("/auth") ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/delete-account"
+  ) {
     return null;
   }
 

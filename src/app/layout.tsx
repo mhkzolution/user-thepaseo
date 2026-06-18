@@ -11,7 +11,7 @@ const prompt = Prompt({
 
 // ✅ metadata: สำหรับ title, description, etc.
 export const metadata: Metadata = {
-  title: "Paseo Life Member program",
+  title: "PaseoLife Member program",
   description: "สะสมพอยท์และแลกของรางวัลกับเรา",
 };
 

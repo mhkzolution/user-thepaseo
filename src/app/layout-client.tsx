@@ -9,12 +9,15 @@ import CapacitorNativeChrome from "@/components/CapacitorNativeChrome"
 import { useContext, useEffect } from 'react'
 import { AuthContext } from '@/contexts/AuthContext'
 
+const PUBLIC_LEGAL_PATHS = ["/privacy", "/terms", "/delete-account"]
+
 function RequirePhoneGuard({ pathname }: { pathname: string }) {
   const router = useRouter()
   const { user, loading } = useContext(AuthContext)
 
   useEffect(() => {
     if (loading || !user) return
+    if (PUBLIC_LEGAL_PATHS.includes(pathname)) return
 
     const phone = typeof user.phone === "string" ? user.phone.trim() : ""
 
