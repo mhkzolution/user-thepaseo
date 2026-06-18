@@ -1,4 +1,5 @@
 import { PrismaClient, OtpPurpose } from "@prisma/client"
+import { isReviewerBypass } from "@/lib/otp/reviewer-bypass"
 
 const prisma = new PrismaClient()
 
@@ -11,6 +12,11 @@ export async function verifyOtp({
   otp: string
   purpose: OtpPurpose
 }) {
+
+  // Google Play reviewer bypass (fixed OTP, no SMS)
+  if (isReviewerBypass(phone, otp)) {
+    return { success: true }
+  }
 
   // ⭐ TEST MODE (ไม่ต้องเช็ค DB)
   if (

@@ -1,5 +1,6 @@
 // src/lib/otp/request-otp.ts
 import { PrismaClient, OtpPurpose } from "@prisma/client"
+import { isReviewerPhone } from "@/lib/otp/reviewer-bypass"
 
 const prisma = new PrismaClient()
 const OTP_EXPIRE_MINUTES = 5
@@ -15,6 +16,26 @@ export async function requestOtp({
   phone: string
   purpose: OtpPurpose
 }) {
+
+  // Google Play reviewer bypass (skip SMS)
+  if (isReviewerPhone(phone)) {
+    await prisma.otpVerification.updateMany({
+      where: { phone, purpose, verifiedAt: null },
+      data: { expiresAt: new Date(0) },
+    })
+
+    await prisma.otpVerification.create({
+      data: {
+        phone,
+        purpose,
+        provider: "REVIEWER",
+        token: "REVIEWER_TOKEN",
+        expiresAt: new Date(Date.now() + OTP_EXPIRE_MINUTES * 60 * 1000),
+      },
+    })
+
+    return { success: true, ref: "REVIEWER" }
+  }
 
   // =============================
   // 🧪 TEST MODE (localhost)
