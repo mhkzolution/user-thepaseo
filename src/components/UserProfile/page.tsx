@@ -165,7 +165,7 @@ export default function UserProfile({ showOn = "mobile" }: Props) {
               <div className="w-full flex flex-col gap-2 z-10 ">
 
                 <div className="w-full flex flex-col ml-2">
-                  <p className="text-xl font-semibold">{user.firstName || user.name } {user.lastName}</p>
+                  <p className="md:text-xl text-lg font-semibold">{user.firstName || user.name } {user.lastName}</p>
                   <div className="w-full flex flex-row items-center gap-2">
                     <p className="text-xs font-medium leading-none">เบอร์โทรศัพท์</p>
                     <p className="text-xs font-semibold leading-none">

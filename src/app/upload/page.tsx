@@ -288,7 +288,7 @@ export default function UploadPage() {
 
         {/* ส่วน preview */}
         <div
-          className="space-y-3 py-10 px-10 pb-4 z-60"
+          className="space-y-3 py-10 md:px-10 px-4 pb-4 z-60"
           style={{ paddingTop: "7rem" }}
         >
           <div className="mt-8 mb-6">

@@ -225,7 +225,7 @@ export default function PrivilegeCampaignList() {
 
   // ✅ Branch Tabs (Dynamic from API)
   const renderBranchTabs = () => (
-    <div className="flex justify-center gap-4 mb-4" role="tablist">
+    <div className="flex justify-center md:gap-4 gap-2 mb-4" role="tablist">
       {branches.map((branch) => (
         <button
           key={branch.id}

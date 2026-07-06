@@ -160,11 +160,11 @@ export default function ShopPage() {
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto -mt-10 pt-6 px-6 pb-20 bg-white rounded-t-3xl rounded-b-xl shadow-xl relative z-48">
+          <div className="max-w-2xl mx-auto -mt-10 md:pt-6 md:px-6 pt-4 px-4 md:pb-20 pb-4 bg-white rounded-t-3xl rounded-b-xl shadow-xl relative z-48">
               <div className="flex flex-col justify-between align-start gap-2">
-                <h1 className="text-2xl font-bold">{shop.name}</h1>
+                <h1 className="md:text-2xl text-xl font-bold">{shop.name}</h1>
 
-                <div className="flex flex-row items-center justify-between">
+                <div className="flex md:flex-row flex-col md:items-center md:justify-between gap-4">
                 {status && (
                   <div className="flex items-center gap-2">
                     <span
@@ -195,7 +195,7 @@ export default function ShopPage() {
                       py-1.5 px-2 rounded-full 
                       hover:opacity-90 transition"
                     >
-                      <FaPhoneAlt size={24} className="text-white p-1.5  bg-paseo-dark rounded-full" />
+                      <FaPhoneAlt size={24} className="text-white md:p-1.5 p-1 bg-paseo-dark rounded-full" />
                       {shop.phone}
                     </a>
                   )}

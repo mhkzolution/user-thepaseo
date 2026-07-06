@@ -61,21 +61,31 @@ export default function MiniGameList() {
   const [emblaRef] = useEmblaCarousel();
 
   useEffect(() => {
+    const ac = new AbortController();
+
     const load = async () => {
       try {
         const res = await fetchWithAuth(
-          `${API_URL}/mini-games?excludePlayed=true`
+          `${API_URL}/mini-games?excludePlayed=true`,
+          { signal: ac.signal }
         );
-        if (!res.ok) throw new Error("failed");
-        const data = await res.json();
-        setGames(data);
-      } catch (e) {
-        console.error(e);
+        if (!res.ok) {
+          console.error("MiniGameList fetch failed:", res.status);
+          setGames([]);
+          return;
+        }
+        setGames(await res.json());
+      } catch (e: unknown) {
+        if (ac.signal.aborted || (e as Error)?.name === "AbortError") return;
+        console.error("MiniGameList fetch error:", e);
+        setGames([]);
       } finally {
-        setLoading(false);
+        if (!ac.signal.aborted) setLoading(false);
       }
     };
+
     load();
+    return () => ac.abort();
   }, [API_URL]);
 
   if (loading) return <Loading />;

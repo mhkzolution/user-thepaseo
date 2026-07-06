@@ -312,7 +312,7 @@ const handleJoin = async () => {
           className="capture relative max-w-2xl mx-auto md:pt-10 md:pb-0 pb-40 md:mb-10 pt-8 md:mt-6 mt-0 bg-white rounded-3xl flex flex-col md:gap-6 gap-4"
         >
   
-          <div className="px-8 md:px-10">
+          <div className="px-6 md:px-10">
             {reward.imageUrl && (
               <Image
                 width={600}
@@ -348,13 +348,13 @@ const handleJoin = async () => {
             </div>
           </div>
 
-          <div className="px-8 md:px-10">
+          <div className="px-6 md:px-10">
             <div className="flex flex-row justify-between align-start px-6">
               <h1 className="text-sm font-bold text-center">{reward.name}</h1>
             </div>
           </div>
 
-          <div className="px-8 md:px-10">
+          <div className="px-4 md:px-10">
             <div className="flex flex-row justify-between align-start gap-4 bg-paseo-hover md:p-6 p-4 px-4 rounded-xl">
               <div className="flex flex-col gap-2">
                 <div className="flex flex-row item-center align-center gap-2">
@@ -415,7 +415,7 @@ const handleJoin = async () => {
             
           </div>
 
-        <div className="px-8 md:px-10">
+        <div className="px-6 md:px-10">
           <div className="flex flex-col justify-between align-start gap-4">
             {reward.description && (
               <div className="mb-4">

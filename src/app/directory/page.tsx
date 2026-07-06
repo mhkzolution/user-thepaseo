@@ -354,7 +354,7 @@ useEffect(() => {
           
           <div className="flex flex-col gap-4 px-4">
             {/* Section 1: Search */}
-            <div className="px-4 pt-0 md:px-10 md:pt-0 mb-2">
+            <div className="px-2 pt-0 md:px-10 md:pt-0 mb-2">
               <div className="relative ">
                 <input
                   type="text"
@@ -379,7 +379,7 @@ useEffect(() => {
             
 
             {/* Section 2: Branches */}
-            <div className="flex flex-col px-4 pt-0 md:px-4 md:pt-0 gap-3">
+            <div className="flex flex-col px-2 pt-0 md:px-4 md:pt-0 gap-3">
               <span className="text-base font-bold">สาขา</span>
 
               <div className="flex justify-center md:gap-10 gap-2 overflow-x-auto pb-2">
@@ -431,7 +431,7 @@ useEffect(() => {
             </div>
 
             {/* Section 3: Categories */}
-            <div className="flex flex-col px-4 pt-0 md:px-4 md:pt-0 gap-3">
+            <div className="flex flex-col px-2 pt-0 md:px-4 md:pt-0 gap-3">
               <span className="text-base font-bold">หมวดหมู่</span>
 
               {categories.length === 0 ? (
@@ -508,7 +508,7 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="px-6 py-8 md:p-4 bg-gray-100 rounded-3xl">
+          <div className="md:px-6 md:py-8 px-4 py-6 md:p-4 bg-gray-100 rounded-3xl">
             {/* Error Message */}
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
@@ -523,7 +523,7 @@ useEffect(() => {
             ) : (
               <>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 md:gap-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 md:gap-4 gap-4">
                 {visibleShops.map((shop) => {
                   const status = getShopStatus(shop.hours ?? []);
 
@@ -580,7 +580,7 @@ useEffect(() => {
                       >
                         {shop.category?.name || "-"}
                       </p>
-                      <h2 className="md:text-xs text-sm font-semibold mt-1 mb-0">{shop.name}</h2>
+                      <h2 className="md:text-sm text-xs font-semibold mt-1 mb-0">{shop.name}</h2>
                       <p className="text-xs text-gray-600">{shop.branch?.name || '-'}</p>
                     </div>
                   </Link>

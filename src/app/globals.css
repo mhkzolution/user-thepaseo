@@ -153,6 +153,14 @@ html, body {
   overscroll-behavior-y: auto;
 }
 
+/* ใช้กับ fixed bottom bar บน mobile / Capacitor — ไม่ให้ทับ Android/iOS system navigation */
+.pb-safe-bottom {
+  padding-bottom: max(
+    env(safe-area-inset-bottom, 0px),
+    var(--safe-area-inset-bottom, 0px)
+  );
+}
+
 .embla {
   overflow: hidden;
 }
