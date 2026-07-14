@@ -16,6 +16,10 @@ import { GoFileDirectoryFill } from "react-icons/go";
 import { MdPictureAsPdf } from "react-icons/md";
 import { AiOutlineExclamationCircle } from "react-icons/ai";
 import Loading from "@/components/loading";
+import {
+  isImageFile,
+  normalizeReceiptFiles,
+} from "@/lib/receiptFile";
 
 export default function UploadPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -127,34 +131,43 @@ export default function UploadPage() {
     }
 
     setUploading(true);
-    const formData = new FormData();
-    files.forEach((file) => formData.append("images", file));
+    try {
+      const formData = new FormData();
+      const normalized = await normalizeReceiptFiles(files);
+      normalized.forEach((file) => formData.append("images", file));
 
-    const res = await fetch(`${API_URL}/receipt/upload`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        // ❗ ไม่ต้องใส่ Content-Type
-      },
-      body: formData,
-    });
+      const res = await fetch(`${API_URL}/receipt/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // ❗ ไม่ต้องใส่ Content-Type
+        },
+        body: formData,
+      });
 
-    if (res.ok) {
-      setIsModalOpen(true);
-      setFiles([]);
-    } else {
+      if (res.ok) {
+        setIsModalOpen(true);
+        setFiles([]);
+      } else {
+        alert("บันทึกไม่สำเร็จ");
+      }
+    } catch {
       alert("บันทึกไม่สำเร็จ");
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newFiles = Array.from(e.target.files || []);
-    setFiles((prev) => [...prev, ...newFiles]);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!picked.length) return;
+    const normalized = await normalizeReceiptFiles(picked);
+    setFiles((prev) => [...prev, ...normalized]);
   };
 
   useEffect(() => {
@@ -316,7 +329,7 @@ export default function UploadPage() {
                           ✕
                         </button>
 
-                        {file.type.startsWith("image/") ? (
+                        {isImageFile(file) ? (
                           <img
                             width={600}
                             height={600}

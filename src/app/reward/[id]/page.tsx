@@ -17,6 +17,7 @@ import Loading from '@/components/loading';
 import UserProfile from '@/components/UserProfile/page';
 import HeaderMobile from '@/components/HeaderMobile/page';
 import UseRewardModal from "@/components/reward/UseRewardModal";
+import AuthRequiredScreen from "@/components/AuthRequiredScreen/page";
 import { IoMdMore } from "react-icons/io";
 import { dateFromBangkokWallClock } from "@/lib/bangkokDate";
 
@@ -52,6 +53,7 @@ export default function RewardSinglePage() {
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState(false);
   const [pointBalance, setPointBalance] = useState<number>(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -102,7 +104,7 @@ export default function RewardSinglePage() {
         window.location.reload();
         return;
       }
-      setError("ไม่สามารถยืนยันผู้ใช้ได้ กรุณาเข้าสู่ระบบใหม่");
+      setAuthError(true);
       setLoading(false);
       return;
     }
@@ -139,6 +141,7 @@ const handleJoin = async () => {
 
   // ✅ โหลดหน้า
   if (loading) return <Loading />;
+  if (authError) return <AuthRequiredScreen />;
   if (!reward)
     return (
       <div className="p-6 max-w-3xl mx-auto text-center">
