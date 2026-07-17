@@ -19,7 +19,11 @@ import Loading from "@/components/loading";
 import {
   isImageFile,
   normalizeReceiptFiles,
+  ReceiptFileError,
 } from "@/lib/receiptFile";
+
+const IMAGE_ACCEPT =
+  "image/*,.heic,.heif,.HEIC,.HEIF,image/heic,image/heif";
 
 export default function UploadPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -149,10 +153,23 @@ export default function UploadPage() {
         setIsModalOpen(true);
         setFiles([]);
       } else {
+        let message = "บันทึกไม่สำเร็จ";
+        try {
+          const data = await res.json();
+          if (typeof data?.error === "string" && data.error) {
+            message = data.error;
+          }
+        } catch {
+          /* ignore */
+        }
+        alert(message);
+      }
+    } catch (err) {
+      if (err instanceof ReceiptFileError) {
+        alert(err.message);
+      } else {
         alert("บันทึกไม่สำเร็จ");
       }
-    } catch {
-      alert("บันทึกไม่สำเร็จ");
     } finally {
       setUploading(false);
     }
@@ -166,8 +183,16 @@ export default function UploadPage() {
     const picked = Array.from(e.target.files || []);
     e.target.value = "";
     if (!picked.length) return;
-    const normalized = await normalizeReceiptFiles(picked);
-    setFiles((prev) => [...prev, ...normalized]);
+    try {
+      const normalized = await normalizeReceiptFiles(picked);
+      setFiles((prev) => [...prev, ...normalized].slice(0, 10));
+    } catch (err) {
+      if (err instanceof ReceiptFileError) {
+        alert(err.message);
+      } else {
+        alert("ไม่สามารถอ่านไฟล์ที่เลือกได้ กรุณาลองใหม่");
+      }
+    }
   };
 
   useEffect(() => {
@@ -277,7 +302,7 @@ export default function UploadPage() {
         {/* Hidden Inputs */}
         <input
           type="file"
-          accept="image/*"
+          accept={IMAGE_ACCEPT}
           capture="environment"
           ref={cameraInputRef}
           className="hidden"
@@ -285,7 +310,7 @@ export default function UploadPage() {
         />
         <input
           type="file"
-          accept="image/*"
+          accept={IMAGE_ACCEPT}
           multiple
           ref={galleryInputRef}
           className="hidden"

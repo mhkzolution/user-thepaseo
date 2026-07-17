@@ -1,6 +1,17 @@
 const IMAGE_EXT_RE = /\.(jpe?g|png|gif|webp|bmp|hei[cf]|tif{1,2})$/i;
 
-/** iPhone/LINE มักส่ง File.type ว่าง หรือ application/octet-stream */
+/** Align with server normalizeReceiptUpload */
+const MAX_EDGE = 1600;
+const JPEG_QUALITY = 0.78;
+
+export class ReceiptFileError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ReceiptFileError";
+  }
+}
+
+/** iPhone/LINE often send empty File.type or application/octet-stream */
 export function isImageFile(file: File): boolean {
   const mime = (file.type || "").toLowerCase();
   if (mime.startsWith("image/")) return true;
@@ -41,47 +52,135 @@ function mimeFromExt(name: string): string | null {
   }
 }
 
+async function canvasToJpegFile(
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+  baseName: string
+): Promise<File | null> {
+  let w = width;
+  let h = height;
+  const maxSide = Math.max(w, h);
+  if (maxSide > MAX_EDGE) {
+    const scale = MAX_EDGE / maxSide;
+    w = Math.round(w * scale);
+    h = Math.round(h * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.drawImage(source, 0, 0, w, h);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY)
+  );
+  if (!blob) return null;
+
+  const base = baseName.replace(/\.[^.]+$/, "") || "receipt";
+  return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+}
+
+async function heicToJpegViaLib(file: File): Promise<File> {
+  // heic2any touches `window` at load time — only import in the browser
+  if (typeof window === "undefined") {
+    throw new Error("HEIC conversion is client-only");
+  }
+  // Dynamic import: heic2any reads `window` at load time (SSR-unsafe)
+  const { default: heic2any } = await import("heic2any");
+  const result = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality: JPEG_QUALITY,
+  });
+  const blob = Array.isArray(result) ? result[0] : result;
+  const base = file.name.replace(/\.[^.]+$/, "") || "receipt";
+  const jpegFile = new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+
+  // Resize if still large
+  try {
+    const bitmap = await createImageBitmap(jpegFile);
+    const out = await canvasToJpegFile(
+      bitmap,
+      bitmap.width,
+      bitmap.height,
+      jpegFile.name
+    );
+    bitmap.close();
+    if (out) return out;
+  } catch {
+    /* keep converted jpeg as-is */
+  }
+
+  return jpegFile;
+}
+
 /**
- * แก้ MIME ว่าง / HEIC → JPEG ก่อนอัปโหลด
- * (Safari/iOS มัก decode HEIC ได้; ถ้าไม่ได้คืนไฟล์เดิม)
+ * Resize / convert HEIC→JPEG before upload.
+ * Throws ReceiptFileError if HEIC cannot be converted (do not upload raw HEIC).
  */
 export async function normalizeReceiptImage(file: File): Promise<File> {
   if (!isImageFile(file)) return file;
 
   const mime = (file.type || "").toLowerCase();
 
-  // HEIC → JPEG เพื่อให้ admin (Chrome) แสดงรูปได้
   if (isHeicLike(file)) {
+    // Safari/iOS: createImageBitmap often works
     try {
       const bitmap = await createImageBitmap(file);
-      const canvas = document.createElement("canvas");
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        bitmap.close();
-        return file;
-      }
-      ctx.drawImage(bitmap, 0, 0);
-      bitmap.close();
-
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/jpeg", 0.92)
+      const out = await canvasToJpegFile(
+        bitmap,
+        bitmap.width,
+        bitmap.height,
+        file.name
       );
-      if (!blob) return file;
-
-      const base = file.name.replace(/\.[^.]+$/, "") || "receipt";
-      return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+      bitmap.close();
+      if (out) return out;
     } catch {
-      return file;
+      /* fall through to heic2any */
+    }
+
+    try {
+      return await heicToJpegViaLib(file);
+    } catch (err) {
+      console.error("HEIC convert failed:", err);
+      throw new ReceiptFileError(
+        "ไม่สามารถแปลงไฟล์ HEIC ได้ กรุณาบันทึกรูปเป็น JPEG แล้วลองใหม่"
+      );
     }
   }
 
-  // MIME ว่าง / octet-stream แต่เป็นรูปปกติ — ใส่ type ให้ถูกโดยไม่ re-encode
-  if (!mime || mime === "application/octet-stream") {
-    const inferred = mimeFromExt(file.name) || "image/jpeg";
-    if (inferred.startsWith("image/") && inferred !== "image/heic" && inferred !== "image/heif") {
-      return new File([file], file.name, { type: inferred });
+  try {
+    const bitmap = await createImageBitmap(file);
+    const needsResize = Math.max(bitmap.width, bitmap.height) > MAX_EDGE;
+    const isJpeg = mime === "image/jpeg";
+    const needsReencode = needsResize || !isJpeg;
+
+    if (!needsReencode) {
+      bitmap.close();
+      return file;
+    }
+
+    const out = await canvasToJpegFile(
+      bitmap,
+      bitmap.width,
+      bitmap.height,
+      file.name
+    );
+    bitmap.close();
+    if (out) return out;
+  } catch {
+    if (!mime || mime === "application/octet-stream") {
+      const inferred = mimeFromExt(file.name) || "image/jpeg";
+      if (
+        inferred.startsWith("image/") &&
+        inferred !== "image/heic" &&
+        inferred !== "image/heif"
+      ) {
+        return new File([file], file.name, { type: inferred });
+      }
     }
   }
 

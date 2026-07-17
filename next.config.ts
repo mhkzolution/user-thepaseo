@@ -4,6 +4,8 @@ const path = require("path");
 const nextConfig = {
   distDir: ".next",
 
+  transpilePackages: ["heic2any"],
+
   turbopack: {
     root: path.resolve(__dirname),
   },
