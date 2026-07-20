@@ -30,10 +30,12 @@ export default function EventList({
   shopId,
   hideExpired = false,
   showViewAllLink,
+  hideWhenEmpty = false,
 }: {
   shopId?: string;
   hideExpired?: boolean;
   showViewAllLink?: boolean;
+  hideWhenEmpty?: boolean;
 }) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [events, setEvents] = useState<Event[]>([]);
@@ -69,6 +71,8 @@ export default function EventList({
       <Loading />
     );
   }
+
+  if (!events.length && hideWhenEmpty) return null;
 
   if (!events.length) {
     return (

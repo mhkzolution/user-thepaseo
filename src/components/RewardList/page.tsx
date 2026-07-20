@@ -20,7 +20,13 @@ type Reward = {
   joined?: boolean;
 };
 
-export default function RewardList({ shopId }: { shopId?: string }) {
+export default function RewardList({
+  shopId,
+  hideWhenEmpty = false,
+}: {
+  shopId?: string;
+  hideWhenEmpty?: boolean;
+}) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,8 @@ export default function RewardList({ shopId }: { shopId?: string }) {
   }, [shopId]); // ✅ refetch เมื่อ shopId เปลี่ยน
 
   if (loading) return <Loading />;
+
+  if (!rewards.length && hideWhenEmpty) return null;
 
   if (!rewards.length) {
     return (

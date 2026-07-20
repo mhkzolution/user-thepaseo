@@ -213,6 +213,14 @@ export default function PrivilegeCampaignList() {
     return () => ac.abort();
   }, [API_URL, selectedBranch]);
 
+  useEffect(() => {
+    if (selectedType === "COUPON" && coupons.length === 0) {
+      setSelectedType(rewards.length > 0 ? "REWARD" : "ALL");
+    } else if (selectedType === "REWARD" && rewards.length === 0) {
+      setSelectedType(coupons.length > 0 ? "COUPON" : "ALL");
+    }
+  }, [coupons.length, rewards.length, selectedType]);
+
   const [campaignEmblaRef] = useEmblaCarousel();
 
   if (loading) {
@@ -561,6 +569,13 @@ export default function PrivilegeCampaignList() {
 
   // Render Coupon/Reward section (grid layout)
   const renderCouponRewardSection = () => {
+    const visibleSelectedType =
+      selectedType === "COUPON" && coupons.length === 0
+        ? "REWARD"
+        : selectedType === "REWARD" && rewards.length === 0
+        ? "COUPON"
+        : selectedType;
+
     const monthNames = [
       "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
       "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค.",
@@ -578,11 +593,11 @@ export default function PrivilegeCampaignList() {
     };
 
     const displayedItems =
-      selectedType === "ALL"
+      visibleSelectedType === "ALL"
         ? [...coupons, ...rewards].sort(
             (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
           )
-        : selectedType === "COUPON"
+        : visibleSelectedType === "COUPON"
         ? coupons
         : rewards;
 
@@ -592,65 +607,69 @@ export default function PrivilegeCampaignList() {
         <div className="flex justify-start gap-4 mb-4" role="tablist">
 
         {/* COUPON */}
-        <button
-          onClick={() => setSelectedType("COUPON")}
-          className="flex flex-col items-center gap-3 transition"
-          role="tab"
-        >
-          <div
-            className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
-            ${
-              selectedType === "COUPON"
-                ? "bg-gray-50 border-paseo-dark"
-                : "bg-white border-gray-200"
-            }`}
+        {coupons.length > 0 && (
+          <button
+            onClick={() => setSelectedType("COUPON")}
+            className="flex flex-col items-center gap-3 transition"
+            role="tab"
           >
-            <Image
-              src="/icon/icon-coupon.png"
-              alt="PaseoLife"
-              width={300}
-              height={300}
-              className="w-full h-full rounded-l-xl"
-              unoptimized
-              priority
-            />
-          </div>
+            <div
+              className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
+              ${
+                visibleSelectedType === "COUPON"
+                  ? "bg-gray-50 border-paseo-dark"
+                  : "bg-white border-gray-200"
+              }`}
+            >
+              <Image
+                src="/icon/icon-coupon.png"
+                alt="PaseoLife"
+                width={300}
+                height={300}
+                className="w-full h-full rounded-l-xl"
+                unoptimized
+                priority
+              />
+            </div>
 
-          <span className="text-xs md:text-sm font-semibold">
-            คูปอง
-          </span>
-        </button>
+            <span className="text-xs md:text-sm font-semibold">
+              คูปอง
+            </span>
+          </button>
+        )}
 
 
         {/* REWARD */}
-        <button
-          onClick={() => setSelectedType("REWARD")}
-          className="flex flex-col items-center gap-3 transition"
-          role="tab"
-        >
-          <div
-            className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
-            ${
-              selectedType === "REWARD"
-                ? "bg-gray-50 border-paseo-dark"
-                : "bg-white border-gray-200"
-            }`}
+        {rewards.length > 0 && (
+          <button
+            onClick={() => setSelectedType("REWARD")}
+            className="flex flex-col items-center gap-3 transition"
+            role="tab"
           >
-            <Image
-              src="/icon/icon-reward.png"
-              alt="PaseoLife"
-              width={300}
-              height={300}
-              className="w-full h-full rounded-l-xl"
-              unoptimized
-              priority
-            />
-          </div>
+            <div
+              className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
+              ${
+                visibleSelectedType === "REWARD"
+                  ? "bg-gray-50 border-paseo-dark"
+                  : "bg-white border-gray-200"
+              }`}
+            >
+              <Image
+                src="/icon/icon-reward.png"
+                alt="PaseoLife"
+                width={300}
+                height={300}
+                className="w-full h-full rounded-l-xl"
+                unoptimized
+                priority
+              />
+            </div>
 
-          <span className="text-xs md:text-sm font-semibold">
-            รางวัล
-          </span>
-        </button>
+            <span className="text-xs md:text-sm font-semibold">
+              รางวัล
+            </span>
+          </button>
+        )}
 
         {/* ALL */}
         <button
@@ -661,7 +680,7 @@ export default function PrivilegeCampaignList() {
           <div
             className={`w-20 h-20 p-2 rounded-xl flex items-center justify-center border transition
             ${
-              selectedType === "ALL"
+              visibleSelectedType === "ALL"
                 ? "bg-gray-50 border-paseo-dark"
                 : "bg-white border-gray-200"
             }`}
@@ -815,16 +834,16 @@ export default function PrivilegeCampaignList() {
 
       {renderBranchTabs()}
 
-      {renderMiniGameSection()}
+      {miniGames.length > 0 && renderMiniGameSection()}
 
       {/* Campaign Section */}
-      {renderCampaignCarousel()}
+      {campaigns.length > 0 && renderCampaignCarousel()}
 
       {/* Coupon/Reward Section */}
-      {renderCouponRewardSection()}
+      {(coupons.length > 0 || rewards.length > 0) && renderCouponRewardSection()}
 
       {/* Event Section */}
-      {renderEventSection()}
+      {events.length > 0 && renderEventSection()}
     </div>
   );
 }

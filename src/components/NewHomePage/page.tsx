@@ -94,24 +94,24 @@ export default function NewHomePage({ user }: NewHomePageProps) {
         </div>
 
         
-        <div className="p-0 max-w-5xl mx-auto mb-6">
-          <MiniGameList />
+        <div className="p-0 max-w-5xl mx-auto mb-6 empty:hidden">
+          <MiniGameList hideWhenEmpty />
         </div>
 
-        <div className="p-0 max-w-5xl mx-auto mb-6">
-          <CampaignList />
+        <div className="p-0 max-w-5xl mx-auto mb-6 empty:hidden">
+          <CampaignList hideWhenEmpty />
         </div>
 
-        <div className="p-0 max-w-5xl mx-auto mb-6">
-          <RewardList />
+        <div className="p-0 max-w-5xl mx-auto mb-6 empty:hidden">
+          <RewardList hideWhenEmpty />
         </div>
 
-        <div className="p-0 max-w-5xl mx-auto mb-6">
-          <CouponList />
+        <div className="p-0 max-w-5xl mx-auto mb-6 empty:hidden">
+          <CouponList hideWhenEmpty />
         </div>
 
-        <div className="p-0 max-w-5xl mx-auto mb-0">
-          <EventList hideExpired />
+        <div className="p-0 max-w-5xl mx-auto mb-0 empty:hidden">
+          <EventList hideExpired hideWhenEmpty />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>

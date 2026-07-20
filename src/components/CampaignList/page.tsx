@@ -17,7 +17,11 @@ type Campaign = {
   joined?: boolean;
 };
 
-export default function CampaignList() {
+export default function CampaignList({
+  hideWhenEmpty = false,
+}: {
+  hideWhenEmpty?: boolean;
+}) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,8 @@ export default function CampaignList() {
     <Loading />
     );
   }
+
+  if (!campaigns.length && hideWhenEmpty) return null;
 
   if (!campaigns.length) {
     return (

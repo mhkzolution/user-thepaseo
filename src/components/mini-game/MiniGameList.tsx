@@ -54,7 +54,11 @@ function getGameHref(game: MiniGameItem) {
     : `/games/lucky-spin/${game.id}`;
 }
 
-export default function MiniGameList() {
+export default function MiniGameList({
+  hideWhenEmpty = false,
+}: {
+  hideWhenEmpty?: boolean;
+}) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!;
   const [games, setGames] = useState<MiniGameItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,6 +93,8 @@ export default function MiniGameList() {
   }, [API_URL]);
 
   if (loading) return <Loading />;
+
+  if (!games.length && hideWhenEmpty) return null;
 
   if (!games.length) {
     return (

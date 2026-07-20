@@ -18,7 +18,13 @@ type Coupon = {
   pointCost: string;
 };
 
-export default function CouponList({ shopId }: { shopId?: string }) {
+export default function CouponList({
+  shopId,
+  hideWhenEmpty = false,
+}: {
+  shopId?: string;
+  hideWhenEmpty?: boolean;
+}) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL!
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +52,8 @@ export default function CouponList({ shopId }: { shopId?: string }) {
   }, [shopId]); // ✅ refetch เมื่อ shopId เปลี่ยน
 
   if (loading) return <Loading />;
+
+  if (!coupons.length && hideWhenEmpty) return null;
 
   if (!coupons.length) {
     return (
