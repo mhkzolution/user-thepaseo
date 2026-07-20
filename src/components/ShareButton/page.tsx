@@ -68,7 +68,7 @@ export default function ShareButton({ title, linkShare }: ShareButtonProps) {
           <LuShare2 size={24} />
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="blur overflow-hidden fixed bottom-1 left-1 right-1 text-black rounded-xl shadow-sm border border-gray-200">
+      <DrawerContent className="overflow-hidden fixed bottom-1 left-1 right-1 bg-white text-black rounded-xl shadow-sm border border-gray-200">
         <div className="max-w-2xl mx-auto w-full pt-4 px-4 pb-6">
           <DrawerHeader>
             <div className="flex flex-row justify-between items-center">
